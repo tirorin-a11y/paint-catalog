@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>塗装見積もり＆カタログ検索</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+    <header>
+        <h1>職人向け 塗装サポートツール</h1>
+    </header>
+
+    <main>
+        
+        <section class="tool-section">
+            <h2>📢 更新情報</h2>
+            <ul style="line-height: 1.6; padding-left: 20px; color: #444;">
+                <li><strong>2025.11.14</strong> : サイト公開！まずは「エスケー化研」のカタログ検索に対応しました。</li>
+                <li><strong>開発予定</strong> : 「日本ペイント」「関西ペイント」のデータを順次追加予定です。</li>
+                <li><strong>開発予定</strong> : 「適用下地」での逆引き検索機能を準備中です。</li>
+                <li><strong>Coming Soon</strong> : 自動見積もり計算ツール（近日公開）</li>
+            </ul>
+        </section>
+
+        <section class="tool-section">
+            <h2>カタログ横断リンク集</h2>
+            
+            <div class="search-main-area" style="margin-bottom: 20px;">
+                <label for="catalogSearch" style="display:block; font-weight:bold; font-size:18px; margin-bottom:5px; color:#007bff;">
+                    🔍 全メーカー横断検索
+                </label>
+                <p style="font-size:12px; color:#666; margin-bottom:10px;">
+                    品名や下地（例：「プレミアム」「サイディング」）を入力するだけで、全メーカーから一括検索できます。
+                </p>
+                <div style="display: flex; gap: 5px;">
+                    <input type="text" id="catalogSearch" placeholder="キーワードを入力（例: シリコン）" 
+                           style="flex: 1; padding: 12px; font-size: 16px; border: 2px solid #007bff; border-radius: 4px;">
+                    <button id="searchButton" 
+                            style="padding: 0 20px; font-weight:bold; background:#007bff; color:white; border:none; border-radius:4px; cursor:pointer;">
+                        検索
+                    </button>
+                </div>
+            </div>
+
+            <div class="search-filter-area" style="background-color: #f9f9f9; padding: 15px; border-radius: 8px; border: 1px solid #eee;">
+                <p style="margin: 0 0 10px 0; font-size: 14px; font-weight:bold; color:#555;">
+                    ⚙️ メーカーで絞り込む <span style="font-weight:normal; font-size:12px; color:#888;">（指定しなくてもOK）</span>
+                </p>
+                <div style="display: flex; gap: 10px;">
+                    <div style="flex: 1;">
+                        <select id="maker1" style="width:100%; padding:8px; border:1px solid #ccc; border-radius:4px; background:white;">
+                            <option value="">指定なし（全社検索）</option>
+                            <option disabled>読み込み中...</option>
+                        </select>
+                    </div>
+                    <div style="flex: 1;">
+                        <select id="maker2" style="width:100%; padding:8px; border:1px solid #ccc; border-radius:4px; background:white;">
+                            <option value="">指定なし</option>
+                            <option disabled>読み込み中...</option>
+                        </select>
+                    </div>
+                </div>
+                <p style="font-size:11px; color:#888; margin-top:5px; text-align:right;">
+                    ※「どこのメーカーだっけ？」という時は2社まで選択できます
+                </p>
+            </div>
+
+            <p id="searchStatus" style="color:#d9534f; margin-top:15px; font-weight:bold; font-size:14px; text-align:center; min-height: 20px;"></p>
+
+            <ul id="catalogList">
+                </ul>
+        </section>
+
+        <section class="tool-section" style="opacity: 0.6;"> <h2>カンタン見積もり <span style="font-size: 14px; color: #d9534f; border: 1px solid #d9534f; padding: 2px 5px; border-radius: 4px;">準備中</span></h2>
+            
+            <div class="input-group">
+                <label for="area">延床面積 (m²):</label>
+                <input type="number" id="area" placeholder="例: 100" disabled>
+            </div>
+            
+            <div class="input-group">
+                <label for="paintGrade">塗料グレード:</label>
+                <select id="paintGrade" disabled>
+                    <option value="silicone">シリコン</option>
+                    <option value="fluorine">フッ素</option>
+                    <option value="premium">プレミアムシリコン</option>
+                </select>
+            </div>
+
+            <button id="calcButton" style="background-color: #999; cursor: default;">計算する</button>
+
+            <div id="resultArea">
+                <h3>見積もり総額:</h3>
+                <p id="totalPrice">-</p>
+            </div>
+        </section>
+
+    </main>
+
+    <footer>
+        <p>&copy; 2025 ペイントハウス山岡（仮）</p>
+    </footer>
+
+    <script src="script.js"></script>
+</body>
+</html>

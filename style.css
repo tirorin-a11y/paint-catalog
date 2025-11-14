@@ -1,0 +1,135 @@
+/* 全体の基本設定 */
+body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    background-color: #f0f2f5;
+    margin: 0;
+    padding: 0;
+    color: #333;
+}
+
+/* ヘッダー */
+header {
+    background-color: #333;
+    color: white;
+    padding: 20px;
+    text-align: center;
+}
+
+/* メインコンテンツエリア */
+main {
+    max-width: 900px;
+    margin: 20px auto;
+    padding: 20px;
+    background-color: white;
+    border-radius: 8px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+}
+
+/* 各ツールセクション */
+.tool-section {
+    margin-bottom: 30px;
+    border-bottom: 1px solid #eee;
+    padding-bottom: 20px;
+}
+
+h2 {
+    color: #0056b3; /* 濃い青 */
+    border-bottom: 2px solid #0056b3;
+    padding-bottom: 5px;
+}
+
+/* 入力欄グループ */
+.input-group {
+    margin-bottom: 15px;
+}
+
+.input-group label {
+    display: block;
+    margin-bottom: 5px;
+    font-weight: bold;
+}
+
+.input-group input[type="number"],
+.input-group input[type="text"],
+.input-group select {
+    width: 100%;
+    padding: 8px;
+    box-sizing: border-box; /* paddingを含めて幅100%にする */
+    border: 1px solid #ccc;
+    border-radius: 4px;
+}
+
+/* ボタン */
+button {
+    background-color: #007bff; /* 明るい青 */
+    color: white;
+    padding: 10px 15px;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 16px;
+    transition: background-color 0.3s;
+}
+
+button:hover {
+    background-color: #0056b3; /* 濃い青 */
+}
+
+/* 見積もり結果エリア */
+#resultArea {
+    margin-top: 20px;
+    background-color: #f9f9f9;
+    padding: 15px;
+    border-radius: 5px;
+    border: 1px solid #ddd;
+}
+
+#totalPrice {
+    font-size: 24px;
+    font-weight: bold;
+    color: #d9534f; /* 赤系 */
+}
+
+/* 広告プレースホルダー */
+.ad-placeholder {
+    height: 100px;
+    background-color: #eee;
+    border: 1px dashed #ccc;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-top: 15px;
+    color: #888;
+}
+
+/* カタログ検索結果リスト */
+#catalogList {
+    list-style-type: none;
+    padding: 0;
+    margin-top: 15px;
+}
+
+#catalogList li {
+    padding: 10px;
+    border-bottom: 1px solid #eee;
+}
+
+#catalogList li a {
+    text-decoration: none;
+    color: #007bff;
+    font-weight: bold;
+}
+
+#catalogList li span {
+    font-size: 12px;
+    color: #666;
+    display: block; /* リンクの下に表示 */
+}
+
+/* フッター */
+footer {
+    text-align: center;
+    padding: 20px;
+    color: #888;
+    font-size: 14px;
+}
