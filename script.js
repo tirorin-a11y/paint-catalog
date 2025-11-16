@@ -13,19 +13,25 @@ document.addEventListener("DOMContentLoaded", function() {
     initializePwaBanner(); 
 });
 
-// --- ▼ イベントリスナー（ライブ検索） ▼ ---
-document.getElementById("catalogSearch").addEventListener("input", function() {
-    clearTimeout(debounceTimer); 
-    debounceTimer = setTimeout(runUpdate, 500); // 0.5秒待って実行
+// --- ▼ イベントリスナー（修正版：確定時に検索） ▼ ---
+
+// 1. テキスト検索窓（入力が完了してフォーカスが外れた時）
+document.getElementById("catalogSearch").addEventListener("change", runUpdate);
+
+// 2. テキスト検索窓（Enterキーが押された時）
+document.getElementById("catalogSearch").addEventListener("keypress", function(e) {
+    if (e.key === "Enter") {
+        runUpdate(); // 検索実行
+    }
 });
-// 全てのプルダウンが変更されたら実行
+
+// 3. 全てのプルダウン（変更されたら即時実行）
 document.getElementById("maker1").addEventListener("change", runUpdate);
 document.getElementById("maker2").addEventListener("change", runUpdate);
 document.getElementById("filter_j").addEventListener("change", runUpdate);
 document.getElementById("filter_k").addEventListener("change", runUpdate);
 document.getElementById("filter_l").addEventListener("change", runUpdate);
 document.getElementById("filter_m").addEventListener("change", runUpdate);
-
 
 /**
  * メインの検索＆更新関数（V3）
