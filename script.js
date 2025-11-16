@@ -90,35 +90,33 @@ function searchCatalog() {
                     let li = document.createElement("li");
                     let statusBadge = item.status === "廃盤" ? `<span class="badge-stop">[廃盤]</span>` : '';
                     
-                    // --- ▼ メインの品名リンクを作成（ここを修正！） ▼ ---
+                    // --- ▼ [PDF]リンクを作成（D列） ▼ ---
+                    let pdfLinkHTML = "";
+                    if (item.pdf_url) {
+                        pdfLinkHTML = `<a href="${item.pdf_url}" target="_blank" class="result-link pdf-link"> [PDF] </a>`;
+                    }
+
+                    // --- ▼ 品名リンクを作成（C列 or なければPDF） ▼ ---
                     let mainLinkHTML = "";
-                    if (item.pdf_url) { // D列(PDF)がある場合
-                        // メインリンクはPDFへ（赤文字になる）
-                        mainLinkHTML = `<a href="${item.pdf_url}" target="_blank" class="result-link pdf-link">${item.name}</a>`;
-                    } else if (item.url) { // D列(PDF)がなくC列(製品)がある場合
-                        // メインリンクは製品ページへ（青文字になる）
+                    if (item.url) { // C列(製品ページ)がある場合
                         mainLinkHTML = `<a href="${item.url}" target="_blank" class="result-link product-link">${item.name}</a>`;
+                    } else if (item.pdf_url) { // C列がなくD列(PDF)がある場合
+                        // 品名が押せないのは不便なので、PDFにリンクしておく
+                        mainLinkHTML = `<a href="${item.pdf_url}" target="_blank" class="result-link product-link">${item.name}</a>`;
                     } else { // どっちも無い場合
                         mainLinkHTML = `<span class="result-link no-link">${item.name}</span>`;
                     }
                     
-                    // --- ▼ サブの製品ページリンクを作成（ここを修正！） ▼ ---
-                    let productPageLink = "";
-                    if (item.url) { // C列(製品ページ)がある場合
-                        // 「製品ページ」というリンクを小さく追加
-                        productPageLink = ` / <a href="${item.url}" target="_blank" style="color:#666; text-decoration:underline;">製品ページ</a>`;
-                    }
-
                     // --- ▼ HTMLを組み立て ▼ ---
                     li.innerHTML = `
                         <div class="result-item">
                             ${mainLinkHTML}
+                            ${pdfLinkHTML}
                             ${statusBadge}
                         </div>
                         <div class="result-meta">
                             <span class="maker-name">メーカー: ${item.maker}</span>
                             <span class="shitaji-info"> / 下地: ${item.shitaji || "情報なし"}</span>
-                            ${productPageLink}
                         </div>
                     `;
                     listElement.appendChild(li);
