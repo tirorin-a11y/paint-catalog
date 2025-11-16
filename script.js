@@ -2,15 +2,34 @@
 const GAS_API_URL = "https://script.google.com/macros/s/AKfycbxxDC7Ak1PVF1sWYmDJlnLDokqndsNugtp1koaZgWZg51ihzksYe9hKJ4y_sTqVjUfp/exec"; 
 // ------------------
 
-let loadingTimer = null; 
+let loadingTimer = null; // 演出用タイマー
+let debounceTimer = null; // ★ライブ検索用のタイマー
 
-// ★ページ読み込み完了時に、メーカーとフィルターの全リストを取得
+// --- ▼ サイト初期化（変更） ▼ ---
+// ページ読み込み時に、プルダウンのリストをGASから取得
 document.addEventListener("DOMContentLoaded", fetchInitialData);
 
-document.getElementById("searchButton").addEventListener("click", searchCatalog);
-document.getElementById("catalogSearch").addEventListener("keypress", function(e) {
-    if (e.key === "Enter") searchCatalog();
+// --- ▼ イベントリスナー（ここがライブ検索の心臓部） ▼ ---
+
+// 1. テキスト検索窓（入力後、500ミリ秒待ってから検索）
+document.getElementById("catalogSearch").addEventListener("input", function() {
+    clearTimeout(debounceTimer); // 前のタイマーをキャンセル
+    debounceTimer = setTimeout(function() {
+        searchCatalog(); // 500ミリ秒間、次の入力がなければ検索実行
+    }, 500);
 });
+
+// 2. 検索ボタン（これは即時実行）
+document.getElementById("searchButton").addEventListener("click", searchCatalog);
+
+// 3. 全てのプルダウン（変更されたら即時実行）
+document.getElementById("maker1").addEventListener("change", searchCatalog);
+document.getElementById("maker2").addEventListener("change", searchCatalog);
+document.getElementById("filter_j").addEventListener("change", searchCatalog);
+document.getElementById("filter_k").addEventListener("change", searchCatalog);
+document.getElementById("filter_l").addEventListener("change", searchCatalog);
+document.getElementById("filter_m").addEventListener("change", searchCatalog);
+
 
 /**
  * サイト初期化：GASから全リストを取得し、プルダウンを生成する
@@ -19,20 +38,14 @@ function fetchInitialData() {
     fetch(GAS_API_URL + "?type=getInitialData")
         .then(response => response.json())
         .then(data => {
-            // メーカーリストを生成
             updateSelect("maker1", data.makers, "指定なし（全社検索）");
             updateSelect("maker2", data.makers, "指定なし");
-            
-            // フィルターリストを生成
             updateSelect("filter_j", data.filters.j, "指定なし");
             updateSelect("filter_k", data.filters.k, "指定なし");
             updateSelect("filter_l", data.filters.l, "指定なし");
             updateSelect("filter_m", data.filters.m, "指定なし");
         })
-        .catch(error => {
-            console.error("初期データ取得エラー:", error);
-            // ここでエラーが出ても、検索はできるようにしておく
-        });
+        .catch(error => console.error("初期データ取得エラー:", error));
 }
 
 /**
@@ -40,17 +53,12 @@ function fetchInitialData() {
  */
 function updateSelect(id, list, defaultOptionText) {
     let select = document.getElementById(id);
-    if (!select) return; // IDが見つからなければ何もしない
-    
-    select.innerHTML = ''; // 中身をリセット
-    
-    // デフォルトの選択肢（"指定なし"など）
+    if (!select) return;
+    select.innerHTML = '';
     let defaultOption = document.createElement("option");
     defaultOption.value = "";
     defaultOption.innerText = defaultOptionText;
     select.appendChild(defaultOption);
-
-    // リストから選択肢を生成
     list.forEach(item => {
         let option = document.createElement("option");
         option.value = item;
@@ -59,11 +67,11 @@ function updateSelect(id, list, defaultOptionText) {
     });
 }
 
-
 /**
  * メインの検索実行関数
  */
 function searchCatalog() {
+    // 全てのフォームから現在の値を取得
     let keyword = document.getElementById("catalogSearch").value;
     let m1 = document.getElementById("maker1").value;
     let m2 = document.getElementById("maker2").value;
@@ -75,7 +83,13 @@ function searchCatalog() {
     let listElement = document.getElementById("catalogList");
     let statusMsg = document.getElementById("searchStatus");
 
-    if (!keyword && !m1 && !m2 && !filterJ && !filterK && !filterL && !filterM) return;
+    // 全ての入力が空なら、検索を実行しない（リストを空にするだけ）
+    if (!keyword && !m1 && !m2 && !filterJ && !filterK && !filterL && !filterM) {
+        listElement.innerHTML = ""; // リストをクリア
+        statusMsg.innerText = ""; // メッセージをクリア
+        if (loadingTimer) clearInterval(loadingTimer); // 演出も止める
+        return;
+    }
 
     if (loadingTimer) clearInterval(loadingTimer);
     listElement.innerHTML = ""; 
@@ -108,10 +122,10 @@ function searchCatalog() {
             statusMsg.innerText = ""; 
 
             if (data.length > 0) {
+                // (結果表示のHTML組み立ては変更なし)
                 data.forEach(function(item) {
                     let li = document.createElement("li");
-                    let statusBadge = item.status === "廃盤" ? `<span class="badge-stop">[廃盤]</span>` : '';
-                    
+                    let statusBadge = item.status === "廃盤" ? `<span class.badge-stop">[廃盤]</span>` : '';
                     let pdfLinkHTML = "";
                     if (item.pdf_url) {
                         pdfLinkHTML = `<a href="${item.pdf_url}" target="_blank" class="result-link pdf-link"> [PDF] </a>`;
@@ -150,8 +164,7 @@ function searchCatalog() {
         });
 }
 
-
-// --- ▼ 見積もりツール（準備中） ▼ ---
+// 見積もりツール（準備中）
 document.getElementById("calcButton").addEventListener("click", function() {
     alert("【準備中】\n\n自動見積もり機能は現在開発中です。\n次回のアップデートをお待ちください！");
 });

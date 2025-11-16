@@ -7,7 +7,13 @@
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
-
+     <div id="pwa-install-banner">
+         <img src="icon-192x192.png" alt="アイコン"> <div class="pwa-text">
+            <strong>ホーム画面に追加</strong>
+            <p>アイコンを置くと、アプリのようにタブ比較ができて便利です！</p>
+            </div>
+            <button id="pwa-close-btn" aria-label="閉じる">&times;</button>
+     </div>
     <header>
         <h1>職人向け 塗装サポートツール</h1>
     </header>
@@ -207,6 +213,30 @@
             }
         });
         initialize();
+    </script>
+    <script>
+    document.addEventListener("DOMContentLoaded", function() {
+        const banner = document.getElementById("pwa-install-banner");
+        const closeBtn = document.getElementById("pwa-close-btn");
+
+        // 1. 既に閉じたことがあるか、スマホじゃないかチェック
+        const isDismissed = localStorage.getItem("pwaBannerDismissed") === "true";
+        const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+        
+        if (isDismissed || !isMobile) {
+            return; // 表示しない
+        }
+        
+        // 2. バナーを表示する
+        banner.style.display = "flex";
+
+        // 3. 閉じるボタンが押された時の処理
+        closeBtn.addEventListener("click", function() {
+            banner.style.display = "none";
+            // 「閉じた」ことをブラウザに永久に記憶させる
+            localStorage.setItem("pwaBannerDismissed", "true");
+        });
+     });
     </script>
 </body>
 </html>
