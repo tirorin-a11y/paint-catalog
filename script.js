@@ -40,11 +40,9 @@ function updateSelect(id, makers) {
 function searchCatalog() {
     let keyword = document.getElementById("catalogSearch").value;
     
-    // ▼ メーカー絞り込みを取得
+    // ▼ 絞り込みの値を取得
     let m1 = document.getElementById("maker1").value;
     let m2 = document.getElementById("maker2").value;
-    
-    // ▼ 新しい絞り込み（J,K,L,M列）の値を取得
     let filterJ = document.getElementById("filter_j").value;
     let filterK = document.getElementById("filter_k").value;
     let filterL = document.getElementById("filter_l").value;
@@ -53,7 +51,7 @@ function searchCatalog() {
     let listElement = document.getElementById("catalogList");
     let statusMsg = document.getElementById("searchStatus");
 
-    // キーワードも絞り込みも無い場合は何もしない
+    // 何も入力されていなければ何もしない
     if (!keyword && !m1 && !m2 && !filterJ && !filterK && !filterL && !filterM) return;
 
     if (loadingTimer) clearInterval(loadingTimer);
@@ -68,19 +66,14 @@ function searchCatalog() {
         isToggle = !isToggle; 
     }, 1000);
 
-    // ▼ GASに送るURLを組み立てる
-    let makerParam = [];
-    if (m1) makerParam.push(m1);
-    if (m2) makerParam.push(m2);
-    
-    // URLに検索パラメータを追加
+    // GASに送るURLを組み立てる
     let params = new URLSearchParams();
     params.append("q", keyword);
-    params.append("makers", makerParam.join(","));
-    params.append("j", filterJ); // J列（用途）
-    params.append("k", filterK); // K列（樹脂）
-    params.append("l", filterL); // L列（機能）
-    params.append("m", filterM); // M列（下地）
+    params.append("makers", [m1, m2].filter(Boolean).join(",")); // 空でなければ結合
+    params.append("j", filterJ);
+    params.append("k", filterK);
+    params.append("l", filterL);
+    params.append("m", filterM);
 
     let url = GAS_API_URL + "?" + params.toString();
 
@@ -92,31 +85,41 @@ function searchCatalog() {
             statusMsg.innerText = ""; 
 
             if (data.length > 0) {
-                // 結果表示（ここは変更なし）
+                // ▼ ここから結果表示のHTML組み立て ▼
                 data.forEach(function(item) {
                     let li = document.createElement("li");
-                    let statusBadge = item.status === "廃盤" ? '<span style="color:red; font-weight:bold; margin-left:5px;">[廃盤]</span>' : '';
+                    let statusBadge = item.status === "廃盤" ? `<span class="badge-stop">[廃盤]</span>` : '';
                     
-                    // C列(製品URL)とD列(PDF URL)でリンクを分岐
-                    let linkHTML = "";
-                    if (item.pdf_url) { // D列
-                        linkHTML += `<a href="${item.pdf_url}" target="_blank" style="font-weight:bold; font-size:18px; text-decoration:none; color:#d9534f;">[PDF]</a> `;
+                    // --- ▼ メインの品名リンクを作成（ここを修正！） ▼ ---
+                    let mainLinkHTML = "";
+                    if (item.pdf_url) { // D列(PDF)がある場合
+                        // メインリンクはPDFへ（赤文字になる）
+                        mainLinkHTML = `<a href="${item.pdf_url}" target="_blank" class="result-link pdf-link">${item.name}</a>`;
+                    } else if (item.url) { // D列(PDF)がなくC列(製品)がある場合
+                        // メインリンクは製品ページへ（青文字になる）
+                        mainLinkHTML = `<a href="${item.url}" target="_blank" class="result-link product-link">${item.name}</a>`;
+                    } else { // どっちも無い場合
+                        mainLinkHTML = `<span class="result-link no-link">${item.name}</span>`;
                     }
-                    if (item.url) { // C列
-                        linkHTML += `<a href="${item.url}" target="_blank" style="font-weight:bold; font-size:18px; text-decoration:none; color:#007bff;">${item.name}</a>`;
-                    } else if (!item.pdf_url) { // どっちも無い場合
-                         linkHTML = `<span style="font-weight:bold; font-size:18px; color:#333;">${item.name}</span>`;
+                    
+                    // --- ▼ サブの製品ページリンクを作成（ここを修正！） ▼ ---
+                    let productPageLink = "";
+                    if (item.url) { // C列(製品ページ)がある場合
+                        // 「製品ページ」というリンクを小さく追加
+                        productPageLink = ` / <a href="${item.url}" target="_blank" style="color:#666; text-decoration:underline;">製品ページ</a>`;
                     }
 
+                    // --- ▼ HTMLを組み立て ▼ ---
                     li.innerHTML = `
-                        <div class="result-item" style="padding: 5px 0;">
-                            ${linkHTML}
+                        <div class="result-item">
+                            ${mainLinkHTML}
                             ${statusBadge}
-                            <div style="font-size:12px; color:#666; margin-top:2px;">
-                                メーカー: ${item.maker} / 下地: ${item.shitaji || "情報なし"}
-                            </div>
                         </div>
-                        <hr style="border: 0; border-top: 1px solid #eee; margin: 5px 0;">
+                        <div class="result-meta">
+                            <span class="maker-name">メーカー: ${item.maker}</span>
+                            <span class="shitaji-info"> / 下地: ${item.shitaji || "情報なし"}</span>
+                            ${productPageLink}
+                        </div>
                     `;
                     listElement.appendChild(li);
                 });
