@@ -27,20 +27,24 @@ document.getElementById("filter_m").addEventListener("change", runUpdate);
 
 
 /**
- * ★修正：サイト初期化専用の関数 (V4.2)
- * サイトを開いた時、?type=getInitialData を呼ぶ
+ * サイト初期化：GASから全リストを取得し、プルダウンを生成する (V4.3)
  */
 function fetchInitialData() {
-    let url = GAS_API_URL + "?type=getInitialData"; // ★正しい命令
+    let url = GAS_API_URL + "?type=getInitialData";
 
     fetch(url)
         .then(response => response.json())
-        .then(data => {
-            // ★「全メーカーリスト」をグローバル変数に保存
+        .then(data => { // data = { makers: [...], filters: {...} }
+            
+            // 1. 全メーカーリストをグローバルに保存
             allMakersList = data.makers; 
             
-            // ★プルダウンを初回生成する
-            updateAllDropdowns(data.filters, true); // true = 初回ロード
+            // ★修正点：GASの戻り値の形を、検索時と同じ availableFilters に統一する
+            let initialFilters = data.filters;
+            initialFilters.makers = data.makers; // メーカーリストも合体させる
+
+            // 3. プルダウンを初回生成する
+            updateAllDropdowns(initialFilters, true); // true = 初回ロード
         })
         .catch(error => console.error("初期データ取得エラー:", error));
 }
@@ -126,7 +130,7 @@ function runUpdate() {
 }
 
 /**
- * (神機能) GASから返ってきたリストで、全プルダウンを更新する
+ * (神機能) GASから返ってきたリストで、全プルダウンを更新する (V4.3)
  */
 function updateAllDropdowns(filters, isInitialLoad) {
     if (!filters) return; 
