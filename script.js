@@ -9,7 +9,7 @@ let allMakersList = []; // 「全メーカー」を記憶しておくための�
 
 // --- ▼ サイト初期化 ▼ ---
 document.addEventListener("DOMContentLoaded", function() {
-    fetchInitialData(); // ★初回実行
+    runUpdate(); // ★修正：初回限定を削除！ ページを開いたら必ず1回検索
     initializeCheerButton(); 
     initializeEstimateButton(); 
 });
@@ -27,30 +27,7 @@ document.getElementById("filter_m").addEventListener("change", runUpdate);
 
 
 /**
- * サイト初期化：GASから全リストを取得し、プルダウンを生成する
- */
-function fetchInitialData() {
-    
-    // ★★★ バグ修正点 ★★★
-    // 「?」だけを送るのではなく、「?type=getInitialData」を明示的に送る
-    let url = GAS_API_URL + "?type=getInitialData";
-    // ★★★ 修正点ここまで ★★★
-
-    fetch(url)
-        .then(response => response.json())
-        .then(data => {
-            // 「全メーカーリスト」をグローバル変数に保存
-            allMakersList = data.makers; // ※GAS(v3.9)のAパートは `data.makers` で返す
-            
-            // 2. プルダウンを初回生成する
-            updateAllDropdowns(data); // ※GAS(v3.9)のAパートは `data.filters` で返す
-        })
-        .catch(error => console.error("初期データ取得エラー:", error));
-}
-
-
-/**
- * メインの検索＆更新関数
+ * メインの検索＆更新関数（V4.0）
  */
 function runUpdate() {
     let keyword = document.getElementById("catalogSearch").value;
@@ -60,15 +37,8 @@ function runUpdate() {
     let listElement = document.getElementById("catalogList");
     let statusMsg = document.getElementById("searchStatus");
 
-    // 全ての入力が空なら、リストをクリアして終了
-    if (!keyword && !maker && !filterJ && !filterK && !filterL && !filterM) {
-        listElement.innerHTML = ""; statusMsg.innerText = "";
-        if (loadingTimer) clearInterval(loadingTimer);
-        // ★リセット時は全リストを取得し直す
-        fetchInitialData();
-        return; 
-    }
-
+    // ★修正：初回ロード（全空）判定を、GAS側に任せる（JSは必ず検索する）
+    
     if (loadingTimer) clearInterval(loadingTimer);
     listElement.innerHTML = ""; 
     
@@ -110,8 +80,8 @@ function runUpdate() {
                     else if (item.pdf_url) { mainLinkHTML = `<a href="${item.pdf_url}" target="_blank" class="result-link product-link">${item.name}</a>`; }
                     else { mainLinkHTML = `<span class="result-link no-link">${item.name}</span>`; }
                     li.innerHTML = `
-                        <div class="result-item">${mainLinkHTML}${pdfLinkHTML}${statusBadge}</div>
-                        <div class="result-meta">
+                        <div class="item-main">${mainLinkHTML}${pdfLinkHTML}${statusBadge}</div>
+                        <div class="item-meta">
                             <span class="maker-name">メーカー: ${item.maker}</span>
                             <span class="shitaji-info"> / 下地: ${item.shitaji || "情報なし"}</span>
                         </div>
@@ -119,7 +89,12 @@ function runUpdate() {
                     listElement.appendChild(li);
                 });
             } else {
-                statusMsg.innerText = "該当するカタログが見つかりません。";
+                // ★初回ロード時は「検索結果0件」なので、メッセージも変える
+                if (!keyword && !maker && !filterJ && !filterK && !filterL && !filterM) {
+                    statusMsg.innerText = "↑ キーワードや絞り込みで検索してください";
+                } else {
+                    statusMsg.innerText = "該当するカタログが見つかりません。";
+                }
             }
         })
         .catch(error => {
@@ -129,16 +104,15 @@ function runUpdate() {
 }
 
 /**
- * (神機能) GASから返ってきたリストで、全プルダウンを更新する
+ * (神機能) GASから返ってきたリストで、全プルダウンを更新する (V3.3)
  */
-function updateAllDropdowns(data) { // ★修正：data.availableFilters ではなく data を受け取る
-    
-    // ★修正：GASのAパートとBパートで戻り値の形が違うのを吸収
-    let filters = data.filters || data.availableFilters;
-    let makers = data.makers || allMakersList;
-    
-    if (data.makers) {
-        allMakersList = data.makers;
+function updateAllDropdowns(filters) {
+    // ★修正：GASからfiltersが返ってこなかった場合のエラー回避
+    if (!filters) return; 
+
+    // allMakersListを更新
+    if (filters.makers) {
+        allMakersList = filters.makers;
     }
 
     let m1_val = document.getElementById("maker1").value;
