@@ -9,36 +9,56 @@ let allMakersList = []; // 「全メーカー」を記憶しておくための�
 
 // --- ▼ サイト初期化 ▼ ---
 document.addEventListener("DOMContentLoaded", function() {
-    fetchInitialData(); 
+    fetchInitialData(); // ★修正：初回は「fetchInitialData」を呼ぶ
     initializeCheerButton(); 
     initializeEstimateButton(); 
-
-    // ★修正点1： 1秒後に検索窓（catalogSearch）へ自動スクロール
-    setTimeout(function() {
-        const searchBox = document.getElementById("catalogSearch");
-        if (searchBox) {
-            // 検索窓を画面の真ん中に持ってくる
-            searchBox.scrollIntoView({ behavior: 'smooth', block: 'center' });
-        }
-    }, 1000); // 1000ミリ秒 = 1秒
 });
 
 // --- ▼ イベントリスナー（ライブ検索） ▼ ---
-document.getElementById("catalogSearch").addEventListener("change", runUpdate);
+document.getElementById("catalogSearch").addEventListener("change", function() { runUpdate(false); }); 
 document.getElementById("catalogSearch").addEventListener("keypress", function(e) {
-    if (e.key === "Enter") { runUpdate(); }
+    if (e.key === "Enter") { runUpdate(false); }
 });
-document.getElementById("maker1").addEventListener("change", runUpdate);
-document.getElementById("filter_j").addEventListener("change", runUpdate);
-document.getElementById("filter_k").addEventListener("change", runUpdate);
-document.getElementById("filter_l").addEventListener("change", runUpdate);
-document.getElementById("filter_m").addEventListener("change", runUpdate);
+document.getElementById("maker1").addEventListener("change", function() { runUpdate(false); }); 
+document.getElementById("filter_j").addEventListener("change", function() { runUpdate(false); }); 
+document.getElementById("filter_k").addEventListener("change", function() { runUpdate(false); }); 
+document.getElementById("filter_l").addEventListener("change", function() { runUpdate(false); }); 
+document.getElementById("filter_m").addEventListener("change", function() { runUpdate(false); }); 
 
 
 /**
- * メインの検索＆更新関数（V3.4）
+ * ★復活！★ サイト初期化：GASから全リストを取得し、プルダウンを生成する
  */
-function runUpdate() {
+function fetchInitialData() {
+    // 1. まず「空の検索」をGASに投げて、全リストを取得
+    let params = new URLSearchParams();
+    let url = GAS_API_URL + "?" + params.toString();
+
+    fetch(url)
+        .then(response => response.json())
+        .then(data => {
+            // 「全メーカーリスト」をグローバル変数に保存
+            allMakersList = data.availableFilters.makers; 
+            
+            // 2. プルダウンを初回生成する
+            updateAllDropdowns(data.availableFilters);
+
+            // 3. ★修正： 読み込みが完了してから、1秒後にスクロールを実行
+            setTimeout(function() {
+                const searchBox = document.getElementById("catalogSearch");
+                if (searchBox) {
+                    searchBox.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                }
+            }, 1000); // 1000ミリ秒 = 1秒
+        })
+        .catch(error => console.error("初期データ取得エラー:", error));
+}
+
+
+/**
+ * メインの検索＆更新関数（V3.6）
+ */
+function runUpdate(isInitialLoad = false) { // isInitialLoadはもう使わないが、念のため残す
     let keyword = document.getElementById("catalogSearch").value;
     let maker = document.getElementById("maker1").value; 
     let filterJ = document.getElementById("filter_j").value, filterK = document.getElementById("filter_k").value, filterL = document.getElementById("filter_l").value, filterM = document.getElementById("filter_m").value;
@@ -46,25 +66,24 @@ function runUpdate() {
     let listElement = document.getElementById("catalogList");
     let statusMsg = document.getElementById("searchStatus");
 
+    // 全ての入力が空なら、リストをクリアして終了
     if (!keyword && !maker && !filterJ && !filterK && !filterL && !filterM) {
         listElement.innerHTML = ""; statusMsg.innerText = "";
         if (loadingTimer) clearInterval(loadingTimer);
-        if (document.getElementById("maker1").length <= 2) { 
-             fetchInitialData(); // 初回ロードなら全リスト取得
-        } else {
-            return; 
-        }
+        // ★修正：リセット時は「fetchInitialData」を呼ぶ
+        fetchInitialData(); 
+        return; 
     }
+
     if (loadingTimer) clearInterval(loadingTimer);
     listElement.innerHTML = ""; 
     
     statusMsg.innerText = "🔍 カタログを検索中...";
 
-    // --- ▼ ★修正点2：スクロール位置を 'center'（真ん中）に戻す ▼ ---
+    // 検索時のスクロール（真ん中へ）
     setTimeout(function() {
         statusMsg.scrollIntoView({ behavior: 'smooth', block: 'center' }); 
     }, 370); 
-    // --- ▲ 修正点ここまで ▲ ---
     
     let isToggle = false;
     loadingTimer = setInterval(function() {
@@ -82,11 +101,8 @@ function runUpdate() {
         .then(response => response.json())
         .then(data => {
             clearInterval(loadingTimer); loadingTimer = null; statusMsg.innerText = ""; 
-
-            // (神機能) プルダウンの選択肢を更新する
             updateAllDropdowns(data.availableFilters);
             
-            // 検索結果を表示する
             if (data.results.length > 0) {
                 data.results.forEach(function(item) {
                     let li = document.createElement("li");
@@ -124,7 +140,6 @@ function updateAllDropdowns(filters) {
     let k_val = document.getElementById("filter_k").value;
     let l_val = document.getElementById("filter_l").value;
     let m_val = document.getElementById("filter_m").value;
-
     updateSelect("maker1", allMakersList, "指定なし（全社検索）", m1_val);
     updateSelect("filter_j", filters.j, "指定なし", j_val);
     updateSelect("filter_k", filters.k, "指定なし", k_val);
