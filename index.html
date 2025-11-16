@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>塗装見積もり＆カタログ検索</title>
+    <title>塗装カタログ検索</title>
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
@@ -15,13 +15,16 @@
     <main>
         
         <section class="tool-section">
-            <h2>📢 更新情報</h2>
-            <ul style="line-height: 1.6; padding-left: 20px; color: #444;">
-                <li><strong>2025.11.14</strong> : サイト公開！まずは「エスケー化研」「日本ペイント」のカタログ検索に対応しました。</li>
-                <li><strong>開発予定</strong> : 「関西ペイント」「スズカファイン」のデータを順次追加予定です。</li>
-                <li><strong>開発予定</strong> : 「適用下地」での逆引き検索機能を準備中です。</li>
-                <li><strong>Coming Soon</strong> : 自動見積もり計算ツール（そのうち公開）</li>
-            </ul>
+            <h2>📢 更新情報・開発予定</h2>
+            <div class="news-scroll-box">
+                <ul>
+                    <li><strong>2025.11.16</strong> : 絞り込み機能（用途・樹脂・機能・下地）を追加！</li>
+                    <li><strong>2025.11.15</strong> : 日本ペイントのデータを追加しました！</li>
+                    <li><strong>2025.11.14</strong> : サイト公開！エスケー化研に対応。</li>
+                    <li style="color:#0056b3;"><strong>開発中</strong> : 関西ペイントのデータ収集中...</li>
+                    <li style="color:#d9534f;"><strong>注記</strong> : 絞り込みデータは現在手入力で整備中です。（開発奮闘中💦）</li>
+                </ul>
+            </div>
         </section>
 
         <section class="tool-section">
@@ -32,10 +35,10 @@
                     🔍 全メーカー横断検索
                 </label>
                 <p style="font-size:12px; color:#666; margin-bottom:10px;">
-                    品名や下地（例：「プレミアム」「サイディング」）を入力するだけで、全メーカーから一括検索できます。
+                    製品名、一般名称、下地、キーワード（例：「バイオ」）などで一括検索できます。
                 </p>
                 <div style="display: flex; gap: 5px;">
-                    <input type="text" id="catalogSearch" placeholder="キーワードを入力（例: シリコン）" 
+                    <input type="text" id="catalogSearch" placeholder="キーワード（例: シリコン 屋根）" 
                            style="flex: 1; padding: 12px; font-size: 16px; border: 2px solid #007bff; border-radius: 4px;">
                     <button id="searchButton" 
                             style="padding: 0 20px; font-weight:bold; background:#007bff; color:white; border:none; border-radius:4px; cursor:pointer;">
@@ -62,8 +65,65 @@
                         </select>
                     </div>
                 </div>
-                <p style="font-size:11px; color:#888; margin-top:5px; text-align:right;">
-                    ※「どこのメーカーだっけ？」という時は2社まで選択できます
+            </div>
+
+            <div class="search-filter-area" style="margin-top: 10px; background-color: #f1f8ff; border: 1px solid #c8e1ff; padding: 15px; border-radius: 8px;">
+                <p style="margin: 0 0 10px 0; font-size: 14px; font-weight:bold; color:#004a99;">
+                    ⚙️ さらに絞り込む
+                </p>
+                
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+                    
+                    <div>
+                        <label for="filter_j" style="font-size:12px; font-weight:bold;">用途・場所 (J列)</label>
+                        <select id="filter_j" style="width:100%; padding:8px; border:1px solid #ccc; border-radius:4px; background:white;">
+                            <option value="">指定なし</option>
+                            <option value="外壁">外壁</option>
+                            <option value="屋根">屋根</option>
+                            <option value="鉄部">鉄部</option>
+                            <option value="床">床</option>
+                            <option value="内装">内装</option>
+                        </select>
+                    </div>
+                    
+                    <div>
+                        <label for="filter_k" style="font-size:12px; font-weight:bold;">樹脂・タイプ (K列)</label>
+                        <select id="filter_k" style="width:100%; padding:8px; border:1px solid #ccc; border-radius:4px; background:white;">
+                            <option value="">指定なし</option>
+                            <option value="シリコン">シリコン</option>
+                            <option value="フッ素">フッ素</option>
+                            <option value="ラジカル">ラジカル</option>
+                            <option value="水性">水性</option>
+                            <option value="溶剤">溶剤</option>
+                            <option value="1液">1液</option>
+                            <option value="2液">2液</option>
+                        </select>
+                    </div>
+
+                    <div>
+                        <label for="filter_l" style="font-size:12px; font-weight:bold;">機能・特徴 (L列)</label>
+                        <select id="filter_l" style="width:100%; padding:8px; border:1px solid #ccc; border-radius:4px; background:white;">
+                            <option value="">指定なし</option>
+                            <option value="遮熱">遮熱</option>
+                            <option value="弾性">弾性</option>
+                            <option value="防カビ">防カビ</option>
+                        </select>
+                    </div>
+
+                    <div>
+                        <label for="filter_m" style="font-size:12px; font-weight:bold;">適用下地 (M列)</label>
+                        <select id="filter_m" style="width:100%; padding:8px; border:1px solid #ccc; border-radius:4px; background:white;">
+                            <option value="">指定なし</option>
+                            <option value="サイディング">サイディング</option>
+                            <option value="モルタル">モルタル</option>
+                            <option value="コンクリート">コンクリート</option>
+                            <option value="ALC">ALC</option>
+                        </select>
+                    </div>
+                </div>
+                
+                <p style="font-size: 11px; color: #d9534f; margin-top: 10px; text-align: center; background: #fff; padding: 5px; border-radius: 4px;">
+                    ※現在データ入力中のため、この絞り込みでヒットしない商品もまだ多くあります。（開発奮闘中💦）
                 </p>
             </div>
 
@@ -73,36 +133,48 @@
                 </ul>
         </section>
 
-        <section class="tool-section" style="opacity: 0.6;"> <h2>カンタン見積もり <span style="font-size: 14px; color: #d9534f; border: 1px solid #d9534f; padding: 2px 5px; border-radius: 4px;">準備中</span></h2>
-            
+        <section class="tool-section" style="opacity: 0.6;">
+            <h2>カンタン見積もり <span style="font-size: 14px; color: #d9534f; border: 1px solid #d9534f; padding: 2px 5px; border-radius: 4px;">準備中</span></h2>
             <div class="input-group">
-                <label for="area">延床面積 (m²):</label>
+                <label for="area" disabled>延床面積 (m²):</label>
                 <input type="number" id="area" placeholder="例: 100" disabled>
             </div>
-            
             <div class="input-group">
-                <label for="paintGrade">塗料グレード:</label>
+                <label for="paintGrade" disabled>塗料グレード:</label>
                 <select id="paintGrade" disabled>
                     <option value="silicone">シリコン</option>
-                    <option value="fluorine">フッ素</option>
-                    <option value="premium">プレミアムシリコン</option>
                 </select>
             </div>
-
             <button id="calcButton" style="background-color: #999; cursor: default;">計算する</button>
+        </section>
 
-            <div id="resultArea">
-                <h3>見積もり総額:</h3>
-                <p id="totalPrice">-</p>
+        <section style="text-align: center; margin-top: 30px; padding: 20px; background-color: #fff3cd; border-radius: 8px;">
+            <p style="font-size: 14px; font-weight: bold; color: #856404;">
+                ☕ 開発者のやる気スイッチ
+            </p>
+            <button id="cheerButton" style="font-size: 20px; padding: 10px 20px; cursor: pointer; background: #ffc107; border: none; border-radius: 50px; box-shadow: 0 4px 0 #d39e00;">
+                👍 応援する！
+            </button>
+            <p id="cheerCount" style="margin-top: 10px; font-weight: bold; color: #333;">0 いいね！</p>
+            <p id="unlockMessage" style="font-size: 12px; color: #888;">※押すと数字が増えるだけです（笑）</p>
+
+            <div id="hiddenContactForm" style="display: none; margin-top: 20px; text-align: left; background: #f8f9fa; padding: 15px; border-radius: 5px; border: 1px solid #ddd;">
+                <h4 style="margin-top: 0; text-align: center;">🎉 お問い合わせフォーム解放！</h4>
+                <p style="font-size: 12px; text-align: center; color: #666; margin-bottom: 15px;">
+                    50回の応援ありがとうございます！<br>
+                    バグ報告や機能の要望はこちらからどうぞ。
+                </p>
+                <a href="mailto:yamaokatosou@gmail.com" style="display: block; text-align: center; background: #28a745; color: white; padding: 10px; border-radius: 5px; text-decoration: none; font-weight: bold;">
+                    管理者）にメールする
+                </a>
             </div>
         </section>
 
-    </main>
-        <section style="margin-top: 50px; padding: 20px; background-color: #f9f9f9; font-size: 12px; color: #666; border-top: 1px solid #ddd;">
+        <section style="margin-top: 30px; padding: 20px; background-color: #f9f9f9; font-size: 12px; color: #666; border-top: 1px solid #ddd;">
             <h3 style="font-size: 13px; margin-top: 0; margin-bottom: 10px; color: #333;">⚠️ 免責事項・著作権について</h3>
             <p style="margin-bottom: 10px;">
                 当サイトは、塗装職人の業務効率化を目的として作成された<strong>非公式のリンク集（検索ツール）</strong>です。<br>
-                掲載している各塗料メーカー様（エスケー化研株式会社、日本ペイント株式会社、関西ペイント株式会社 他）とは一切関係ございません。
+                掲載している各塗料メーカー様とは一切関係ございません。
             </p>
             <p style="margin-bottom: 10px;">
                 カタログデータ（PDF）および製品情報の著作権は、全て各メーカー様に帰属します。<br>
@@ -114,10 +186,55 @@
             </p>
         </section>
 
+    </main>
+
     <footer>
-        <p>&copy; 2025 ペイントハウス山岡（仮）</p>
+        <p>&copy; 2025 ペイントハウス（仮）</p>
     </footer>
 
     <script src="script.js"></script>
+    
+    <script>
+        const UNLOCK_COUNT = 20; 
+        let count = localStorage.getItem("cheerCount") ? parseInt(localStorage.getItem("cheerCount")) : 0;
+        let isUnlocked = localStorage.getItem("contactFormUnlocked") === "true";
+
+        const cheerCountDisplay = document.getElementById("cheerCount");
+        const unlockMessage = document.getElementById("unlockMessage");
+        const contactForm = document.getElementById("hiddenContactForm");
+
+        function initialize() {
+            cheerCountDisplay.innerText = count + " いいね！";
+            
+            if (isUnlocked) {
+                contactForm.style.display = "block";
+                unlockMessage.innerText = "いつも応援ありがとうございます！";
+            } else {
+                let remaining = UNLOCK_COUNT - count;
+                if(remaining <= 0) remaining = 1; // 0より下にはしない
+                unlockMessage.innerText = "お問い合わせフォーム解放まで あと " + remaining + " 回";
+            }
+        }
+
+        document.getElementById("cheerButton").addEventListener("click", function() {
+            count++; 
+            cheerCountDisplay.innerText = count + " いいね！";
+            localStorage.setItem("cheerCount", count);
+
+            if (isUnlocked) return;
+
+            if (count >= UNLOCK_COUNT) {
+                alert("🎉 50回達成！\nありがとうございます！お問い合わせフォームを解放します！");
+                contactForm.style.display = "block";
+                unlockMessage.innerText = "いつも応援ありがとうございます！";
+                localStorage.setItem("contactFormUnlocked", "true");
+                isUnlocked = true;
+            } else {
+                let remaining = UNLOCK_COUNT - count;
+                unlockMessage.innerText = "お問い合わせフォーム解放まで あと " + remaining + " 回";
+            }
+        });
+        initialize();
+    </script>
 </body>
 </html>

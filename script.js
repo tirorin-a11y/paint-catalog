@@ -40,15 +40,21 @@ function updateSelect(id, makers) {
 function searchCatalog() {
     let keyword = document.getElementById("catalogSearch").value;
     
-    // ★選択されたメーカーを取得
+    // ▼ メーカー絞り込みを取得
     let m1 = document.getElementById("maker1").value;
     let m2 = document.getElementById("maker2").value;
+    
+    // ▼ 新しい絞り込み（J,K,L,M列）の値を取得
+    let filterJ = document.getElementById("filter_j").value;
+    let filterK = document.getElementById("filter_k").value;
+    let filterL = document.getElementById("filter_l").value;
+    let filterM = document.getElementById("filter_m").value;
     
     let listElement = document.getElementById("catalogList");
     let statusMsg = document.getElementById("searchStatus");
 
-    // キーワードもメーカー指定も無い場合は何もしない
-    if (!keyword && !m1 && !m2) return;
+    // キーワードも絞り込みも無い場合は何もしない
+    if (!keyword && !m1 && !m2 && !filterJ && !filterK && !filterL && !filterM) return;
 
     if (loadingTimer) clearInterval(loadingTimer);
 
@@ -62,14 +68,21 @@ function searchCatalog() {
         isToggle = !isToggle; 
     }, 1000);
 
-    // ★GASに送るデータを作成
-    // メーカー指定がある場合、カンマ区切りで送る (例: "エスケー化研,日本ペイント")
+    // ▼ GASに送るURLを組み立てる
     let makerParam = [];
     if (m1) makerParam.push(m1);
     if (m2) makerParam.push(m2);
     
-    // URLを作成
-    let url = GAS_API_URL + "?q=" + encodeURIComponent(keyword) + "&makers=" + encodeURIComponent(makerParam.join(","));
+    // URLに検索パラメータを追加
+    let params = new URLSearchParams();
+    params.append("q", keyword);
+    params.append("makers", makerParam.join(","));
+    params.append("j", filterJ); // J列（用途）
+    params.append("k", filterK); // K列（樹脂）
+    params.append("l", filterL); // L列（機能）
+    params.append("m", filterM); // M列（下地）
+
+    let url = GAS_API_URL + "?" + params.toString();
 
     fetch(url)
         .then(response => response.json())
@@ -79,12 +92,25 @@ function searchCatalog() {
             statusMsg.innerText = ""; 
 
             if (data.length > 0) {
+                // 結果表示（ここは変更なし）
                 data.forEach(function(item) {
                     let li = document.createElement("li");
                     let statusBadge = item.status === "廃盤" ? '<span style="color:red; font-weight:bold; margin-left:5px;">[廃盤]</span>' : '';
+                    
+                    // C列(製品URL)とD列(PDF URL)でリンクを分岐
+                    let linkHTML = "";
+                    if (item.pdf_url) { // D列
+                        linkHTML += `<a href="${item.pdf_url}" target="_blank" style="font-weight:bold; font-size:18px; text-decoration:none; color:#d9534f;">[PDF]</a> `;
+                    }
+                    if (item.url) { // C列
+                        linkHTML += `<a href="${item.url}" target="_blank" style="font-weight:bold; font-size:18px; text-decoration:none; color:#007bff;">${item.name}</a>`;
+                    } else if (!item.pdf_url) { // どっちも無い場合
+                         linkHTML = `<span style="font-weight:bold; font-size:18px; color:#333;">${item.name}</span>`;
+                    }
+
                     li.innerHTML = `
                         <div class="result-item" style="padding: 5px 0;">
-                            <a href="${item.url}" target="_blank" style="font-weight:bold; font-size:18px; text-decoration:none; color:#007bff;">${item.name}</a>
+                            ${linkHTML}
                             ${statusBadge}
                             <div style="font-size:12px; color:#666; margin-top:2px;">
                                 メーカー: ${item.maker} / 下地: ${item.shitaji || "情報なし"}
