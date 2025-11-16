@@ -10,8 +10,8 @@ let debounceTimer = null; // ライブ検索用のタイマー
 document.addEventListener("DOMContentLoaded", function() {
     runUpdate(); // ★初回実行（全リストを取得）
     initializeCheerButton(); 
-    initializePwaBanner(); 
     initializeEstimateButton(); // 見積もりボタンのリスナー
+    // PWAバナー（HTMLから削除したので）の初期化も削除
 });
 
 // --- ▼ イベントリスナー（ライブ検索） ▼ ---
@@ -19,7 +19,6 @@ document.getElementById("catalogSearch").addEventListener("change", runUpdate);
 document.getElementById("catalogSearch").addEventListener("keypress", function(e) {
     if (e.key === "Enter") { runUpdate(); }
 });
-// ★修正：maker2を削除
 document.getElementById("maker1").addEventListener("change", runUpdate);
 document.getElementById("filter_j").addEventListener("change", runUpdate);
 document.getElementById("filter_k").addEventListener("change", runUpdate);
@@ -28,11 +27,11 @@ document.getElementById("filter_m").addEventListener("change", runUpdate);
 
 
 /**
- * メインの検索＆更新関数（V3.1）
+ * メインの検索＆更新関数（V3.2 - スクロール遅延）
  */
 function runUpdate() {
     let keyword = document.getElementById("catalogSearch").value;
-    let maker = document.getElementById("maker1").value; // ★修正：maker1だけ取得
+    let maker = document.getElementById("maker1").value; 
     let filterJ = document.getElementById("filter_j").value, filterK = document.getElementById("filter_k").value, filterL = document.getElementById("filter_l").value, filterM = document.getElementById("filter_m").value;
     
     let listElement = document.getElementById("catalogList");
@@ -41,7 +40,6 @@ function runUpdate() {
     if (!keyword && !maker && !filterJ && !filterK && !filterL && !filterM) {
         listElement.innerHTML = ""; statusMsg.innerText = "";
         if (loadingTimer) clearInterval(loadingTimer);
-        // ★修正：初回ロード時も「全リスト」ではなく「0件」で開始する
         if (document.getElementById("maker1").length <= 2) { 
              // 何も入力せず、全リストを取得しに行く
         } else {
@@ -52,7 +50,13 @@ function runUpdate() {
     listElement.innerHTML = ""; 
     
     statusMsg.innerText = "🔍 カタログを検索中...";
-    statusMsg.scrollIntoView({ behavior: 'smooth', block: 'center' }); 
+
+    // --- ▼ ★ここが修正点！ ▼ ---
+    // 0.1秒（100ミリ秒）待ってからスクロールを開始する
+    setTimeout(function() {
+        statusMsg.scrollIntoView({ behavior: 'smooth', block: 'center' }); 
+    }, 100); // 100ミリ秒 = 0.1秒
+    // --- ▲ 修正点ここまで ▲ ---
     
     let isToggle = false;
     loadingTimer = setInterval(function() {
@@ -62,7 +66,7 @@ function runUpdate() {
 
     let params = new URLSearchParams();
     params.append("q", keyword);
-    params.append("maker", maker); // ★修正：makers → maker
+    params.append("maker", maker); 
     params.append("j", filterJ); params.append("k", filterK); params.append("l", filterL); params.append("m", filterM);
     let url = GAS_API_URL + "?" + params.toString();
 
@@ -71,10 +75,10 @@ function runUpdate() {
         .then(data => {
             clearInterval(loadingTimer); loadingTimer = null; statusMsg.innerText = ""; 
 
-            // 4. (神機能) プルダウンの選択肢を更新する
+            // (神機能) プルダウンの選択肢を更新する
             updateAllDropdowns(data.availableFilters);
             
-            // 5. 検索結果を表示する
+            // 検索結果を表示する
             if (data.results.length > 0) {
                 data.results.forEach(function(item) {
                     let li = document.createElement("li");
@@ -104,7 +108,7 @@ function runUpdate() {
 }
 
 /**
- * ★(神機能) GASから返ってきたリストで、全プルダウンを更新する (V3.1)
+ * (神機能) GASから返ってきたリストで、全プルダウンを更新する (V3.1)
  */
 function updateAllDropdowns(filters) {
     let m1_val = document.getElementById("maker1").value;
@@ -114,7 +118,6 @@ function updateAllDropdowns(filters) {
     let m_val = document.getElementById("filter_m").value;
 
     updateSelect("maker1", filters.makers, "指定なし（全社検索）", m1_val);
-    // ★修正：maker2を削除
     updateSelect("filter_j", filters.j, "指定なし", j_val);
     updateSelect("filter_k", filters.k, "指定なし", k_val);
     updateSelect("filter_l", filters.l, "指定なし", l_val);
@@ -152,9 +155,12 @@ function updateSelect(id, list, defaultOptionText, currentValue) {
 
 // --- ▼ 見積もりツール（準備中） ▼ ---
 function initializeEstimateButton() {
-    document.getElementById("calcButton").addEventListener("click", function() {
-        alert("【準備中】\n\n自動見積もり機能は現在開発中です。\n次回のアップデートをお待ちください！");
-    });
+    let calcButton = document.getElementById("calcButton");
+    if(calcButton) {
+        calcButton.addEventListener("click", function() {
+            alert("【準備中】\n\n自動見積もり機能は現在開発中です。\n次回のアップデートをお待ちください！");
+        });
+    }
 }
 
 // --- ▼ 応援ボタン制御スクリプト ▼ ---
@@ -164,8 +170,9 @@ function initializeCheerButton() {
     const cheerCountDisplay = document.getElementById("cheerCount");
     const unlockMessage = document.getElementById("unlockMessage");
     const contactForm = document.getElementById("hiddenContactForm");
+    const cheerButton = document.getElementById("cheerButton");
 
-    if (!cheerCountDisplay || !unlockMessage || !contactForm) return;
+    if (!cheerCountDisplay || !unlockMessage || !contactForm || !cheerButton) return;
 
     cheerCountDisplay.innerText = count + " いいね！";
     if (isUnlocked) {
@@ -177,7 +184,7 @@ function initializeCheerButton() {
         unlockMessage.innerText = "お問い合わせフォーム解放まで あと " + remaining + " 回";
     }
 
-    document.getElementById("cheerButton").addEventListener("click", function() {
+    cheerButton.addEventListener("click", function() {
         count++; 
         cheerCountDisplay.innerText = count + " いいね！";
         localStorage.setItem("cheerCount", count);
@@ -192,25 +199,5 @@ function initializeCheerButton() {
             let remaining = UNLOCK_COUNT - count;
             unlockMessage.innerText = "お問い合わせフォーム解放まで あと " + remaining + " 回";
         }
-    });
-}
-
-// --- ▼ PWAバナー制御スクリプト ▼ ---
-function initializePwaBanner() {
-    const banner = document.getElementById("pwa-install-banner");
-    const closeBtn = document.getElementById("pwa-close-btn");
-
-    if (!banner || !closeBtn) return; 
-
-    const isDismissed = localStorage.getItem("pwaBannerDismissed") === "true";
-    const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
-    
-    if (isDismissed || !isMobile) { return; }
-    
-    banner.style.display = "flex";
-
-    closeBtn.addEventListener("click", function() {
-        banner.style.display = "none";
-        localStorage.setItem("pwaBannerDismissed", "true");
     });
 }
