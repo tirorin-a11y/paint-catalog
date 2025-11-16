@@ -12,7 +12,6 @@ document.addEventListener("DOMContentLoaded", function() {
     fetchInitialData(); // ★初回実行
     initializeCheerButton(); 
     initializeEstimateButton(); 
-    // (PWAバナーの初期化は削除済み)
 });
 
 // --- ▼ イベントリスナー（ライブ検索） ▼ ---
@@ -31,25 +30,27 @@ document.getElementById("filter_m").addEventListener("change", runUpdate);
  * サイト初期化：GASから全リストを取得し、プルダウンを生成する
  */
 function fetchInitialData() {
-    // 1. まず「空の検索」をGASに投げて、全リストを取得
-    let params = new URLSearchParams();
-    let url = GAS_API_URL + "?" + params.toString();
+    
+    // ★★★ バグ修正点 ★★★
+    // 「?」だけを送るのではなく、「?type=getInitialData」を明示的に送る
+    let url = GAS_API_URL + "?type=getInitialData";
+    // ★★★ 修正点ここまで ★★★
 
     fetch(url)
         .then(response => response.json())
         .then(data => {
-            // ★「全メーカーリスト」をグローバル変数に保存
-            allMakersList = data.availableFilters.makers; 
+            // 「全メーカーリスト」をグローバル変数に保存
+            allMakersList = data.makers; // ※GAS(v3.9)のAパートは `data.makers` で返す
             
             // 2. プルダウンを初回生成する
-            updateAllDropdowns(data.availableFilters);
+            updateAllDropdowns(data); // ※GAS(v3.9)のAパートは `data.filters` で返す
         })
         .catch(error => console.error("初期データ取得エラー:", error));
 }
 
 
 /**
- * メインの検索＆更新関数（V3.3）
+ * メインの検索＆更新関数
  */
 function runUpdate() {
     let keyword = document.getElementById("catalogSearch").value;
@@ -128,9 +129,18 @@ function runUpdate() {
 }
 
 /**
- * (神機能) GASから返ってきたリストで、全プルダウンを更新する (V3.3)
+ * (神機能) GASから返ってきたリストで、全プルダウンを更新する
  */
-function updateAllDropdowns(filters) {
+function updateAllDropdowns(data) { // ★修正：data.availableFilters ではなく data を受け取る
+    
+    // ★修正：GASのAパートとBパートで戻り値の形が違うのを吸収
+    let filters = data.filters || data.availableFilters;
+    let makers = data.makers || allMakersList;
+    
+    if (data.makers) {
+        allMakersList = data.makers;
+    }
+
     let m1_val = document.getElementById("maker1").value;
     let j_val = document.getElementById("filter_j").value;
     let k_val = document.getElementById("filter_k").value;
@@ -155,15 +165,20 @@ function updateSelect(id, list, defaultOptionText, currentValue) {
     defaultOption.value = "";
     defaultOption.innerText = defaultOptionText;
     select.appendChild(defaultOption);
-    list.forEach(item => {
-        let option = document.createElement("option");
-        option.value = item;
-        option.innerText = item;
-        if (item === currentValue) {
-            option.selected = true;
-        }
-    });
-    if (currentValue && !list.includes(currentValue)) {
+    
+    if (list) { // listが空でないことを確認
+      list.forEach(item => {
+          let option = document.createElement("option");
+          option.value = item;
+          option.innerText = item;
+          if (item === currentValue) {
+              option.selected = true;
+          }
+          select.appendChild(option);
+      });
+    }
+    
+    if (currentValue && list && !list.includes(currentValue)) {
         select.value = "";
     }
 }
