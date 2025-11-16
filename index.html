@@ -7,13 +7,15 @@
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
-     <div id="pwa-install-banner">
-         <img src="icon-192x192.png" alt="アイコン"> <div class="pwa-text">
+
+    <div id="pwa-install-banner" style="display:none;"> <img src="icon-192x192.png" alt="アイコン">
+        <div class="pwa-text">
             <strong>ホーム画面に追加</strong>
-            <p>アイコンを置くと、アプリのようにタブ比較ができて便利です！</p>
-            </div>
-            <button id="pwa-close-btn" aria-label="閉じる">&times;</button>
-     </div>
+            <p>アイコンを置くと、アプリのように使えて便利です！</p>
+        </div>
+        <button id="pwa-close-btn" aria-label="閉じる">&times;</button>
+    </div>
+
     <header>
         <h1>職人向け 塗装サポートツール</h1>
     </header>
@@ -24,8 +26,8 @@
             <h2>📢 更新情報・開発予定</h2>
             <div class="news-scroll-box">
                 <ul>
+                    <li><strong>2025.11.16</strong> : 絞り込み機能をカスケード（連動）式に強化！</li>
                     <li><strong>2025.11.16</strong> : 絞り込みリストを自動更新する機能を追加！</li>
-                    <li><strong>2025.11.16</strong> : 絞り込み機能（用途・樹脂・機能・下地）を追加！</li>
                     <li><strong>2025.11.15</strong> : 日本ペイントのデータを追加しました！</li>
                     <li><strong>2025.11.14</strong> : サイト公開！エスケー化研に対応。</li>
                     <li style="color:#0056b3;"><strong>開発中</strong> : 関西ペイントのデータ収集中...</li>
@@ -41,40 +43,28 @@
                     🔍 全メーカー横断検索
                 </label>
                 <p style="font-size:12px; color:#666; margin-bottom:10px;">
-                    品名、一般名称、下地、キーワード（例：「バイオ」）などで一括検索できます。
+                    品名、一般名称、キーワード（例：「バイオ」）などで一括検索できます。
                 </p>
                 <div style="display: flex; gap: 5px;">
                     <input type="text" id="catalogSearch" placeholder="キーワード（例: シリコン 屋根）" 
                            style="flex: 1; padding: 12px; font-size: 16px; border: 2px solid #007bff; border-radius: 4px;">
-                    
-                </div>
+                    </div>
             </div>
 
             <div class="search-filter-area" style="background-color: #f9f9f9; padding: 15px; border-radius: 8px; border: 1px solid #eee;">
                 <p style="margin: 0 0 10px 0; font-size: 14px; font-weight:bold; color:#555;">
                     ⚙️ メーカーで絞り込む <span style="font-weight:normal; font-size:12px; color:#888;">（指定しなくてもOK）</span>
                 </p>
-                <div style="display: flex; gap: 10px;">
-                    <div style="flex: 1;">
-                        <select id="maker1" style="width:100%; padding:8px; border:1px solid #ccc; border-radius:4px; background:white;">
-                            <option value="">指定なし（全社検索）</option>
-                            <option disabled>読み込み中...</option>
-                        </select>
-                    </div>
-                    <div style="flex: 1;">
-                        <select id="maker2" style="width:100%; padding:8px; border:1px solid #ccc; border-radius:4px; background:white;">
-                            <option value="">指定なし</option>
-                            <option disabled>読み込み中...</option>
-                        </select>
-                    </div>
-                </div>
+                <select id="maker1" style="width:100%; padding:8px; border:1px solid #ccc; border-radius:4px; background:white;">
+                    <option value="">指定なし（全社検索）</option>
+                    <option disabled>読み込み中...</option>
+                </select>
             </div>
 
             <div class="search-filter-area" style="margin-top: 10px; background-color: #f1f8ff; border: 1px solid #c8e1ff; padding: 15px; border-radius: 8px;">
                 <p style="margin: 0 0 10px 0; font-size: 14px; font-weight:bold; color:#004a99;">
                     ⚙️ さらに絞り込む
                 </p>
-                
                 <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
                     <div>
                         <label for="filter_j" style="font-size:12px; font-weight:bold;">用途・場所 (J列)</label>
@@ -104,7 +94,6 @@
             </div>
 
             <p id="searchStatus" style="color:#d9534f; margin-top:15px; font-weight:bold; font-size:14px; text-align:center; min-height: 20px;"></p>
-            
             <ul id="catalogList"></ul>
         </section>
 
@@ -124,12 +113,8 @@
         </section>
 
         <section style="text-align: center; margin-top: 30px; padding: 20px; background-color: #fff3cd; border-radius: 8px;">
-            <p style="font-size: 14px; font-weight: bold; color: #856404;">
-                ☕ 開発者のやる気スイッチ
-            </p>
-            <button id="cheerButton" style="font-size: 20px; padding: 10px 20px; cursor: pointer; background: #ffc107; border: none; border-radius: 50px; box-shadow: 0 4px 0 #d39e00;">
-                👍 応援する！
-            </button>
+            <p style="font-size: 14px; font-weight: bold; color: #856404;">☕ 開発者のやる気スイッチ</p>
+            <button id="cheerButton" style="font-size: 20px; padding: 10px 20px; cursor: pointer; background: #ffc107; border: none; border-radius: 50px; box-shadow: 0 4px 0 #d39e00;">👍 応援する！</button>
             <p id="cheerCount" style="margin-top: 10px; font-weight: bold; color: #333;">0 いいね！</p>
             <p id="unlockMessage" style="font-size: 12px; color: #888;">※押すと数字が増えるだけです（笑）</p>
 
@@ -138,7 +123,7 @@
                 <p style="font-size: 12px; text-align: center; color: #666; margin-bottom: 15px;">
                     20回の応援ありがとうございます！<br>
                     バグ報告や機能の要望はこちらからどうぞ。
-                </small>
+                </p>
                 <a href="mailto:yamaokatosou@gmail.com" style="display: block; text-align: center; background: #28a745; color: white; padding: 10px; border-radius: 5px; text-decoration: none; font-weight: bold;">
                     管理者にメールする
                 </a>
@@ -147,18 +132,9 @@
 
         <section style="margin-top: 30px; padding: 20px; background-color: #f9f9f9; font-size: 12px; color: #666; border-top: 1px solid #ddd;">
             <h3 style="font-size: 13px; margin-top: 0; margin-bottom: 10px; color: #333;">⚠️ 免責事項・著作権について</h3>
-            <p style="margin-bottom: 10px;">
-                当サイトは、塗装職人の業務効率化を目的として作成された<strong>非公式のリンク集（検索ツール）</strong>です。<br>
-                掲載している各塗料メーカー様とは一切関係ございません。
-            </p>
-            <p style="margin-bottom: 10px;">
-                カタログデータ（PDF）および製品情報の著作権は、全て各メーカー様に帰属します。<br>
-                当サイトは公式サイトで公開されているPDFへの「リンク」を提供しているのみであり、データの再配布、複製、改変等は行っておりません。
-            </p>
-            <p style="margin: 0;">
-                万が一、掲載内容に問題がある場合や、メーカー様の方針にそぐわない場合は、直ちに該当リンクを削除いたします。<br>
-                お手数ですが、管理者までご連絡ください。
-            </p>
+            <p style="margin-bottom: 10px;">当サイトは、塗装職人の業務効率化を目的として作成された<strong>非公式のリンク集（検索ツール）</strong>です。<br>掲載している各塗料メーカー様とは一切関係ございません。</p>
+            <p style="margin-bottom: 10px;">カタログデータ（PDF）および製品情報の著作権は、全て各メーカー様に帰属します。<br>当サイトは公式サイトで公開されているPDFへの「リンク」を提供しているのみであり、データの再配布、複製、改変等は行っておりません。</p>
+            <p style="margin: 0;">万が一、掲載内容に問題がある場合や、メーカー様の方針にそぐわない場合は、直ちに該当リンクを削除いたします。<br>お手数ですが、管理者までご連絡ください。</p>
         </section>
 
     </main>
@@ -169,71 +145,5 @@
 
     <script src="script.js"></script>
     
-    <script>
-        const UNLOCK_COUNT = 20; 
-        let count = localStorage.getItem("cheerCount") ? parseInt(localStorage.getItem("cheerCount")) : 0;
-        let isUnlocked = localStorage.getItem("contactFormUnlocked") === "true";
-
-        const cheerCountDisplay = document.getElementById("cheerCount");
-        const unlockMessage = document.getElementById("unlockMessage");
-        const contactForm = document.getElementById("hiddenContactForm");
-
-        function initialize() {
-            cheerCountDisplay.innerText = count + " いいね！";
-            
-            if (isUnlocked) {
-                contactForm.style.display = "block";
-                unlockMessage.innerText = "いつも応援ありがとうございます！";
-            } else {
-                let remaining = UNLOCK_COUNT - count;
-                if(remaining <= 0) remaining = 1; 
-                unlockMessage.innerText = "お問い合わせフォーム解放まで あと " + remaining + " 回";
-            }
-        }
-
-        document.getElementById("cheerButton").addEventListener("click", function() {
-            count++; 
-            cheerCountDisplay.innerText = count + " いいね！";
-            localStorage.setItem("cheerCount", count);
-
-            if (isUnlocked) return;
-
-            if (count >= UNLOCK_COUNT) {
-                alert("🎉 20回達成！\nありがとうございます！お問い合わせフォームを解放します！");
-                contactForm.style.display = "block";
-                unlockMessage.innerText = "いつも応援ありがとうございます！";
-                localStorage.setItem("contactFormUnlocked", "true");
-                isUnlocked = true;
-            } else {
-                let remaining = UNLOCK_COUNT - count;
-                unlockMessage.innerText = "お問い合わせフォーム解放まで あと " + remaining + " 回";
-            }
-        });
-        initialize();
-    </script>
-    <script>
-    document.addEventListener("DOMContentLoaded", function() {
-        const banner = document.getElementById("pwa-install-banner");
-        const closeBtn = document.getElementById("pwa-close-btn");
-
-        // 1. 既に閉じたことがあるか、スマホじゃないかチェック
-        const isDismissed = localStorage.getItem("pwaBannerDismissed") === "true";
-        const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
-        
-        if (isDismissed || !isMobile) {
-            return; // 表示しない
-        }
-        
-        // 2. バナーを表示する
-        banner.style.display = "flex";
-
-        // 3. 閉じるボタンが押された時の処理
-        closeBtn.addEventListener("click", function() {
-            banner.style.display = "none";
-            // 「閉じた」ことをブラウザに永久に記憶させる
-            localStorage.setItem("pwaBannerDismissed", "true");
-        });
-     });
-    </script>
 </body>
 </html>
