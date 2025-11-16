@@ -5,13 +5,13 @@ const UNLOCK_COUNT = 20; // 応援ボタンの回数
 
 let loadingTimer = null; // 演出用タイマー
 let debounceTimer = null; // ライブ検索用のタイマー
+let allMakersList = []; // ★「全メーカー」を記憶しておくための箱
 
 // --- ▼ サイト初期化 ▼ ---
 document.addEventListener("DOMContentLoaded", function() {
-    runUpdate(); // ★初回実行（全リストを取得）
+    fetchInitialData(); // ★初回実行を「runUpdate」から「fetchInitialData」に変更
     initializeCheerButton(); 
-    initializeEstimateButton(); // 見積もりボタンのリスナー
-    // PWAバナー（HTMLから削除したので）の初期化も削除
+    initializeEstimateButton(); 
 });
 
 // --- ▼ イベントリスナー（ライブ検索） ▼ ---
@@ -27,7 +27,28 @@ document.getElementById("filter_m").addEventListener("change", runUpdate);
 
 
 /**
- * メインの検索＆更新関数（V3.2 - スクロール遅延）
+ * サイト初期化：GASから全リストを取得し、プルダウンを生成する
+ */
+function fetchInitialData() {
+    // 1. まず「空の検索」をGASに投げて、全リストを取得
+    let params = new URLSearchParams();
+    let url = GAS_API_URL + "?" + params.toString();
+
+    fetch(url)
+        .then(response => response.json())
+        .then(data => {
+            // ★「全メーカーリスト」をグローバル変数に保存
+            allMakersList = data.availableFilters.makers; 
+            
+            // 2. プルダウンを初回生成する
+            updateAllDropdowns(data.availableFilters);
+        })
+        .catch(error => console.error("初期データ取得エラー:", error));
+}
+
+
+/**
+ * メインの検索＆更新関数（V3.3）
  */
 function runUpdate() {
     let keyword = document.getElementById("catalogSearch").value;
@@ -37,25 +58,24 @@ function runUpdate() {
     let listElement = document.getElementById("catalogList");
     let statusMsg = document.getElementById("searchStatus");
 
+    // 全ての入力が空なら、リストをクリアして終了
     if (!keyword && !maker && !filterJ && !filterK && !filterL && !filterM) {
         listElement.innerHTML = ""; statusMsg.innerText = "";
         if (loadingTimer) clearInterval(loadingTimer);
-        if (document.getElementById("maker1").length <= 2) { 
-             // 何も入力せず、全リストを取得しに行く
-        } else {
-            return; 
-        }
+        // ★初回ロード時は全リストを取得し直す（リセットボタン代わり）
+        fetchInitialData();
+        return;
     }
+
     if (loadingTimer) clearInterval(loadingTimer);
     listElement.innerHTML = ""; 
     
     statusMsg.innerText = "🔍 カタログを検索中...";
 
-    // --- ▼ ★ここが修正点！ ▼ ---
-    // 0.1秒（100ミリ秒）待ってからスクロールを開始する
+    // --- ▼ ★スクロール待機時間を 0.37秒 に変更 ▼ ---
     setTimeout(function() {
         statusMsg.scrollIntoView({ behavior: 'smooth', block: 'center' }); 
-    }, 100); // 100ミリ秒 = 0.1秒
+    }, 370); // 370ミリ秒 = 0.37秒
     // --- ▲ 修正点ここまで ▲ ---
     
     let isToggle = false;
@@ -108,7 +128,7 @@ function runUpdate() {
 }
 
 /**
- * (神機能) GASから返ってきたリストで、全プルダウンを更新する (V3.1)
+ * ★(神機能) GASから返ってきたリストで、全プルダウンを更新する (V3.3)
  */
 function updateAllDropdowns(filters) {
     let m1_val = document.getElementById("maker1").value;
@@ -117,7 +137,10 @@ function updateAllDropdowns(filters) {
     let l_val = document.getElementById("filter_l").value;
     let m_val = document.getElementById("filter_m").value;
 
-    updateSelect("maker1", filters.makers, "指定なし（全社検索）", m1_val);
+    // ★修正点：メーカーリストは「常に」「allMakersList（全リスト）」を使う
+    updateSelect("maker1", allMakersList, "指定なし（全社検索）", m1_val);
+    
+    // ★他の絞り込みは、連動したリスト（filters.j など）を使う
     updateSelect("filter_j", filters.j, "指定なし", j_val);
     updateSelect("filter_k", filters.k, "指定なし", k_val);
     updateSelect("filter_l", filters.l, "指定なし", l_val);
@@ -148,6 +171,9 @@ function updateSelect(id, list, defaultOptionText, currentValue) {
         select.appendChild(option);
     });
     
+    // カスケードのバグ修正：
+    // もし今選んでいる値が、新しい（絞り込まれた）リストに無い場合、
+    // 勝手に「指定なし」に戻す
     if (currentValue && !list.includes(currentValue)) {
         select.value = "";
     }
