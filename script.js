@@ -4,43 +4,67 @@ const GAS_API_URL = "https://script.google.com/macros/s/AKfycbxxDC7Ak1PVF1sWYmDJ
 
 let loadingTimer = null; 
 
-// ★ページが読み込まれたら、すぐにメーカー一覧を取得しに行く
-document.addEventListener("DOMContentLoaded", fetchMakerList);
+// ★ページ読み込み完了時に、メーカーとフィルターの全リストを取得
+document.addEventListener("DOMContentLoaded", fetchInitialData);
 
 document.getElementById("searchButton").addEventListener("click", searchCatalog);
 document.getElementById("catalogSearch").addEventListener("keypress", function(e) {
     if (e.key === "Enter") searchCatalog();
 });
 
-// ★メーカーリストを取得してプルダウンを作る関数
-function fetchMakerList() {
-    fetch(GAS_API_URL + "?type=getMakers")
+/**
+ * サイト初期化：GASから全リストを取得し、プルダウンを生成する
+ */
+function fetchInitialData() {
+    fetch(GAS_API_URL + "?type=getInitialData")
         .then(response => response.json())
-        .then(makers => {
-            // 2つのプルダウンに同じリストを入れる
-            updateSelect("maker1", makers);
-            updateSelect("maker2", makers);
+        .then(data => {
+            // メーカーリストを生成
+            updateSelect("maker1", data.makers, "指定なし（全社検索）");
+            updateSelect("maker2", data.makers, "指定なし");
+            
+            // フィルターリストを生成
+            updateSelect("filter_j", data.filters.j, "指定なし");
+            updateSelect("filter_k", data.filters.k, "指定なし");
+            updateSelect("filter_l", data.filters.l, "指定なし");
+            updateSelect("filter_m", data.filters.m, "指定なし");
         })
-        .catch(error => console.error("メーカー一覧取得エラー:", error));
+        .catch(error => {
+            console.error("初期データ取得エラー:", error);
+            // ここでエラーが出ても、検索はできるようにしておく
+        });
 }
 
-// プルダウンの中身を更新するヘルパー関数
-function updateSelect(id, makers) {
+/**
+ * プルダウンの中身を動的に生成するヘルパー関数
+ */
+function updateSelect(id, list, defaultOptionText) {
     let select = document.getElementById(id);
-    select.innerHTML = '<option value="">指定なし</option>'; // リセット
-    makers.forEach(maker => {
+    if (!select) return; // IDが見つからなければ何もしない
+    
+    select.innerHTML = ''; // 中身をリセット
+    
+    // デフォルトの選択肢（"指定なし"など）
+    let defaultOption = document.createElement("option");
+    defaultOption.value = "";
+    defaultOption.innerText = defaultOptionText;
+    select.appendChild(defaultOption);
+
+    // リストから選択肢を生成
+    list.forEach(item => {
         let option = document.createElement("option");
-        option.value = maker;
-        option.innerText = maker;
+        option.value = item;
+        option.innerText = item;
         select.appendChild(option);
     });
 }
 
 
+/**
+ * メインの検索実行関数
+ */
 function searchCatalog() {
     let keyword = document.getElementById("catalogSearch").value;
-    
-    // ▼ 絞り込みの値を取得
     let m1 = document.getElementById("maker1").value;
     let m2 = document.getElementById("maker2").value;
     let filterJ = document.getElementById("filter_j").value;
@@ -51,15 +75,15 @@ function searchCatalog() {
     let listElement = document.getElementById("catalogList");
     let statusMsg = document.getElementById("searchStatus");
 
-    // 何も入力されていなければ何もしない
     if (!keyword && !m1 && !m2 && !filterJ && !filterK && !filterL && !filterM) return;
 
     if (loadingTimer) clearInterval(loadingTimer);
-
     listElement.innerHTML = ""; 
     
-    // 演出
+    // 演出＆自動スクロール
     statusMsg.innerText = "🔍 カタログを検索中...";
+    statusMsg.scrollIntoView({ behavior: 'smooth', block: 'center' }); // ★自動スクロール
+    
     let isToggle = false;
     loadingTimer = setInterval(function() {
         statusMsg.innerText = isToggle ? "🔍 カタログを検索中..." : "💦 開発奮闘中..."; 
@@ -69,12 +93,11 @@ function searchCatalog() {
     // GASに送るURLを組み立てる
     let params = new URLSearchParams();
     params.append("q", keyword);
-    params.append("makers", [m1, m2].filter(Boolean).join(",")); // 空でなければ結合
+    params.append("makers", [m1, m2].filter(Boolean).join(","));
     params.append("j", filterJ);
     params.append("k", filterK);
     params.append("l", filterL);
     params.append("m", filterM);
-
     let url = GAS_API_URL + "?" + params.toString();
 
     fetch(url)
@@ -85,29 +108,23 @@ function searchCatalog() {
             statusMsg.innerText = ""; 
 
             if (data.length > 0) {
-                // ▼ ここから結果表示のHTML組み立て ▼
                 data.forEach(function(item) {
                     let li = document.createElement("li");
                     let statusBadge = item.status === "廃盤" ? `<span class="badge-stop">[廃盤]</span>` : '';
                     
-                    // --- ▼ [PDF]リンクを作成（D列） ▼ ---
                     let pdfLinkHTML = "";
                     if (item.pdf_url) {
                         pdfLinkHTML = `<a href="${item.pdf_url}" target="_blank" class="result-link pdf-link"> [PDF] </a>`;
                     }
-
-                    // --- ▼ 品名リンクを作成（C列 or なければPDF） ▼ ---
                     let mainLinkHTML = "";
-                    if (item.url) { // C列(製品ページ)がある場合
+                    if (item.url) { 
                         mainLinkHTML = `<a href="${item.url}" target="_blank" class="result-link product-link">${item.name}</a>`;
-                    } else if (item.pdf_url) { // C列がなくD列(PDF)がある場合
-                        // 品名が押せないのは不便なので、PDFにリンクしておく
+                    } else if (item.pdf_url) { 
                         mainLinkHTML = `<a href="${item.pdf_url}" target="_blank" class="result-link product-link">${item.name}</a>`;
-                    } else { // どっちも無い場合
+                    } else { 
                         mainLinkHTML = `<span class="result-link no-link">${item.name}</span>`;
                     }
                     
-                    // --- ▼ HTMLを組み立て ▼ ---
                     li.innerHTML = `
                         <div class="result-item">
                             ${mainLinkHTML}
@@ -134,7 +151,7 @@ function searchCatalog() {
 }
 
 
-// 見積もりツール（準備中）
+// --- ▼ 見積もりツール（準備中） ▼ ---
 document.getElementById("calcButton").addEventListener("click", function() {
     alert("【準備中】\n\n自動見積もり機能は現在開発中です。\n次回のアップデートをお待ちください！");
 });

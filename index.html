@@ -18,11 +18,11 @@
             <h2>📢 更新情報・開発予定</h2>
             <div class="news-scroll-box">
                 <ul>
+                    <li><strong>2025.11.16</strong> : 絞り込みリストを自動更新する機能を追加！</li>
                     <li><strong>2025.11.16</strong> : 絞り込み機能（用途・樹脂・機能・下地）を追加！</li>
                     <li><strong>2025.11.15</strong> : 日本ペイントのデータを追加しました！</li>
                     <li><strong>2025.11.14</strong> : サイト公開！エスケー化研に対応。</li>
                     <li style="color:#0056b3;"><strong>開発中</strong> : 関西ペイントのデータ収集中...</li>
-                    <li style="color:#d9534f;"><strong>注記</strong> : 絞り込みデータは現在手入力で整備中です。（開発奮闘中💦）</li>
                 </ul>
             </div>
         </section>
@@ -35,7 +35,7 @@
                     🔍 全メーカー横断検索
                 </label>
                 <p style="font-size:12px; color:#666; margin-bottom:10px;">
-                    製品名、一般名称、下地、キーワード（例：「バイオ」）などで一括検索できます。
+                    品名、一般名称、下地、キーワード（例：「バイオ」）などで一括検索できます。
                 </p>
                 <div style="display: flex; gap: 5px;">
                     <input type="text" id="catalogSearch" placeholder="キーワード（例: シリコン 屋根）" 
@@ -73,64 +73,36 @@
                 </p>
                 
                 <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
-                    
                     <div>
                         <label for="filter_j" style="font-size:12px; font-weight:bold;">用途・場所 (J列)</label>
                         <select id="filter_j" style="width:100%; padding:8px; border:1px solid #ccc; border-radius:4px; background:white;">
-                            <option value="">指定なし</option>
-                            <option value="外壁">外壁</option>
-                            <option value="屋根">屋根</option>
-                            <option value="鉄部">鉄部</option>
-                            <option value="床">床</option>
-                            <option value="内装">内装</option>
+                            <option value="">指定なし</option><option disabled>読み込み中...</option>
                         </select>
                     </div>
-                    
                     <div>
                         <label for="filter_k" style="font-size:12px; font-weight:bold;">樹脂・タイプ (K列)</label>
                         <select id="filter_k" style="width:100%; padding:8px; border:1px solid #ccc; border-radius:4px; background:white;">
-                            <option value="">指定なし</option>
-                            <option value="シリコン">シリコン</option>
-                            <option value="フッ素">フッ素</option>
-                            <option value="ラジカル">ラジカル</option>
-                            <option value="水性">水性</option>
-                            <option value="溶剤">溶剤</option>
-                            <option value="1液">1液</option>
-                            <option value="2液">2液</option>
+                            <option value="">指定なし</option><option disabled>読み込み中...</option>
                         </select>
                     </div>
-
                     <div>
                         <label for="filter_l" style="font-size:12px; font-weight:bold;">機能・特徴 (L列)</label>
                         <select id="filter_l" style="width:100%; padding:8px; border:1px solid #ccc; border-radius:4px; background:white;">
-                            <option value="">指定なし</option>
-                            <option value="遮熱">遮熱</option>
-                            <option value="弾性">弾性</option>
-                            <option value="防カビ">防カビ</option>
+                            <option value="">指定なし</option><option disabled>読み込み中...</option>
                         </select>
                     </div>
-
                     <div>
                         <label for="filter_m" style="font-size:12px; font-weight:bold;">適用下地 (M列)</label>
                         <select id="filter_m" style="width:100%; padding:8px; border:1px solid #ccc; border-radius:4px; background:white;">
-                            <option value="">指定なし</option>
-                            <option value="サイディング">サイディング</option>
-                            <option value="モルタル">モルタル</option>
-                            <option value="コンクリート">コンクリート</option>
-                            <option value="ALC">ALC</option>
+                            <option value="">指定なし</option><option disabled>読み込み中...</option>
                         </select>
                     </div>
                 </div>
-                
-                <p style="font-size: 11px; color: #d9534f; margin-top: 10px; text-align: center; background: #fff; padding: 5px; border-radius: 4px;">
-                    ※現在データ入力中のため、この絞り込みでヒットしない商品もまだ多くあります。（開発奮闘中💦）
-                </p>
             </div>
 
             <p id="searchStatus" style="color:#d9534f; margin-top:15px; font-weight:bold; font-size:14px; text-align:center; min-height: 20px;"></p>
-
-            <ul id="catalogList">
-                </ul>
+            
+            <ul id="catalogList"></ul>
         </section>
 
         <section class="tool-section" style="opacity: 0.6;">
@@ -161,11 +133,11 @@
             <div id="hiddenContactForm" style="display: none; margin-top: 20px; text-align: left; background: #f8f9fa; padding: 15px; border-radius: 5px; border: 1px solid #ddd;">
                 <h4 style="margin-top: 0; text-align: center;">🎉 お問い合わせフォーム解放！</h4>
                 <p style="font-size: 12px; text-align: center; color: #666; margin-bottom: 15px;">
-                    50回の応援ありがとうございます！<br>
+                    20回の応援ありがとうございます！<br>
                     バグ報告や機能の要望はこちらからどうぞ。
-                </p>
+                </small>
                 <a href="mailto:yamaokatosou@gmail.com" style="display: block; text-align: center; background: #28a745; color: white; padding: 10px; border-radius: 5px; text-decoration: none; font-weight: bold;">
-                    管理者）にメールする
+                    管理者にメールする
                 </a>
             </div>
         </section>
@@ -211,7 +183,7 @@
                 unlockMessage.innerText = "いつも応援ありがとうございます！";
             } else {
                 let remaining = UNLOCK_COUNT - count;
-                if(remaining <= 0) remaining = 1; // 0より下にはしない
+                if(remaining <= 0) remaining = 1; 
                 unlockMessage.innerText = "お問い合わせフォーム解放まで あと " + remaining + " 回";
             }
         }
@@ -224,7 +196,7 @@
             if (isUnlocked) return;
 
             if (count >= UNLOCK_COUNT) {
-                alert("🎉 50回達成！\nありがとうございます！お問い合わせフォームを解放します！");
+                alert("🎉 20回達成！\nありがとうございます！お問い合わせフォームを解放します！");
                 contactForm.style.display = "block";
                 unlockMessage.innerText = "いつも応援ありがとうございます！";
                 localStorage.setItem("contactFormUnlocked", "true");
