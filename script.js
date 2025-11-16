@@ -74,7 +74,7 @@ function runUpdate() {
 
     // --- ▼ ★スクロール待機時間を 0.37秒 に変更 ▼ ---
     setTimeout(function() {
-        statusMsg.scrollIntoView({ behavior: 'smooth', block: 'center' }); 
+        statusMsg.scrollIntoView({ behavior: 'smooth', block: 'end' }); 
     }, 370); // 370ミリ秒 = 0.37秒
     // --- ▲ 修正点ここまで ▲ ---
     
