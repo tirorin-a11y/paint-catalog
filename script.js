@@ -9,25 +9,26 @@ let allMakersList = []; // 「全メーカー」を記憶しておくための�
 
 // --- ▼ サイト初期化 ▼ ---
 document.addEventListener("DOMContentLoaded", function() {
-    fetchInitialData(); // ★修正：初回は「fetchInitialData」を呼ぶ
+    fetchInitialData(); // ★初回実行
     initializeCheerButton(); 
     initializeEstimateButton(); 
+    // (PWAバナーの初期化は削除済み)
 });
 
 // --- ▼ イベントリスナー（ライブ検索） ▼ ---
-document.getElementById("catalogSearch").addEventListener("change", function() { runUpdate(false); }); 
+document.getElementById("catalogSearch").addEventListener("change", runUpdate);
 document.getElementById("catalogSearch").addEventListener("keypress", function(e) {
-    if (e.key === "Enter") { runUpdate(false); }
+    if (e.key === "Enter") { runUpdate(); }
 });
-document.getElementById("maker1").addEventListener("change", function() { runUpdate(false); }); 
-document.getElementById("filter_j").addEventListener("change", function() { runUpdate(false); }); 
-document.getElementById("filter_k").addEventListener("change", function() { runUpdate(false); }); 
-document.getElementById("filter_l").addEventListener("change", function() { runUpdate(false); }); 
-document.getElementById("filter_m").addEventListener("change", function() { runUpdate(false); }); 
+document.getElementById("maker1").addEventListener("change", runUpdate);
+document.getElementById("filter_j").addEventListener("change", runUpdate);
+document.getElementById("filter_k").addEventListener("change", runUpdate);
+document.getElementById("filter_l").addEventListener("change", runUpdate);
+document.getElementById("filter_m").addEventListener("change", runUpdate);
 
 
 /**
- * ★復活！★ サイト初期化：GASから全リストを取得し、プルダウンを生成する
+ * サイト初期化：GASから全リストを取得し、プルダウンを生成する
  */
 function fetchInitialData() {
     // 1. まず「空の検索」をGASに投げて、全リストを取得
@@ -37,28 +38,20 @@ function fetchInitialData() {
     fetch(url)
         .then(response => response.json())
         .then(data => {
-            // 「全メーカーリスト」をグローバル変数に保存
+            // ★「全メーカーリスト」をグローバル変数に保存
             allMakersList = data.availableFilters.makers; 
             
             // 2. プルダウンを初回生成する
             updateAllDropdowns(data.availableFilters);
-
-            // 3. ★修正： 読み込みが完了してから、1秒後にスクロールを実行
-            setTimeout(function() {
-                const searchBox = document.getElementById("catalogSearch");
-                if (searchBox) {
-                    searchBox.scrollIntoView({ behavior: 'smooth', block: 'center' });
-                }
-            }, 1000); // 1000ミリ秒 = 1秒
         })
         .catch(error => console.error("初期データ取得エラー:", error));
 }
 
 
 /**
- * メインの検索＆更新関数（V3.6）
+ * メインの検索＆更新関数（V3.3）
  */
-function runUpdate(isInitialLoad = false) { // isInitialLoadはもう使わないが、念のため残す
+function runUpdate() {
     let keyword = document.getElementById("catalogSearch").value;
     let maker = document.getElementById("maker1").value; 
     let filterJ = document.getElementById("filter_j").value, filterK = document.getElementById("filter_k").value, filterL = document.getElementById("filter_l").value, filterM = document.getElementById("filter_m").value;
@@ -70,8 +63,8 @@ function runUpdate(isInitialLoad = false) { // isInitialLoadはもう使わな�
     if (!keyword && !maker && !filterJ && !filterK && !filterL && !filterM) {
         listElement.innerHTML = ""; statusMsg.innerText = "";
         if (loadingTimer) clearInterval(loadingTimer);
-        // ★修正：リセット時は「fetchInitialData」を呼ぶ
-        fetchInitialData(); 
+        // ★リセット時は全リストを取得し直す
+        fetchInitialData();
         return; 
     }
 
@@ -80,7 +73,7 @@ function runUpdate(isInitialLoad = false) { // isInitialLoadはもう使わな�
     
     statusMsg.innerText = "🔍 カタログを検索中...";
 
-    // 検索時のスクロール（真ん中へ）
+    // 検索時のスクロール（0.37秒遅延）
     setTimeout(function() {
         statusMsg.scrollIntoView({ behavior: 'smooth', block: 'center' }); 
     }, 370); 
@@ -101,8 +94,11 @@ function runUpdate(isInitialLoad = false) { // isInitialLoadはもう使わな�
         .then(response => response.json())
         .then(data => {
             clearInterval(loadingTimer); loadingTimer = null; statusMsg.innerText = ""; 
+
+            // (神機能) プルダウンの選択肢を更新する
             updateAllDropdowns(data.availableFilters);
             
+            // 検索結果を表示する
             if (data.results.length > 0) {
                 data.results.forEach(function(item) {
                     let li = document.createElement("li");
@@ -140,6 +136,7 @@ function updateAllDropdowns(filters) {
     let k_val = document.getElementById("filter_k").value;
     let l_val = document.getElementById("filter_l").value;
     let m_val = document.getElementById("filter_m").value;
+
     updateSelect("maker1", allMakersList, "指定なし（全社検索）", m1_val);
     updateSelect("filter_j", filters.j, "指定なし", j_val);
     updateSelect("filter_k", filters.k, "指定なし", k_val);
