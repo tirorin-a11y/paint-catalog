@@ -32,7 +32,14 @@ function fetchInitialData() {
         .then(response => response.json())
         .then(data => {
             allMakersList = data.makers; 
-            updateAllDropdowns(data.filters, true);
+            
+            // ★★★ 修正点：ここが抜けていました！ ★★★
+            // GASから来た「フィルター」に「メーカー」も合体させてから渡す
+            let initialFilters = data.filters;
+            initialFilters.makers = data.makers; 
+            // ★★★★★★★★★★★★★★★★★★★★★★★
+
+            updateAllDropdowns(initialFilters, true);
             generateHintTags(data.keywords); 
 
             setTimeout(function() {
@@ -119,34 +126,23 @@ function runUpdate(isInitialLoad = false) {
                     else if (item.pdf_url) { mainLinkHTML = `<a href="${item.pdf_url}" target="_blank" class="result-link product-link">${item.name}</a>`; }
                     else { mainLinkHTML = `<span class="result-link no-link">${item.name}</span>`; }
 
-                    // --- ▼ レイアウト変更箇所 ▼ ---
-
-                    // 1. キーワード (H列) -> メーカーの横に置く
-                    let keywordHTML = "";
-                    if (item.keyword) {
-                        // インラインで綺麗に見えるようにスタイル調整
-                        keywordHTML = `<span style="margin-left:10px; font-size:11px; background:#f0f8ff; color:#007bff; padding:1px 5px; border-radius:3px; vertical-align: middle;">🏷️ ${item.keyword}</span>`;
-                    }
-
-                    // 2. 一般名称 (G列) -> 独立した行に置く（メーカーの下）
-                    let generalHTML = "";
+                    let metaInfo = "";
                     if (item.general) {
-                        // detail-rowクラスを再利用しつつ、少し隙間を調整
-                        generalHTML = `<div class="detail-row" style="margin-top:4px; border-left:3px solid #eee; padding-left:5px; color:#444;">📝 ${item.general}</div>`;
+                        metaInfo += `<div style="font-size:12px; color:#444; margin-top:4px;">📝 ${item.general}</div>`;
                     } else {
-                        // 一般名称がない場合の予備（下地）
-                        if(item.shitaji) {
-                            generalHTML = `<div class="detail-row" style="margin-top:4px; color:#888;">(下地: ${item.shitaji})</div>`;
-                        }
+                        metaInfo += `<div style="font-size:12px; color:#888; margin-top:4px;">(下地: ${item.shitaji || "-"})</div>`;
+                    }
+                    
+                    if (item.keyword) {
+                        metaInfo += `<div style="margin-top:4px;"><span style="font-size:11px; background:#f0f8ff; color:#007bff; padding:1px 5px; border-radius:3px;">🏷️ ${item.keyword}</span></div>`;
                     }
 
                     li.innerHTML = `
                         <div class="item-main">${mainLinkHTML}${pdfLinkHTML}${statusBadge}</div>
-                        <div class="item-meta" style="font-size:11px; color:#999; margin-top:2px;">
-                            <span class="maker-name">メーカー: ${item.maker}</span>
-                            ${keywordHTML}
+                        ${metaInfo}
+                        <div class="item-meta" style="font-size:11px; color:#999; margin-top:2px; text-align:right;">
+                            メーカー: ${item.maker}
                         </div>
-                        ${generalHTML}
                     `;
                     listElement.appendChild(li);
                 });
