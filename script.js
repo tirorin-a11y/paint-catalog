@@ -32,13 +32,8 @@ function fetchInitialData() {
         .then(response => response.json())
         .then(data => {
             allMakersList = data.makers; 
-            
-            // ★★★ 修正点：ここが抜けていました！ ★★★
-            // GASから来た「フィルター」に「メーカー」も合体させてから渡す
             let initialFilters = data.filters;
             initialFilters.makers = data.makers; 
-            // ★★★★★★★★★★★★★★★★★★★★★★★
-
             updateAllDropdowns(initialFilters, true);
             generateHintTags(data.keywords); 
 
@@ -82,14 +77,18 @@ function runUpdate(isInitialLoad = false) {
     let listElement = document.getElementById("catalogList");
     let statusMsg = document.getElementById("searchStatus");
 
+    // --- ▼ ★修正点：全部空っぽになったら「リセット」とみなす ▼ ---
     if (!keyword && !maker && !filterJ && !filterK && !filterL && !filterM) {
-        listElement.innerHTML = ""; statusMsg.innerText = "";
+        listElement.innerHTML = ""; 
+        statusMsg.innerText = ""; // メッセージを消す
         if (loadingTimer) clearInterval(loadingTimer);
-        if (document.getElementById("maker1").length <= 2 || isInitialLoad) { 
-             fetchInitialData(); 
-        } else { return; }
+        
+        // ★修正：どんな時でも、全部空なら「初期データ（全リスト）」を再取得してプルダウンを戻す！
+        fetchInitialData(); 
         return; 
     }
+    // --- ▲ 修正点ここまで ▲ ---
+
     if (loadingTimer) clearInterval(loadingTimer);
     listElement.innerHTML = ""; 
     
