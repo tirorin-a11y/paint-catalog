@@ -1,0 +1,530 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>現場カーナビ手帳 DX</title>
+    <style>
+        body { font-family: -apple-system, BlinkMacSystemFont, "Helvetica Neue", "Yu Gothic", sans-serif; background-color: #f0f2f5; margin: 0; padding: 0; color: #333; -webkit-font-smoothing: antialiased; }
+        header { background-color: #2c3e50; color: white; padding: 10px 15px; position: sticky; top: 0; z-index: 100; box-shadow: 0 2px 5px rgba(0,0,0,0.2); display: flex; justify-content: space-between; align-items: center; }
+        h1 { margin: 0; font-size: 1.1rem; letter-spacing: 0.05em; }
+        .header-btn-group { display: flex; align-items: center; gap: 15px; }
+        .icon-btn { font-size: 1.4rem; cursor: pointer; text-decoration: none; color: white; display: flex; align-items: center; }
+        body.sort-mode header { background-color: #e67e22; }
+        .search-area { background: #34495e; padding: 10px 15px; position: sticky; top: 50px; z-index: 99; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
+        .search-input { width: 100%; padding: 10px; border-radius: 6px; border: none; font-size: 1rem; box-sizing: border-box; outline: none; }
+        .container { max-width: 600px; margin: 0 auto; padding: 15px; padding-bottom: 100px; }
+        .site-card { background: white; border-radius: 12px; padding: 16px; margin-bottom: 16px; box-shadow: 0 2px 6px rgba(0,0,0,0.06); position: relative; transition: transform 0.2s; }
+        .card-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
+        .case-no { font-size: 0.8rem; color: #666; background: #eee; padding: 3px 8px; border-radius: 4px; font-family: monospace; font-weight: bold; }
+        .status-badge { font-size: 0.75rem; padding: 4px 10px; border-radius: 20px; font-weight: bold; }
+        .st-plan { background-color: #fff3e0; color: #f57c00; border: 1px solid #ffe0b2; }
+        .st-active { background-color: #e3f2fd; color: #1976d2; border: 1px solid #bbdefb; }
+        .st-done { background-color: #f5f5f5; color: #757575; border: 1px solid #e0e0e0; }
+        .st-handover { background-color: #34495e; color: #fff; border: 1px solid #2c3e50; }
+        .site-name { font-size: 1.25rem; font-weight: bold; margin-bottom: 6px; line-height: 1.4; }
+        .site-address { font-size: 0.9rem; color: #555; margin-bottom: 16px; display: flex; align-items: center; gap: 4px; }
+        .card-actions { margin-top: 15px; display: flex; gap: 8px; height: 60px; }
+        .action-btn { border-radius: 6px; font-weight: bold; text-decoration: none; display: flex; flex-direction: column; align-items: center; justify-content: center; border: none; cursor: pointer; box-shadow: 0 2px 4px rgba(0,0,0,0.1); transition: opacity 0.1s; line-height: 1; }
+        .action-btn:active { transform: translateY(2px); box-shadow: none; }
+        .btn-navi-side { flex: 1.5; background-color: #00C853; color: white; font-size: 0.9rem; }
+        .btn-center { flex: 1; background-color: #fff; border: 1px solid #ddd; color: #555; font-size: 1.2rem; }
+        .btn-cal { background-color: #fff3e0; border-color: #ffe0b2; color: #e67e22; }
+        .sort-actions { display: none; width: 100%; gap: 8px; height: 60px; }
+        body.sort-mode .card-actions { display: none; }
+        body.sort-mode .sort-actions { display: flex; }
+        .btn-up, .btn-down { flex: 1; background-color: #f39c12; color: white; font-size: 1.5rem; border-radius: 6px; border: none; cursor: pointer; }
+        .overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 150; display: none; opacity: 0; }
+        .overlay.show { display: block; opacity: 1; }
+        .modal-box { position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 90%; max-width: 500px; background: white; padding: 24px; border-radius: 16px; z-index: 160; box-shadow: 0 10px 25px rgba(0,0,0,0.2); display: none; }
+        .modal-box.show { display: block; }
+        label { display: block; margin-top: 12px; font-size: 0.85rem; font-weight: bold; color: #444; }
+        input, select { width: 100%; padding: 12px; margin-top: 6px; border: 1px solid #ddd; border-radius: 8px; box-sizing: border-box; font-size: 1rem; appearance: none; }
+        .id-input-group { display: flex; align-items: center; gap: 10px; margin-top: 5px; }
+        .input-year { width: 30%; text-align: center; background: #f0f0f0; color: #555; border: 1px solid #ccc; }
+        .input-num { width: 60%; text-align: center; font-family: monospace; letter-spacing: 2px; font-weight: bold; transition: 0.3s; }
+        .input-num.locked { background: #f9f9f9; color: #999; border: 1px solid #eee; cursor: not-allowed; }
+        .input-num.unlocked { background: #fff; color: #d35400; border: 2px solid #e67e22; }
+        .edit-footer { display: flex; gap: 10px; margin-top: 20px; }
+        .btn-del-single { width: 50px; background-color: #fff5f5; border: 1px solid #e74c3c; color: #e74c3c; border-radius: 8px; font-size: 1.2rem; cursor: pointer; display: flex; align-items: center; justify-content: center; }
+        .save-btn { flex: 2; background-color: #2980b9; color: white; padding: 14px; border: none; border-radius: 8px; font-weight: bold; font-size: 1rem; cursor: pointer; }
+        .cancel-btn { flex: 1; background-color: #e0e0e0; color: #333; padding: 14px; border: none; border-radius: 8px; font-weight: bold; cursor: pointer; }
+        .settings-menu h3 { margin-top: 0; text-align: center; border-bottom: 1px solid #eee; padding-bottom: 10px; margin-bottom: 15px; }
+        .settings-item { width: 100%; padding: 15px; margin-bottom: 10px; border: 1px solid #eee; background: #fcfcfc; border-radius: 8px; font-weight: bold; cursor: pointer; text-align: left; display: flex; align-items: center; gap: 10px; text-decoration: none; color: #333; box-sizing: border-box; }
+        .settings-footer { display: flex; gap: 10px; margin-top: 20px; border-top: 1px solid #eee; padding-top: 15px; }
+        .btn-close { flex: 2; background-color: #95a5a6; color: white; padding: 12px; border: none; border-radius: 8px; font-weight: bold; cursor: pointer; }
+        .btn-delete-all { flex: 1; background-color: white; color: #e74c3c; border: 1px solid #e74c3c; padding: 12px; border-radius: 8px; font-weight: bold; cursor: pointer; font-size: 0.9rem; }
+        .fab-container { position: fixed; bottom: 24px; right: 20px; display: flex; flex-direction: column; gap: 12px; align-items: flex-end; z-index: 90; }
+        .fab-btn { width: 56px; height: 56px; border-radius: 28px; border: none; color: white; font-size: 24px; box-shadow: 0 4px 10px rgba(0,0,0,0.3); cursor: pointer; display: flex; justify-content: center; align-items: center; transition: transform 0.1s; }
+        .add-fab { background-color: #2980b9; font-size: 30px; }
+        .mini-fab { width: 44px; height: 44px; font-size: 14px; border-radius: 22px; font-weight: bold; }
+        .csv-fab { background-color: #27ae60; }
+        .copy-fab { background-color: #f39c12; }
+        .fab-label { font-size: 10px; background: rgba(0,0,0,0.7); color: white; padding: 2px 6px; border-radius: 4px; margin-right: 8px; position: absolute; right: 60px; pointer-events: none; white-space: nowrap; }
+        .notification { position: fixed; top: 80px; left: 50%; transform: translateX(-50%); background: rgba(44, 62, 80, 0.9); color: #fff; padding: 12px 24px; border-radius: 30px; opacity: 0; pointer-events: none; transition: opacity 0.3s; z-index: 200; font-weight: bold; box-shadow: 0 5px 15px rgba(0,0,0,0.2); width: max-content; max-width: 80%; text-align: center; }
+        .notification.show { opacity: 1; top: 90px; }
+    </style>
+</head>
+<body>
+
+<header>
+    <h1>🚗 現場カーナビ手帳</h1>
+    <div class="header-btn-group">
+        <span class="icon-btn" onclick="toggleSortMode()" title="並び替え">⇅</span>
+        <span class="icon-btn" onclick="openSettings()" title="設定">⚙️</span>
+    </div>
+</header>
+
+<div class="search-area">
+    <input type="search" id="searchInput" class="search-input" placeholder="🔍 現場名や住所で検索..." oninput="renderList()">
+</div>
+
+<div class="container" id="siteList"></div>
+
+<input type="file" id="jsonInput" accept=".json" style="display:none" onchange="importJSON(this)">
+<div class="overlay" id="overlay" onclick="closeAllModals()"></div>
+
+<div id="inputForm" class="modal-box">
+    <h3 style="margin-top:0; text-align:center;">現場情報の編集</h3>
+    <label>案件No (5回タップで編集解除)</label>
+    <div class="id-input-group">
+        <input type="number" id="inputYear" class="input-year" readonly>
+        <span style="color:#888; font-weight:bold;">-</span>
+        <input type="number" id="inputNum" class="input-num locked" readonly onclick="unlockCaseNo()">
+    </div>
+    <label>現場名</label>
+    <input type="text" id="siteName" placeholder="例：鈴木様邸">
+    <label>住所（ナビ用）</label>
+    <input type="text" id="address" placeholder="例：東京都千代田区...">
+    <label>現在の状況</label>
+    <select id="status">
+        <option value="plan">📝 現調予定</option>
+        <option value="active">🏗️ 施工中</option>
+        <option value="done">✅ 完工</option>
+        <option value="handover">🏠 引き渡し</option>
+    </select>
+    <div class="edit-footer">
+        <button class="btn-del-single" id="btnDeleteSingle" onclick="deleteCurrentSite()">🗑️</button>
+        <button class="cancel-btn" onclick="closeAllModals()">中止</button>
+        <button class="save-btn" onclick="saveSite()">保 存</button>
+    </div>
+</div>
+
+<div id="settingsModal" class="modal-box settings-menu">
+    <h3>⚙️ 設定・データ管理</h3>
+    <button class="settings-item" onclick="exportJSON()">📤 <strong>バックアップを作成</strong></button>
+    <button class="settings-item" onclick="document.getElementById('jsonInput').click()">📥 <strong>データを復元（取込）</strong></button>
+    <a href="help.html" class="settings-item">📖 <strong>使い方ガイドを見る</strong></a>
+    <div class="settings-footer">
+        <button class="btn-delete-all" onclick="deleteAllData()">🗑️ 全削除</button>
+        <button class="btn-close" onclick="closeAllModals()">閉じる</button>
+    </div>
+</div>
+
+<div class="fab-container">
+    <div style="display:flex; align-items:center;"><span class="fab-label">スプシ用コピー</span><button class="fab-btn mini-fab copy-fab" onclick="copyToClipboard()">📋</button></div>
+    <div style="display:flex; align-items:center;"><span class="fab-label">CSV出力</span><button class="fab-btn mini-fab csv-fab" onclick="exportCSV()">💾</button></div>
+    <div style="display:flex; align-items:center;"><button class="fab-btn add-fab" onclick="openForm('new')">＋</button></div>
+</div>
+<div id="notification" class="notification"></div>
+
+<script>
+    // --- データ管理 ---
+    let sites = JSON.parse(localStorage.getItem('dx_sites')) || [];
+    let isEditing = false;
+    let tapCount = 0;
+    let editingId = null;
+    let isSortMode = false;
+
+    // 初期データ（初回のみ）
+    if (sites.length === 0) {
+        sites = [
+            { id: '2025-001', name: '【サンプル】鈴木様邸', address: '東京都墨田区押上1-1-2', status: 'active', updatedAt: Date.now(), naviCount: 0 }
+        ];
+        localStorage.setItem('dx_sites', JSON.stringify(sites));
+    }
+
+    // --- ★ナビ回数カウント機能（追加） ---
+    function countNavi(id) {
+        const index = sites.findIndex(s => s.id === id);
+        if (index !== -1) {
+            // カウントを増やす（なければ1にする）
+            sites[index].naviCount = (sites[index].naviCount || 0) + 1;
+            sites[index].updatedAt = Date.now(); // 同期用に更新日時も更新
+            localStorage.setItem('dx_sites', JSON.stringify(sites));
+            // ※画面遷移を邪魔しないよう、通知などは出しません
+        }
+    }
+
+    // --- 並び替えモード ---
+    function toggleSortMode() {
+        isSortMode = !isSortMode;
+        if(isSortMode) { 
+            document.body.classList.add('sort-mode'); 
+            showNotification('⇅ 並び替えモード：ON'); 
+        } else { 
+            document.body.classList.remove('sort-mode'); 
+            showNotification('並び替えを終了しました'); 
+        }
+        renderList();
+    }
+
+    // --- リスト描画 ---
+    function renderList() {
+        const listEl = document.getElementById('siteList');
+        const keyword = document.getElementById('searchInput').value.toLowerCase();
+        listEl.innerHTML = '';
+
+        // 配列の順番通りに表示（ソート対応）
+        sites.forEach((site, index) => {
+            // 検索フィルター
+            if (keyword && !site.name.toLowerCase().includes(keyword) && !site.address.toLowerCase().includes(keyword) && !site.id.includes(keyword)) {
+                return; 
+            }
+
+            let stLabel = '現調予定', stClass = 'st-plan';
+            if(site.status === 'active') { stLabel = '施工中'; stClass = 'st-active'; }
+            if(site.status === 'done') { stLabel = '完工'; stClass = 'st-done'; }
+            if(site.status === 'handover') { stLabel = '引き渡し'; stClass = 'st-handover'; }
+            
+            const mapUrl = `http://googleusercontent.com/maps.google.com/3{encodeURIComponent(site.address)}`;
+            const calUrl = `https://www.google.com/calendar/render?action=TEMPLATE&text=${encodeURIComponent("【" + stLabel + "】" + site.name)}&location=${encodeURIComponent(site.address)}`;
+
+            const html = `
+                <div class="site-card">
+                    <div class="card-header">
+                        <span class="case-no">${site.id}</span>
+                        <span class="status-badge ${stClass}">${stLabel}</span>
+                    </div>
+                    <div class="site-name">${site.name}</div>
+                    <div class="site-address">📍 ${site.address}</div>
+                    
+                    <div class="card-actions">
+                        <a href="${mapUrl}" target="_blank" class="action-btn btn-navi-side" onclick="countNavi('${site.id}')">
+                            🚀<br><span style="font-size:0.7rem">ナビ</span>
+                        </a>
+                        
+                        <a href="${calUrl}" target="_blank" class="action-btn btn-center btn-cal">📅</a>
+                        
+                        <button class="action-btn btn-center" onclick="openForm('edit', '${site.id}')">✏️</button>
+                        
+                        <a href="${mapUrl}" target="_blank" class="action-btn btn-navi-side" onclick="countNavi('${site.id}')">
+                            🚀<br><span style="font-size:0.7rem">ナビ</span>
+                        </a>
+                    </div>
+
+                    <div class="sort-actions">
+                        <button class="btn-up" onclick="moveItem(${index}, -1)" ${index === 0 ? 'disabled style="opacity:0.3"' : ''}>⬆️</button>
+                        <button class="btn-down" onclick="moveItem(${index}, 1)" ${index === sites.length - 1 ? 'disabled style="opacity:0.3"' : ''}>⬇️</button>
+                    </div>
+                </div>
+            `;
+            listEl.insertAdjacentHTML('beforeend', html);
+        });
+    }
+
+    // --- 並び替え実行 ---
+    function moveItem(index, direction) {
+        if (direction === -1 && index > 0) { 
+            [sites[index], sites[index - 1]] = [sites[index - 1], sites[index]]; 
+        } else if (direction === 1 && index < sites.length - 1) { 
+            [sites[index], sites[index + 1]] = [sites[index + 1], sites[index]]; 
+        }
+        localStorage.setItem('dx_sites', JSON.stringify(sites));
+        renderList();
+    }
+
+    // --- 保存処理 ---
+    function saveSite() {
+        const y = document.getElementById('inputYear').value;
+        const n = document.getElementById('inputNum').value.toString().padStart(3, '0');
+        const id = `${y}-${n}`;
+        const name = document.getElementById('siteName').value;
+        const address = document.getElementById('address').value;
+        const status = document.getElementById('status').value;
+
+        if(!name || !address) { 
+            showNotification('⚠️ 現場名と住所は必須です'); 
+            return; 
+        }
+
+        const now = Date.now(); // タイムスタンプ
+
+        if (isEditing) {
+            // ID変更チェック
+            if (id !== editingId) { 
+                sites = sites.filter(s => s.id !== editingId); 
+            }
+            const index = sites.findIndex(s => s.id === id);
+            
+            if(index !== -1) { 
+                // 既存更新（ナビ回数などは保持する）
+                sites[index] = { ...sites[index], name, address, status, updatedAt: now }; 
+            } else { 
+                // ID変更で新規扱いになる場合（先頭に追加）
+                sites.unshift({ id, name, address, status, updatedAt: now, naviCount: 0 }); 
+            }
+        } else {
+            // 新規登録
+            if(sites.some(s => s.id === id)){ 
+                if(!confirm('⚠️ 重複しています。上書きしますか？')) return; 
+                const idx = sites.findIndex(s => s.id === id); 
+                sites[idx] = { ...sites[idx], name, address, status, updatedAt: now }; 
+            } else { 
+                sites.unshift({ id, name, address, status, updatedAt: now, naviCount: 0 }); 
+            }
+        }
+        
+        localStorage.setItem('dx_sites', JSON.stringify(sites));
+        closeAllModals(); 
+        renderList(); 
+        showNotification('🎉 保存しました');
+    }
+
+    // --- 削除処理 ---
+    function deleteCurrentSite() {
+        if(!editingId) return;
+        if(confirm('本当に削除しますか？\n（復元できません）')) {
+            sites = sites.filter(s => s.id !== editingId);
+            localStorage.setItem('dx_sites', JSON.stringify(sites));
+            closeAllModals();
+            renderList();
+            showNotification('🗑️ 削除しました');
+        }
+    }
+
+    // --- フォーム開閉 ---
+    function openForm(mode, id = null) {
+        document.getElementById('inputForm').classList.add('show'); 
+        document.getElementById('overlay').classList.add('show');
+        
+        // ロック状態リセット
+        const numInput = document.getElementById('inputNum');
+        numInput.readOnly = true; 
+        numInput.classList.remove('unlocked'); 
+        numInput.classList.add('locked'); 
+        tapCount = 0;
+
+        const todayYear = new Date().getFullYear();
+
+        if (mode === 'new') {
+            isEditing = false;
+            editingId = null;
+            document.getElementById('btnDeleteSingle').style.display = 'none';
+            
+            document.getElementById('inputYear').value = todayYear;
+            document.getElementById('inputNum').value = getNextNum(todayYear);
+            
+            document.getElementById('siteName').value = '';
+            document.getElementById('address').value = '';
+            document.getElementById('status').value = 'plan';
+        } else {
+            isEditing = true;
+            editingId = id;
+            document.getElementById('btnDeleteSingle').style.display = 'flex';
+            
+            const targetSite = sites.find(s => s.id === id);
+            if(targetSite) {
+                const parts = targetSite.id.split('-');
+                document.getElementById('inputYear').value = parts[0];
+                document.getElementById('inputNum').value = parts[1];
+                document.getElementById('siteName').value = targetSite.name;
+                document.getElementById('address').value = targetSite.address;
+                document.getElementById('status').value = targetSite.status;
+            }
+        }
+    }
+
+    // --- 自動採番 ---
+    function getNextNum(year) {
+        const thisYearSites = sites.filter(s => s.id.startsWith(year.toString()));
+        let maxNum = 0;
+        thisYearSites.forEach(s => {
+            const numPart = parseInt(s.id.split('-')[1]);
+            if(numPart > maxNum) maxNum = numPart;
+        });
+        return (maxNum + 1).toString().padStart(3, '0');
+    }
+
+    // --- モーダル・設定関連 ---
+    function openSettings() { 
+        document.getElementById('overlay').classList.add('show'); 
+        document.getElementById('settingsModal').classList.add('show'); 
+    }
+
+    function closeAllModals() { 
+        document.querySelectorAll('.modal-box').forEach(el => el.classList.remove('show')); 
+        document.getElementById('overlay').classList.remove('show'); 
+    }
+
+    function unlockCaseNo() {
+        const el = document.getElementById('inputNum');
+        if(!el.readOnly) return;
+        tapCount++;
+        if(tapCount >= 5) {
+            el.readOnly = false;
+            el.classList.remove('locked');
+            el.classList.add('unlocked');
+            showNotification('🔓 ロック解除しました');
+            tapCount = 0;
+        }
+    }
+
+    // --- JSONバックアップ ---
+    function getNowStr() {
+        const d = new Date();
+        return `${d.getFullYear()}${(d.getMonth()+1).toString().padStart(2,'0')}${d.getDate().toString().padStart(2,'0')}_${d.getHours().toString().padStart(2,'0')}${d.getMinutes().toString().padStart(2,'0')}`;
+    }
+
+    async function exportJSON() {
+        showNotification('📤 準備中...');
+        
+        const jsonContent = JSON.stringify(sites, null, 2);
+        const fileName = `【カーナビ手帳】backup_${getNowStr()}.json`;
+        const file = new File([jsonContent], fileName, { type: "application/json" });
+
+        // スマホ共有トライ -> だめならダウンロード
+        if (navigator.share && navigator.canShare && navigator.canShare({ files: [file] })) {
+            try {
+                await navigator.share({ files: [file] });
+            } catch (e) {
+                forceDL(file);
+            }
+        } else {
+            forceDL(file);
+        }
+    }
+
+    function forceDL(file) {
+        const url = URL.createObjectURL(file);
+        const link = document.createElement("a");
+        link.setAttribute("href", url);
+        link.setAttribute("download", file.name);
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        showNotification('📥 保存しました');
+    }
+
+    // --- JSONインポート（マージロジック） ---
+    function importJSON(input) {
+        const file = input.files[0];
+        if (!file) return;
+
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            try {
+                const importedSites = JSON.parse(e.target.result);
+                
+                if (!Array.isArray(importedSites)) {
+                    alert('エラー：正しい形式ではありません');
+                    return;
+                }
+
+                let countAdded = 0;
+                let countUpdated = 0;
+                let countIgnored = 0;
+
+                importedSites.forEach(newSite => {
+                    const index = sites.findIndex(s => s.id === newSite.id);
+                    if (index !== -1) {
+                        // 既存データあり：タイムスタンプ比較
+                        const existingTime = sites[index].updatedAt || 0;
+                        const newTime = newSite.updatedAt || 0;
+                        
+                        if (newTime > existingTime) {
+                            sites[index] = newSite; // 新しいので上書き
+                            countUpdated++;
+                        } else {
+                            countIgnored++; // 古いので無視
+                        }
+                    } else {
+                        // 新規データ
+                        sites.push(newSite);
+                        countAdded++;
+                    }
+                });
+
+                localStorage.setItem('dx_sites', JSON.stringify(sites));
+                renderList();
+                closeAllModals();
+                showNotification(`復元: ${countUpdated}件更新, ${countAdded}件追加`);
+
+            } catch (err) {
+                alert('読み込みに失敗しました');
+            }
+            input.value = '';
+        };
+        reader.readAsText(file);
+    }
+
+    // --- 全削除 ---
+    function deleteAllData() {
+        if(confirm('【警告】\n本当に全データを削除しますか？')) {
+            if(confirm('本当に削除してよろしいですか？')) {
+                sites = [];
+                localStorage.setItem('dx_sites', JSON.stringify(sites));
+                renderList();
+                closeAllModals();
+                showNotification('🗑️ 全データを削除しました');
+            }
+        }
+    }
+
+    // --- ステータス日本語化 ---
+    function getStatusText(status) {
+        switch (status) {
+            case 'active': return '施工中';
+            case 'done': return '完工';
+            case 'handover': return '引き渡し';
+            case 'plan': return '現調予定';
+            default: return '現調予定';
+        }
+    }
+
+    // --- CSV出力 ---
+    async function exportCSV() {
+        showNotification('📤 準備中...');
+        let csvContent = "\uFEFF案件No,現場名,住所,ステータス,開始,終了\n"; 
+        
+        sites.forEach(s => {
+            // naviCountなども保存したければここに追加できますが、今回は基本情報のみ
+            csvContent += `"${s.id}","${s.name}","${s.address}","${getStatusText(s.status)}","${s.start||''}","${s.end||''}"\n`;
+        });
+
+        const fileName = `現場リスト_${getNowStr()}.csv`;
+        const file = new File([csvContent], fileName, { type: "text/csv" });
+
+        if (navigator.share && navigator.canShare && navigator.canShare({ files: [file] })) {
+            try { await navigator.share({ files: [file] }); } catch (e) { forceDL(file); }
+        } else {
+            forceDL(file);
+        }
+    }
+
+    // --- クリップボードコピー ---
+    function copyToClipboard() {
+        let tsvContent = "";
+        sites.forEach(s => {
+            tsvContent += `${s.id}\t${s.name}\t${s.address}\t${getStatusText(s.status)}\t${s.start||''}\t${s.end||''}\n`;
+        });
+        navigator.clipboard.writeText(tsvContent).then(() => {
+            showNotification('📋 コピーしました');
+        }).catch(err => {
+            showNotification('⚠️ 失敗しました');
+        });
+    }
+
+    // --- 通知 ---
+    function showNotification(msg) {
+        const el = document.getElementById('notification');
+        el.textContent = msg;
+        el.classList.add('show');
+        setTimeout(() => el.classList.remove('show'), 2000);
+    }
+
+    // 初期化実行
+    renderList();
+</script>
+</body>
+</html>
