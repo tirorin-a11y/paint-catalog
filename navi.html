@@ -135,7 +135,7 @@
     let tapCount = 0;
     let editingId = null;
     let isSortMode = false;
-
+render
     // 初期データ（初回のみ）
     if (sites.length === 0) {
         sites = [
@@ -199,18 +199,18 @@
                     <div class="site-name">${site.name}</div>
                     <div class="site-address">📍 ${site.address}</div>
                     
+                    // navi.html の renderList() 内の card-actions 部分
+
                     <div class="card-actions">
                         <a href="${mapUrl}" target="_blank" class="action-btn btn-navi-side" onclick="countNavi('${site.id}')">
                             🚀<br><span style="font-size:0.7rem">ナビ</span>
                         </a>
-                        
-                        <a href="${calUrl}" target="_blank" class="action-btn btn-center btn-cal">📅</a>
-                        
-                        <button class="action-btn btn-center" onclick="openForm('edit', '${site.id}')">✏️</button>
-                        
-                        <a href="${mapUrl}" target="_blank" class="action-btn btn-navi-side" onclick="countNavi('${site.id}')">
-                            🚀<br><span style="font-size:0.7rem">ナビ</span>
+    
+                        <a href="tools.html?id=${site.id}" class="action-btn btn-center" style="background:#fdf2e9; color:#d35400; border-color:#f5c6cb;">
+                            🧰<br><span style="font-size:0.7rem">ツール</span>
                         </a>
+    
+                        <button class="action-btn btn-center" onclick="openForm('edit', '${site.id}')">✏️</button>
                     </div>
 
                     <div class="sort-actions">
