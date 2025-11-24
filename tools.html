@@ -3,132 +3,199 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>現場ツール - 現場カーナビ手帳</title>
+    <title>現場ツールボックス</title>
     <link rel="stylesheet" href="style.css">
     <style>
-        /* このページ専用のスタイル */
-        .site-header { background: #2c3e50; color: white; padding: 20px; text-align: center; border-radius: 0 0 20px 20px; margin-bottom: 30px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); }
-        .site-title { margin: 0; font-size: 1.4rem; font-weight: bold; }
-        .site-sub { font-size: 0.9rem; opacity: 0.8; margin-top: 5px; }
-
-        .tool-grid { display: grid; gap: 20px; padding: 0 20px; }
+        /* ツールボックス専用スタイル */
+        body { background-color: #f0f2f5; padding-bottom: 50px; }
+        .site-header { background: #2c3e50; color: white; padding: 20px 15px; text-align: center; border-radius: 0 0 20px 20px; margin-bottom: 20px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); position: sticky; top: 0; z-index: 10; }
+        .site-title { margin: 0; font-size: 1.3rem; font-weight: bold; }
         
+        .container { max-width: 600px; margin: 0 auto; padding: 0 15px; }
+        
+        /* カテゴリ枠のデザイン（Helpページ風） */
+        .tool-section { background: white; border-radius: 12px; padding: 20px; margin-bottom: 20px; box-shadow: 0 2px 6px rgba(0,0,0,0.05); }
+        .section-title { font-size: 1rem; color: #7f8c8d; font-weight: bold; margin-bottom: 15px; border-bottom: 2px solid #f0f0f0; padding-bottom: 5px; display: flex; align-items: center; gap: 8px; }
+        
+        /* ツールボタン */
         .tool-btn { 
-            display: flex; align-items: center; justify-content: space-between;
-            background: white; padding: 25px; border-radius: 16px; 
-            text-decoration: none; color: #333;
-            box-shadow: 0 4px 6px rgba(0,0,0,0.05); border: 2px solid transparent;
-            transition: transform 0.1s;
+            display: flex; align-items: center; 
+            background: #f8f9fa; border: 1px solid #eee; 
+            padding: 15px; border-radius: 10px; 
+            text-decoration: none; color: #333; margin-bottom: 10px;
+            transition: transform 0.1s, background 0.1s;
         }
-        .tool-btn:active { transform: scale(0.98); background: #f9f9f9; }
-        
-        .btn-icon { font-size: 2.5rem; margin-right: 20px; width: 50px; text-align: center; }
-        .btn-text h3 { margin: 0; font-size: 1.2rem; color: #2c3e50; }
-        .btn-text p { margin: 5px 0 0; font-size: 0.85rem; color: #777; }
+        .tool-btn:active { transform: scale(0.98); background: #eef2f5; }
+        .btn-icon { font-size: 2rem; margin-right: 15px; width: 40px; text-align: center; }
+        .btn-text h3 { margin: 0; font-size: 1.1rem; color: #2c3e50; }
+        .btn-text p { margin: 3px 0 0; font-size: 0.8rem; color: #777; }
+        .btn-arrow { margin-left: auto; font-size: 1.2rem; color: #ccc; }
 
-        /* 追加ボタンエリア */
-        .sub-action-area { display: flex; gap: 10px; padding: 0 20px; margin-bottom: 20px; }
-        .sub-btn { flex: 1; background: white; border: 1px solid #ddd; padding: 15px; border-radius: 12px; text-align: center; text-decoration: none; color: #555; font-weight: bold; font-size: 0.9rem; box-shadow: 0 2px 4px rgba(0,0,0,0.05); }
+        /* 日報のラフなスタイル */
+        .rough-paper { background-color: #fff9c4; border: 2px dashed #dcdcdc; border-radius: 8px; padding: 15px; margin-top: 10px; position: relative; }
+        .rough-textarea { width: 100%; height: 120px; background: transparent; border: none; outline: none; font-size: 1rem; line-height: 1.6; color: #444; resize: none; }
+        .rough-textarea::placeholder { color: #aaa; font-style: italic; font-size: 0.9rem; }
         
-        /* 日報、黒板等のスタイルは既存のまま維持 */
-        .rough-paper { background-color: #fff9c4; border: 2px dashed #dcdcdc; border-radius: 8px; padding: 15px; margin-top: 20px; box-shadow: 3px 3px 0px rgba(0,0,0,0.1); }
-        .rough-textarea { width: 100%; height: 150px; background: transparent; border: none; outline: none; font-size: 1.1rem; line-height: 1.6; color: #444; font-family: "Yu Gothic", sans-serif; resize: none; }
-        .rough-textarea::placeholder { color: #aaa; font-style: italic; }
-        .mic-btn { background: #e74c3c; color: white; width: 60px; height: 60px; border-radius: 50%; border: none; font-size: 1.5rem; box-shadow: 0 4px 10px rgba(231, 76, 60, 0.4); position: absolute; bottom: 20px; right: 20px; cursor: pointer; display: flex; align-items: center; justify-content: center; }
+        /* 履歴リスト */
+        .history-box { margin-top: 20px; border-top: 1px solid #eee; padding-top: 10px; }
+        .history-title { font-size: 0.85rem; color: #888; margin-bottom: 5px; }
+        .history-list { list-style: none; padding: 0; margin: 0; max-height: 150px; overflow-y: auto; }
+        .history-item { font-size: 0.8rem; padding: 8px; border-bottom: 1px solid #f0f0f0; color: #555; }
+        .history-date { font-size: 0.7rem; color: #999; display: block; }
+
+        /* マイクボタン */
+        .mic-btn { background: #e74c3c; color: white; width: 50px; height: 50px; border-radius: 50%; border: none; font-size: 1.2rem; box-shadow: 0 4px 10px rgba(231, 76, 60, 0.4); position: absolute; bottom: 15px; right: 15px; cursor: pointer; display: flex; align-items: center; justify-content: center; z-index: 5; }
         .mic-active { animation: pulse 1.5s infinite; background: #c0392b; }
         @keyframes pulse { 0% { box-shadow: 0 0 0 0 rgba(231, 76, 60, 0.7); } 70% { box-shadow: 0 0 0 15px rgba(231, 76, 60, 0); } 100% { box-shadow: 0 0 0 0 rgba(231, 76, 60, 0); } }
-        .camera-preview { width: 100%; height: 200px; background: #333; color: white; display: flex; align-items: center; justify-content: center; border-radius: 8px; margin-bottom: 10px; position: relative; overflow: hidden; }
-        .blackboard-overlay { position: absolute; bottom: 10px; right: 10px; background: #004d40; border: 2px solid white; color: white; padding: 5px 10px; font-family: "HiraMinProN-W3", "YuMincho", serif; width: 120px; font-size: 0.7rem; text-align: left; box-shadow: 2px 2px 5px rgba(0,0,0,0.5); }
+
+        /* カメラ黒板 */
+        .camera-preview { width: 100%; height: 220px; background: #222; display: flex; align-items: center; justify-content: center; border-radius: 8px; position: relative; overflow: hidden; margin-bottom: 10px; }
+        .blackboard {
+            position: absolute; bottom: 10px; right: 10px;
+            background: #004d40; border: 2px solid white; color: white;
+            padding: 8px; font-family: serif; width: 140px; text-align: left;
+            box-shadow: 2px 2px 5px rgba(0,0,0,0.5); z-index: 10;
+        }
+        .board-row { font-size: 0.7rem; border-bottom: 1px solid rgba(255,255,255,0.3); padding-bottom: 2px; margin-bottom: 2px; }
+        .board-main { font-size: 0.9rem; font-weight: bold; line-height: 1.2; }
+        
+        .detail-input { width: 100%; padding: 10px; margin-bottom: 10px; border: 1px solid #ddd; border-radius: 6px; font-size: 1rem; }
+        .process-btns { display: flex; gap: 5px; flex-wrap: wrap; margin-bottom: 15px; }
+        .proc-btn { flex: 1; padding: 8px; font-size: 0.85rem; background: white; border: 1px solid #ddd; border-radius: 4px; cursor: pointer; white-space: nowrap; }
+        .proc-btn.active { background: #2c3e50; color: white; border-color: #2c3e50; }
+
+        .back-link { display: block; text-align: center; margin-top: 20px; color: #888; text-decoration: none; padding: 15px; background: white; border-radius: 8px; }
     </style>
 </head>
 <body>
 
 <div class="site-header">
     <h2 class="site-title" id="displaySiteName">読み込み中...</h2>
-    <div class="site-sub" id="displaySiteId">---</div>
+    <div style="font-size:0.8rem; opacity:0.8;">現場専用ツールボックス</div>
 </div>
 
 <div class="container">
-    
-    <div class="sub-action-area">
-        <button class="sub-btn" onclick="openForm()">✏️ 情報編集</button>
-        <a href="#" id="btnGoogleCal" target="_blank" class="sub-btn">📅 カレンダー</a>
-    </div>
 
-    <div class="tool-grid">
+    <div class="tool-section">
+        <div class="section-title">📝 記録・報告</div>
+        
         <div class="tool-btn" onclick="openModal('camera')">
             <div class="btn-icon">📸</div>
-            <div class="btn-text"><h3>電子黒板カメラ</h3><p>現場名と日付は自動入力。<br>工程だけ選んでパシャリ。</p></div>
-            <span style="font-size:1.5rem; color:#ccc;">＞</span>
+            <div class="btn-text"><h3>電子黒板カメラ</h3><p>黒板を自動合成して撮影</p></div>
+            <span class="btn-arrow">＞</span>
         </div>
-        <div class="tool-btn" onclick="searchSupply()">
-            <div class="btn-icon">🛒</div>
-            <div class="btn-text"><h3>資材SOSマップ</h3><p>近くのホームセンターや<br>建材屋を一発検索。</p></div>
-            <span style="font-size:1.5rem; color:#ccc;">＞</span>
-        </div>
+
         <div class="tool-btn" onclick="openModal('report')">
             <div class="btn-icon">🎙️</div>
-            <div class="btn-text"><h3>しゃべる日報</h3><p>誤字脱字OK。<br>声でサクッと報告作成。</p></div>
-            <span style="font-size:1.5rem; color:#ccc;">＞</span>
+            <div class="btn-text"><h3>しゃべる日報</h3><p>声で入力、履歴も保存</p></div>
+            <span class="btn-arrow">＞</span>
         </div>
     </div>
 
-    <a href="navi.html" class="back-link" style="display:block; text-align:center; margin-top:40px; color:#888; text-decoration:none;">↩️ 一覧に戻る</a>
+    <div class="tool-section">
+        <div class="section-title">🧰 現場サポート</div>
+        
+        <div class="tool-btn" onclick="searchSupply()">
+            <div class="btn-icon">🛒</div>
+            <div class="btn-text"><h3>資材SOSマップ</h3><p>近くのホームセンターを検索</p></div>
+            <span class="btn-arrow">＞</span>
+        </div>
+
+        <a href="#" id="btnGoogleCal" target="_blank" class="tool-btn">
+            <div class="btn-icon">📅</div>
+            <div class="btn-text"><h3>カレンダー登録</h3><p>Googleカレンダーに予定追加</p></div>
+            <span class="btn-arrow">↗</span>
+        </a>
+    </div>
+
+    <div class="tool-section" style="border: 1px solid #ffecb3;">
+        <div class="section-title">⚙️ 情報管理</div>
+        <div class="tool-btn" onclick="openForm()" style="background: #fff8e1;">
+            <div class="btn-icon">✏️</div>
+            <div class="btn-text"><h3>情報の編集・削除</h3><p>現場名や住所の修正はこちら</p></div>
+            <span class="btn-arrow">＞</span>
+        </div>
+    </div>
+
+    <a href="navi.html" class="back-link">↩️ 現場一覧に戻る</a>
 </div>
 
 <div class="overlay" id="overlay" onclick="closeAllModals()"></div>
 
+<div id="cameraModal" class="modal-box">
+    <h3>📸 電子黒板撮影</h3>
+    
+    <div class="camera-preview" id="cameraPreview">
+        <div style="color:#aaa;">カメラ映像</div>
+        <div class="blackboard">
+            <div class="board-row" id="boardDate">2025/11/24</div>
+            <div class="board-row" id="boardName">現場名</div>
+            <div class="board-main">
+                <span id="boardDetail"></span>
+                <span id="boardProcess">着工前</span>
+            </div>
+        </div>
+    </div>
+
+    <label>撮影部位（手入力）</label>
+    <input type="text" id="photoDetail" class="detail-input" placeholder="例：北面、軒天など" oninput="updateBoard()">
+
+    <label>工程（選択）</label>
+    <div class="process-btns">
+        <button class="proc-btn" onclick="setProcess(this, '着工前')">着工前</button>
+        <button class="proc-btn" onclick="setProcess(this, '下塗り')">下塗り</button>
+        <button class="proc-btn" onclick="setProcess(this, '中塗り')">中塗り</button>
+        <button class="proc-btn" onclick="setProcess(this, '上塗り')">上塗り</button>
+        <button class="proc-btn" onclick="setProcess(this, '完了')">完了</button>
+    </div>
+
+    <div class="settings-footer">
+        <button class="save-btn" style="background:#2c3e50;">📷 撮影（保存）</button>
+        <button class="btn-close" onclick="closeAllModals()">閉じる</button>
+    </div>
+</div>
+
+<div id="reportModal" class="modal-box" style="background:#fffcf5;">
+    <h3>🎙️ しゃべる日報</h3>
+    <p style="font-size:0.8rem; color:#666;">誤字脱字は気にしない！<br>「何をしたか」が伝わればOKです。</p>
+    
+    <div class="rough-paper">
+        <textarea id="reportText" class="rough-textarea" placeholder="（例）あー、えっと、北面の養生終わって、明日はシーラー塗ります。材料ちょっと足りないかも..."></textarea>
+        <button class="mic-btn" id="micBtn" onclick="toggleSpeech()">🎤</button>
+    </div>
+
+    <div style="display:flex; gap:10px; margin-top:15px;">
+        <button class="save-btn" onclick="saveReportLocal()" style="flex:1; background:#f39c12;">💾 履歴に残す</button>
+        <button class="save-btn" onclick="sendReportLine()" style="flex:1; background:#00C300;">LINE送る</button>
+    </div>
+
+    <div class="history-box">
+        <div class="history-title">📜 過去の履歴（この現場のみ）</div>
+        <ul id="reportHistoryList" class="history-list"></ul>
+    </div>
+
+    <div class="settings-footer" style="margin-top:10px; padding-top:10px;">
+        <button class="btn-close" onclick="closeAllModals()">閉じる</button>
+    </div>
+</div>
+
 <div id="inputForm" class="modal-box">
-    <h3 style="margin-top:0; text-align:center;">現場情報の編集</h3>
+    <h3 style="margin-top:0; text-align:center;">情報の編集・削除</h3>
     <label>現場名</label>
-    <input type="text" id="siteName">
+    <input type="text" id="editSiteName">
     <label>住所</label>
-    <input type="text" id="address">
+    <input type="text" id="editAddress">
     <label>状況</label>
-    <select id="status">
+    <select id="editStatus">
         <option value="plan">📝 現調予定</option>
         <option value="active">🏗️ 施工中</option>
         <option value="done">✅ 完工</option>
         <option value="handover">🏠 引き渡し</option>
     </select>
     <div class="edit-footer">
-        <button class="save-btn" onclick="saveSite()">保 存</button>
-        <button class="cancel-btn" onclick="closeAllModals()">閉じる</button>
-    </div>
-</div>
-
-<div id="cameraModal" class="modal-box">
-    <h3>📸 電子黒板撮影</h3>
-    <div class="camera-preview">
-        （ここにカメラ映像）
-        <div class="blackboard-overlay">
-            <div id="boardDate"></div>
-            <div id="boardName">現場名</div>
-            <div id="boardProcess" style="color:#ffeb3b;">工程を選択</div>
-        </div>
-    </div>
-    <div style="display:flex; gap:5px; flex-wrap:wrap; margin-top:5px;">
-        <button onclick="setProcess('施工前')" style="padding:5px 10px;">施工前</button>
-        <button onclick="setProcess('下塗り')" style="padding:5px 10px;">下塗り</button>
-        <button onclick="setProcess('中塗り')" style="padding:5px 10px;">中塗り</button>
-        <button onclick="setProcess('上塗り')" style="padding:5px 10px;">上塗り</button>
-        <button onclick="setProcess('完了')" style="padding:5px 10px;">完了</button>
-    </div>
-    <div class="settings-footer">
-        <button class="save-btn">📷 撮影する</button>
-        <button class="btn-close" onclick="closeAllModals()">閉じる</button>
-    </div>
-</div>
-
-<div id="reportModal" class="modal-box" style="background:#fffcf0;">
-    <h3>🎙️ かんたん日報</h3>
-    <div class="rough-paper" style="position:relative;">
-        <textarea id="reportText" class="rough-textarea" placeholder="（例）北面の養生終わりました..."></textarea>
-        <button class="mic-btn" id="micBtn" onclick="toggleSpeech()">🎤</button>
-    </div>
-    <div class="settings-footer" style="border-top:none;">
-        <button class="save-btn" onclick="sendReport()">LINEに送る</button>
-        <button class="btn-close" onclick="closeAllModals()">閉じる</button>
+        <button class="btn-del-single" onclick="deleteSite()">🗑️</button>
+        <button class="cancel-btn" onclick="closeAllModals()">中止</button>
+        <button class="save-btn" onclick="saveEdit()">更新する</button>
     </div>
 </div>
 
@@ -137,17 +204,21 @@
     const siteId = params.get('id');
     let currentSite = null;
     let sites = JSON.parse(localStorage.getItem('dx_sites')) || [];
+    
+    // ★日報履歴の読み込み（全現場共通の箱からIDでフィルタする）
+    let allReports = JSON.parse(localStorage.getItem('dx_reports')) || [];
 
+    // 初期表示処理
     if (siteId) {
         currentSite = sites.find(s => s.id === siteId);
         if (currentSite) {
             document.getElementById('displaySiteName').textContent = currentSite.name;
-            document.getElementById('displaySiteId').textContent = `No. ${currentSite.id}`;
+            // 黒板用初期値
             document.getElementById('boardName').textContent = currentSite.name;
             const d = new Date();
             document.getElementById('boardDate').textContent = `${d.getFullYear()}/${d.getMonth()+1}/${d.getDate()}`;
             
-            // カレンダーリンク生成
+            // カレンダーリンク
             let stLabel = '現調予定';
             if(currentSite.status === 'active') stLabel = '施工中';
             const text = encodeURIComponent(`【${stLabel}】${currentSite.name}`);
@@ -159,15 +230,17 @@
     function openModal(type) {
         document.getElementById('overlay').classList.add('show');
         if(type === 'camera') document.getElementById('cameraModal').classList.add('show');
-        if(type === 'report') document.getElementById('reportModal').classList.add('show');
+        if(type === 'report') {
+            document.getElementById('reportModal').classList.add('show');
+            renderReportHistory(); // 履歴を表示
+        }
     }
     function openForm() {
         document.getElementById('overlay').classList.add('show');
         document.getElementById('inputForm').classList.add('show');
-        // 初期値セット
-        document.getElementById('siteName').value = currentSite.name;
-        document.getElementById('address').value = currentSite.address;
-        document.getElementById('status').value = currentSite.status;
+        document.getElementById('editSiteName').value = currentSite.name;
+        document.getElementById('editAddress').value = currentSite.address;
+        document.getElementById('editStatus').value = currentSite.status;
     }
     function closeAllModals() {
         document.querySelectorAll('.modal-box').forEach(el => el.classList.remove('show'));
@@ -175,14 +248,13 @@
         stopSpeech();
     }
 
-    function saveSite() {
-        const name = document.getElementById('siteName').value;
-        const address = document.getElementById('address').value;
-        const status = document.getElementById('status').value;
-        
-        if(!name || !address) return;
+    // --- ✏️ 編集・削除機能 ---
+    function saveEdit() {
+        const name = document.getElementById('editSiteName').value;
+        const address = document.getElementById('editAddress').value;
+        const status = document.getElementById('editStatus').value;
+        if(!name) return;
 
-        // データ更新
         const index = sites.findIndex(s => s.id === siteId);
         if(index !== -1) {
             sites[index].name = name;
@@ -190,16 +262,80 @@
             sites[index].status = status;
             sites[index].updatedAt = Date.now();
             localStorage.setItem('dx_sites', JSON.stringify(sites));
-            
-            // 画面更新
-            currentSite = sites[index];
-            document.getElementById('displaySiteName').textContent = name;
-            closeAllModals();
-            alert('保存しました');
+            alert('更新しました');
+            location.reload(); // 画面リロード
+        }
+    }
+    function deleteSite() {
+        if(confirm('【危険】\nこの現場データを完全に削除しますか？\n元に戻せません。')) {
+            const newSites = sites.filter(s => s.id !== siteId);
+            localStorage.setItem('dx_sites', JSON.stringify(newSites));
+            alert('削除しました');
+            window.location.href = 'navi.html'; // 一覧に戻る
         }
     }
 
-    function setProcess(text) { document.getElementById('boardProcess').textContent = text; }
+    // --- 📸 黒板機能 ---
+    function setProcess(btn, text) {
+        document.querySelectorAll('.proc-btn').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        document.getElementById('boardProcess').textContent = text;
+    }
+    function updateBoard() {
+        const detail = document.getElementById('photoDetail').value;
+        document.getElementById('boardDetail').textContent = detail ? detail + " " : "";
+    }
+
+    // --- 🎙️ 日報機能 ---
+    function saveReportLocal() {
+        const text = document.getElementById('reportText').value;
+        if(!text) return;
+        
+        // 履歴に追加
+        const newReport = {
+            siteId: siteId,
+            date: new Date().toLocaleString(),
+            text: text
+        };
+        allReports.unshift(newReport); // 先頭に追加
+        localStorage.setItem('dx_reports', JSON.stringify(allReports));
+        
+        alert('履歴に保存しました');
+        document.getElementById('reportText').value = ''; // クリア
+        renderReportHistory();
+    }
+
+    function renderReportHistory() {
+        const listEl = document.getElementById('reportHistoryList');
+        listEl.innerHTML = '';
+        // この現場の履歴だけフィルター
+        const myReports = allReports.filter(r => r.siteId === siteId);
+        
+        if(myReports.length === 0) {
+            listEl.innerHTML = '<li class="history-item">履歴はありません</li>';
+            return;
+        }
+
+        myReports.forEach(r => {
+            const html = `
+                <li class="history-item">
+                    <span class="history-date">${r.date}</span>
+                    ${r.text}
+                </li>
+            `;
+            listEl.insertAdjacentHTML('beforeend', html);
+        });
+    }
+
+    function sendReportLine() {
+        const text = document.getElementById('reportText').value;
+        if(!text) return;
+        saveReportLocal(); // 送信と同時に保存もしておく（親切設計）
+        const lineUrl = `https://line.me/R/msg/text/?【日報：${currentSite.name}】%0A${encodeURIComponent(text)}`;
+        window.open(lineUrl, '_blank');
+    }
+
+    // --- 音声入力など ---
     function searchSupply() {
         if (navigator.geolocation) {
             navigator.geolocation.getCurrentPosition(pos => {
@@ -224,7 +360,7 @@
     }
     function toggleSpeech() { if (!recognition) { alert('非対応です'); return; } if (isRecognizing) stopSpeech(); else { recognition.start(); isRecognizing = true; document.getElementById('micBtn').classList.add('mic-active'); } }
     function stopSpeech() { if(recognition) recognition.stop(); isRecognizing = false; document.getElementById('micBtn').classList.remove('mic-active'); }
-    function sendReport() { const text = document.getElementById('reportText').value; if(!text) return; const lineUrl = `https://line.me/R/msg/text/?【日報：${currentSite.name}】%0A${encodeURIComponent(text)}`; window.open(lineUrl, '_blank'); }
+
 </script>
 </body>
 </html>
