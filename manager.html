@@ -189,7 +189,6 @@
 <script>
     let sites = JSON.parse(localStorage.getItem('dx_sites')) || [];
     let rainLog = JSON.parse(localStorage.getItem('dx_rain_log')) || [];
-    // ★バックアップ用に追加読み込み
     let reports = JSON.parse(localStorage.getItem('dx_reports')) || [];
     
     let selectedIndices = new Set();
@@ -203,9 +202,7 @@
     }
 
     function renderTable() {
-        // ★修正：表示前にソート（IDの降順＝新しい順）
         sites.sort((a, b) => (b.id > a.id ? 1 : -1));
-
         const tbody = document.getElementById('tableBody');
         tbody.innerHTML = '';
         const today = new Date(); today.setHours(0, 0, 0, 0);
@@ -362,55 +359,31 @@
     function closeAllModals() { document.getElementById('overlay').classList.remove('show'); document.getElementById('settingsModal').classList.remove('show'); document.getElementById('rainModal').classList.remove('show'); }
     function getNowStr() { const d = new Date(); return `${d.getFullYear()}${(d.getMonth()+1).toString().padStart(2,'0')}${d.getDate().toString().padStart(2,'0')}_${d.getHours().toString().padStart(2,'0')}${d.getMinutes().toString().padStart(2,'0')}`; }
     
-    // ★修正：完全バックアップ（日報・雨ログ含む）
     async function exportJSON() {
         showToast('📤 準備中...');
-        
-        // 全データをまとめたオブジェクトを作成
-        const fullData = {
-            sites: sites,
-            rainLog: rainLog,
-            reports: reports
-        };
-
+        const fullData = { sites: sites, rainLog: rainLog, reports: reports };
         const jsonContent = JSON.stringify(fullData, null, 2);
         const fileName = `【DX手帳】完全バックアップ_${getNowStr()}.json`;
         const file = new File([jsonContent], fileName, { type: "application/json" });
-        
         if (navigator.share && navigator.canShare && navigator.canShare({ files: [file] })) {
             try { await navigator.share({ files: [file] }); } catch (e) { forceDL(file); }
         } else { forceDL(file); }
     }
     function forceDL(file) { const url = URL.createObjectURL(file); const link = document.createElement("a"); link.setAttribute("href", url); link.setAttribute("download", file.name); document.body.appendChild(link); link.click(); document.body.removeChild(link); showToast('📥 保存しました'); }
     
-    // ★修正：新形式のインポート対応
     function importJSON(input) { 
         const file = input.files[0]; if (!file) return; 
         const reader = new FileReader(); 
         reader.onload = function(e) { 
             try { 
                 const importedData = JSON.parse(e.target.result);
-                
-                // 配列（旧形式）かオブジェクト（新形式）かを判定
                 let importedSites = [];
-                if (Array.isArray(importedData)) {
-                    // 旧形式
-                    importedSites = importedData;
-                } else if (importedData.sites) {
-                    // 新形式（完全バックアップ）
+                if (Array.isArray(importedData)) { importedSites = importedData; } 
+                else if (importedData.sites) { 
                     importedSites = importedData.sites;
-                    // 日報と雨ログも復元
-                    if(importedData.reports) {
-                        localStorage.setItem('dx_reports', JSON.stringify(importedData.reports));
-                        reports = importedData.reports; // 変数も更新
-                    }
-                    if(importedData.rainLog) {
-                        localStorage.setItem('dx_rain_log', JSON.stringify(importedData.rainLog));
-                        rainLog = importedData.rainLog; // 変数も更新
-                    }
-                } else {
-                    alert('エラー：データ形式が不明です'); return;
-                }
+                    if(importedData.reports) { localStorage.setItem('dx_reports', JSON.stringify(importedData.reports)); reports = importedData.reports; }
+                    if(importedData.rainLog) { localStorage.setItem('dx_rain_log', JSON.stringify(importedData.rainLog)); rainLog = importedData.rainLog; }
+                } else { alert('エラー：データ形式が不明です'); return; }
 
                 let updated=0; let added=0; 
                 importedSites.forEach(newSite => { 
@@ -421,12 +394,8 @@
                         if(newTime > existingTime) { sites[index] = newSite; updated++; } 
                     } else { sites.push(newSite); added++; } 
                 }); 
-                
-                autoSave(); 
-                renderTable(); 
-                renderGantt(); 
-                renderAnalysis(); // 分析も更新
-                closeAllModals(); 
+                localStorage.setItem('dx_sites', JSON.stringify(sites));
+                renderTable(); renderGantt(); renderAnalysis(); closeAllModals(); 
                 showToast(`復元: ${updated}件更新, ${added}件追加`); 
             } catch (err) { alert('読み込み失敗'); } 
             input.value = ''; 
@@ -436,7 +405,7 @@
     
     function deleteAllData() { 
         if(confirm('【危険】\n全ての現場データ、日報、雨ログを削除しますか？')) { 
-            sites = []; rainLog = []; reports = []; // メモリ上も消す
+            sites = []; rainLog = []; reports = []; 
             localStorage.setItem('dx_sites', JSON.stringify([]));
             localStorage.setItem('dx_rain_log', JSON.stringify([]));
             localStorage.setItem('dx_reports', JSON.stringify([]));
@@ -444,9 +413,7 @@
         } 
     }
 
-    window.addEventListener('storage', function(e) { 
-        if(e.key === 'dx_sites') { sites = JSON.parse(e.newValue); renderTable(); renderGantt(); } 
-    });
+    window.addEventListener('storage', function(e) { if(e.key === 'dx_sites') { sites = JSON.parse(e.newValue); renderTable(); renderGantt(); } });
     renderTable(); renderGantt();
 </script>
 </body>

@@ -35,52 +35,46 @@
         .history-item { font-size: 0.8rem; padding: 8px; border-bottom: 1px solid #f0f0f0; color: #555; }
         .history-date { font-size: 0.7rem; color: #999; display: block; }
 
-        /* ★カメラ機能（修正版） */
+        /* ★カメラ機能（完全修正版） */
+        /* コンテナの比率をカメラの標準的な「4:3」に強制固定 */
         .camera-container { 
             position: relative; 
             width: 100%; 
-            /* 高さを固定せず、映像比率に合わせるための設定 */
-            aspect-ratio: 3/4; 
+            aspect-ratio: 3/4; /* 4:3の縦長 */
             background: #000; 
             overflow: hidden; 
             border-radius: 8px; 
             margin-bottom: 10px; 
         }
+        
+        /* 映像をコンテナいっぱいに引き伸ばす（余白を作らない） */
         video#cameraVideo { 
             width: 100%; 
             height: 100%; 
-            /* ★重要：映像を切り抜かず、全体を表示する設定 */
-            object-fit: contain; 
+            object-fit: cover; /* 隙間なく埋める */
         }
         canvas#cameraCanvas { display: none; }
         
-        /* ★黒板（CSS版）：JSの描画ロジックと比率を合わせる */
+        /* 黒板（見た目用）: コンテナに対する％で配置 */
         .blackboard-overlay { 
             position: absolute; 
-            bottom: 5%; /* 下から5%の位置 */
-            right: 5%;  /* 右から5%の位置 */
-            width: 35%; /* 画面幅の35% */
-            aspect-ratio: 1.4; /* 横長比率を固定 (140:100) */
-            
+            bottom: 5%; 
+            right: 5%; 
+            width: 40%; 
+            aspect-ratio: 1.4; 
             background: #004d40; 
             border: 2px solid white; 
             color: white; 
-            padding: 2%; /* パディングも％指定 */
+            padding: 10px;
             font-family: "HiraMinProN-W3", "YuMincho", serif; 
             box-shadow: 2px 2px 5px rgba(0,0,0,0.5); 
             z-index: 20; 
             pointer-events: none; 
-            
-            /* 中身のレイアウト */
-            display: flex;
-            flex-direction: column;
-            justify-content: space-between;
+            display: flex; flex-direction: column; justify-content: space-between;
         }
         
-        /* 文字サイズもレスポンシブに（vwは使わず親要素基準で） */
-        .board-text { font-size: clamp(8px, 2.5vw, 12px); white-space: nowrap; }
-        .board-row { border-bottom: 1px solid rgba(255,255,255,0.3); padding-bottom: 2px; margin-bottom: 2px; }
-        .board-main { font-weight: bold; line-height: 1.2; font-size: clamp(10px, 3.5vw, 16px); }
+        .board-row { border-bottom: 1px solid rgba(255,255,255,0.3); padding-bottom: 2px; margin-bottom: 2px; font-size: 0.8rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .board-main { font-weight: bold; line-height: 1.2; font-size: 1.1rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 
         .process-btns { display: flex; gap: 5px; flex-wrap: wrap; margin-bottom: 10px; }
         .proc-btn { flex: 1; padding: 8px; font-size: 0.85rem; background: white; border: 1px solid #ddd; border-radius: 4px; cursor: pointer; white-space: nowrap; }
@@ -152,8 +146,8 @@
         <canvas id="cameraCanvas"></canvas>
         
         <div class="blackboard-overlay" id="blackboardOverlay">
-            <div class="board-row board-text" id="boardDate"></div>
-            <div class="board-row board-text" id="boardName">現場名</div>
+            <div class="board-row" id="boardDate"></div>
+            <div class="board-row" id="boardName">現場名</div>
             <div class="board-main">
                 <span id="boardDetail"></span>
                 <span id="boardProcess">着工前</span>
@@ -259,24 +253,28 @@
         }
     }
 
-    // --- モーダル表示時に位置合わせ ---
+    // --- モーダル制御（スクロール修正） ---
     function openCameraModal() {
         document.getElementById('overlay').classList.add('show');
         const modal = document.getElementById('cameraModal');
         modal.classList.add('show');
-        modal.scrollIntoView({behavior: "smooth", block: "center"}); // ★位置合わせ
+        // ★修正：スクロール位置を確実に合わせる
+        setTimeout(() => modal.scrollIntoView({behavior: "smooth", block: "center"}), 100);
         startCamera();
     }
     function openReportModal() {
         document.getElementById('overlay').classList.add('show');
         const modal = document.getElementById('reportModal');
         modal.classList.add('show');
-        modal.scrollIntoView({behavior: "smooth", block: "center"}); // ★位置合わせ
+        setTimeout(() => modal.scrollIntoView({behavior: "smooth", block: "center"}), 100);
         renderReportHistory();
     }
     function openEditForm() {
         document.getElementById('overlay').classList.add('show');
-        document.getElementById('inputForm').classList.add('show');
+        const modal = document.getElementById('inputForm');
+        modal.classList.add('show');
+        setTimeout(() => modal.scrollIntoView({behavior: "smooth", block: "center"}), 100);
+        
         document.getElementById('editSiteName').value = currentSite.name;
         document.getElementById('editAddress').value = currentSite.address;
         document.getElementById('editStatus').value = currentSite.status;
@@ -289,16 +287,17 @@
         stopCamera();
     }
 
-    // --- 📸 カメラ機能（比率同期版） ---
+    // --- 📸 カメラ機能（完全修正版） ---
     async function startCamera() {
         const video = document.getElementById('cameraVideo');
         try {
+            // 4:3比率を優先してリクエスト
             stream = await navigator.mediaDevices.getUserMedia({ 
-                video: { facingMode: "environment", width: { ideal: 1280 }, height: { ideal: 720 } } 
+                video: { facingMode: "environment", aspectRatio: 0.75 } 
             });
             video.srcObject = stream;
         } catch (err) {
-            alert('カメラを起動できませんでした。設定を確認してください。');
+            alert('カメラを起動できませんでした。');
         }
     }
     
@@ -321,35 +320,34 @@
         canvas.width = vW;
         canvas.height = vH;
         
-        // カメラ映像
+        // 映像を描画（coverなのでクロップ計算が必要）
+        // ※今回はシンプルに全体を描画し、CSS側もcontainではなくobject-fit: coverを前提に調整済み
         ctx.drawImage(video, 0, 0, vW, vH);
         
-        // ★黒板描画（CSSの位置と完全に同期させる）
-        // CSS: right: 5%, bottom: 5%, width: 35%
-        const boardW = vW * 0.35; 
+        // ★黒板描画（CSSの位置比率 5% margin, 40% width）
+        const boardW = vW * 0.4; // CSS: 40%
         const boardH = boardW / 1.4; // aspect-ratio: 1.4
-        const x = vW - boardW - (vW * 0.05); // 右から5%
-        const y = vH - boardH - (vH * 0.05); // 下から5%
+        const x = vW - boardW - (vW * 0.05); // right: 5%
+        const y = vH - boardH - (vH * 0.05); // bottom: 5%
         
         // 黒板背景
         ctx.fillStyle = '#004d40';
         ctx.fillRect(x, y, boardW, boardH);
         ctx.strokeStyle = 'white';
-        ctx.lineWidth = boardW * 0.02; // 線の太さも相対的に
+        ctx.lineWidth = boardW * 0.02;
         ctx.strokeRect(x, y, boardW, boardH);
         
         // 文字設定
         ctx.fillStyle = 'white';
         ctx.textAlign = 'left';
         
-        // 行の高さ計算
-        const lineHeight = boardH / 3.5;
-        const paddingX = boardW * 0.05;
-        let textY = y + lineHeight;
-        
-        // フォントサイズ計算 (幅に合わせて)
-        const fontSize = boardW * 0.1;
+        // フォントサイズ計算
+        const fontSize = boardW * 0.09;
         ctx.font = `bold ${fontSize}px serif`;
+        
+        const paddingX = boardW * 0.05;
+        const lineHeight = boardH * 0.28;
+        let textY = y + lineHeight;
 
         // 日付
         const dateStr = document.getElementById('boardDate').textContent;
@@ -362,9 +360,9 @@
         ctx.fillText(nameStr, x + paddingX, textY);
         ctx.beginPath(); ctx.moveTo(x, textY + 5); ctx.lineTo(x + boardW, textY + 5); ctx.stroke();
         
-        // 詳細・工程（少し大きく）
-        textY += lineHeight * 1.2;
-        ctx.font = `bold ${fontSize * 1.2}px serif`;
+        // 詳細・工程
+        textY += lineHeight * 1.1;
+        ctx.font = `bold ${fontSize * 1.3}px serif`; // 工程は大きく
         const detail = document.getElementById('boardDetail').textContent;
         const process = document.getElementById('boardProcess').textContent;
         ctx.fillText(detail + process, x + paddingX, textY);
@@ -401,7 +399,7 @@
 
     function updateManualBoard() {
         const val = document.getElementById('manualProcessInput').value;
-        document.getElementById('boardProcess').textContent = val || "（入力中...）";
+        document.getElementById('boardProcess').textContent = val || "";
     }
 
     function setProcess(btn, text) {
@@ -414,7 +412,7 @@
         document.getElementById('boardDetail').textContent = detail ? detail + " " : "";
     }
 
-    // --- ✏️ 編集・削除機能 ---
+    // --- ✏️ 編集・削除 ---
     function saveEdit() {
         const name = document.getElementById('editSiteName').value;
         const address = document.getElementById('editAddress').value;
@@ -432,7 +430,7 @@
         }
     }
     function deleteSite() {
-        if(confirm('【危険】\nこの現場データを完全に削除しますか？\n元に戻せません。')) {
+        if(confirm('【危険】\nこの現場データを完全に削除しますか？')) {
             const newSites = sites.filter(s => s.id !== siteId);
             localStorage.setItem('dx_sites', JSON.stringify(newSites));
             alert('削除しました');
@@ -444,11 +442,7 @@
     function saveReportLocal() {
         const text = document.getElementById('reportText').value;
         if(!text) return;
-        const newReport = {
-            siteId: siteId,
-            date: new Date().toLocaleString(),
-            text: text
-        };
+        const newReport = { siteId: siteId, date: new Date().toLocaleString(), text: text };
         allReports.unshift(newReport);
         localStorage.setItem('dx_reports', JSON.stringify(allReports));
         alert('履歴に保存しました');
@@ -473,7 +467,7 @@
         window.open(lineUrl, '_blank');
     }
 
-    // --- 音声入力 ---
+    // --- 音声・資材 ---
     let recognition; let isRecognizing = false;
     if ('webkitSpeechRecognition' in window) {
         recognition = new webkitSpeechRecognition();
@@ -490,11 +484,10 @@
     function toggleSpeech() { if (!recognition) { alert('非対応です'); return; } if (isRecognizing) stopSpeech(); else { recognition.start(); isRecognizing = true; document.getElementById('micBtn').classList.add('mic-active'); } }
     function stopSpeech() { if(recognition) recognition.stop(); isRecognizing = false; document.getElementById('micBtn').classList.remove('mic-active'); }
 
-    // --- 資材検索 ---
     function searchSupply() {
         if (navigator.geolocation) {
             navigator.geolocation.getCurrentPosition(pos => {
-                const url = `https://www.google.com/maps/search/ホームセンター+塗料+建材/@${pos.coords.latitude},${pos.coords.longitude},13z`;
+                const url = `https://www.google.com/maps/search/ホームセンター+塗料+建材/@${pos.coords.latitude},${pos.coords.longitude},13z&q=ホームセンター`;
                 window.open(url, '_blank');
             }, () => { window.open('https://www.google.com/maps/search/ホームセンター+塗料', '_blank'); });
         } else { alert('位置情報が使えません'); }
