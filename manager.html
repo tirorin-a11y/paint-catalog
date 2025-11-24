@@ -3,32 +3,24 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>司令塔ダッシュボード - DX手帳</title>
+    <title>工程管理ボード - DX手帳</title>
     <style>
-        /* --- 既存のスタイル --- */
+        /* --- 既存スタイル --- */
         * { box-sizing: border-box; }
         body { font-family: "Helvetica Neue", Arial, sans-serif; background-color: #f4f7f6; color: #333; margin: 0; padding: 0; }
         .sidebar { width: 240px; background: #2c3e50; color: white; position: fixed; height: 100%; padding: 20px; }
-        
-        /* メニュー切り替え用 */
         .menu-item { display: block; padding: 15px; color: #b0c4de; text-decoration: none; border-radius: 8px; margin-bottom: 10px; transition: 0.3s; cursor: pointer; }
         .menu-item:hover, .menu-item.active { background: #34495e; color: white; }
-        
         .main { margin-left: 240px; padding: 40px; padding-bottom: 100px; }
-        
-        /* ページ切り替え */
         .page-section { display: none; }
         .page-section.active { display: block; animation: fadeIn 0.3s; }
         @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
-
         .main-header { display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #ddd; padding-bottom: 15px; margin-bottom: 30px; }
         h1 { margin: 0; font-size: 1.8rem; }
         .settings-btn { font-size: 1.5rem; cursor: pointer; margin-left: 15px; padding: 5px; border-radius: 4px; }
         .settings-btn:hover { background: #e0e0e0; }
         .rain-btn { background: #34495e; color: #fff; border: none; padding: 8px 16px; border-radius: 6px; cursor: pointer; font-weight: bold; margin-right: 10px; display: flex; align-items: center; gap: 5px; }
         .rain-btn:hover { background: #2c3e50; }
-
-        /* テーブル・ガントチャート等は省略（既存と同じ） */
         .data-table { width: 100%; border-collapse: collapse; background: white; box-shadow: 0 2px 10px rgba(0,0,0,0.05); border-radius: 8px; overflow: hidden; margin-bottom: 40px; }
         th, td { padding: 15px; text-align: left; border-bottom: 1px solid #eee; vertical-align: middle; }
         th { background-color: #ecf0f1; font-weight: bold; color: #555; }
@@ -73,8 +65,6 @@
         .rain-list { max-height: 200px; overflow-y: auto; border: 1px solid #eee; margin: 15px 0; padding: 10px; background: #f9f9f9; border-radius: 4px; }
         .rain-item { display: flex; align-items: center; padding: 5px 0; border-bottom: 1px dashed #ddd; }
         .rain-item label { cursor: pointer; display: flex; align-items: center; gap: 10px; width: 100%; font-size: 0.9rem; }
-
-        /* ★分析ページ用スタイル */
         .analysis-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-top: 20px; }
         .card { background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 6px rgba(0,0,0,0.05); }
         .card h3 { margin-top: 0; border-bottom: 2px solid #eee; padding-bottom: 10px; font-size: 1.1rem; color: #2c3e50; }
@@ -88,7 +78,7 @@
 <body>
 
 <div class="sidebar">
-    <h2>📊 司令塔<br><span style="font-size:0.8rem; opacity:0.7;">Manager</span></h2>
+    <h2>📊 工程管理ボード<br><span style="font-size:0.8rem; opacity:0.7;">Manager</span></h2>
     <div class="menu-item active" onclick="switchPage('schedule', this)">📅 運行スケジュール</div>
     <div class="menu-item" onclick="switchPage('analysis', this)">📈 分析レポート</div>
     <a href="index.html" target="_blank" class="menu-item">🔍 カタログ検索</a>
@@ -99,7 +89,7 @@
     <div id="page-schedule" class="page-section active">
         <div class="main-header">
             <div style="display:flex; align-items:center;">
-                <h1>工程管理ダッシュボード</h1>
+                <h1>工程表・ガントチャート</h1>
                 <span class="settings-btn" onclick="openSettings()" title="データ管理">⚙️</span>
             </div>
             <div style="display:flex; align-items:center;">
@@ -185,7 +175,8 @@
 
 <div id="settingsModal" class="modal-box settings-menu">
     <h3>⚙️ データ管理（PC版）</h3>
-    <button class="settings-item" onclick="exportJSON()">📤 <strong>バックアップ作成</strong></button>
+    <p style="font-size:0.8rem; color:#666;">※現場データ、日報、雨ログの全てを含んでバックアップ・復元します。</p>
+    <button class="settings-item" onclick="exportJSON()">📤 <strong>完全バックアップ作成</strong></button>
     <button class="settings-item" onclick="document.getElementById('jsonInput').click()">📥 <strong>データ復元</strong></button>
     <div class="settings-footer">
         <button class="btn-delete-all" onclick="deleteAllData()">🗑️ 全削除</button>
@@ -197,22 +188,24 @@
 
 <script>
     let sites = JSON.parse(localStorage.getItem('dx_sites')) || [];
-    // ★雨履歴データの読み込み
     let rainLog = JSON.parse(localStorage.getItem('dx_rain_log')) || [];
+    // ★バックアップ用に追加読み込み
+    let reports = JSON.parse(localStorage.getItem('dx_reports')) || [];
     
     let selectedIndices = new Set();
 
-    // ページ切り替え
     function switchPage(pageName, btn) {
         document.querySelectorAll('.page-section').forEach(el => el.classList.remove('active'));
         document.getElementById('page-' + pageName).classList.add('active');
         document.querySelectorAll('.menu-item').forEach(el => el.classList.remove('active'));
         btn.classList.add('active');
-        
-        if(pageName === 'analysis') renderAnalysis(); // 分析ページを開くときに集計
+        if(pageName === 'analysis') renderAnalysis();
     }
 
     function renderTable() {
+        // ★修正：表示前にソート（IDの降順＝新しい順）
+        sites.sort((a, b) => (b.id > a.id ? 1 : -1));
+
         const tbody = document.getElementById('tableBody');
         tbody.innerHTML = '';
         const today = new Date(); today.setHours(0, 0, 0, 0);
@@ -261,39 +254,24 @@
         updateBulkBar();
     }
 
-    // --- 分析機能 ---
     function renderAnalysis() {
-        // 1. 雨カウント
         document.getElementById('rainCount').textContent = rainLog.length;
         const logEl = document.getElementById('rainHistoryLog');
         logEl.innerHTML = rainLog.map(d => `<div>☔ ${d}</div>`).join('') || '<div style="color:#aaa">履歴なし</div>';
 
-        // 2. 出動ランキング
         const rankingList = document.getElementById('naviRanking');
         rankingList.innerHTML = '';
-        
-        // naviCountがあるデータを抽出してソート
-        const sortedSites = [...sites]
-            .filter(s => s.naviCount > 0)
-            .sort((a, b) => b.naviCount - a.naviCount)
-            .slice(0, 5); // TOP5
-
+        const sortedSites = [...sites].filter(s => s.naviCount > 0).sort((a, b) => b.naviCount - a.naviCount).slice(0, 5);
         if(sortedSites.length === 0) {
-            rankingList.innerHTML = '<li style="padding:10px; color:#aaa;">まだデータがありません。<br>スマホで「ナビ」を使うとカウントされます。</li>';
+            rankingList.innerHTML = '<li style="padding:10px; color:#aaa;">まだデータがありません。</li>';
         } else {
             sortedSites.forEach(site => {
-                const html = `
-                    <li class="ranking-item">
-                        <span>${site.name}</span>
-                        <span class="ranking-badge">${site.naviCount} 回</span>
-                    </li>
-                `;
+                const html = `<li class="ranking-item"><span>${site.name}</span><span class="ranking-badge">${site.naviCount} 回</span></li>`;
                 rankingList.insertAdjacentHTML('beforeend', html);
             });
         }
     }
 
-    // --- 雨スライド ---
     function openRainModal() {
         document.getElementById('overlay').classList.add('show');
         document.getElementById('rainModal').classList.add('show');
@@ -314,7 +292,6 @@
         sites.forEach((site, index) => {
             if(site.status === 'done' || site.status === 'handover' || !site.start || !site.end) return;
             const start = new Date(site.start); const end = new Date(site.end);
-            // 期間判定
             if (start <= rainDate && rainDate <= end) {
                 const html = `<div class="rain-item"><label><input type="checkbox" class="rain-check" value="${index}" checked><span>${site.name} (${site.status==='active'?'施工中':'予定'})</span></label></div>`;
                 listEl.insertAdjacentHTML('beforeend', html);
@@ -333,21 +310,16 @@
             const index = parseInt(cb.value);
             const site = sites[index];
             const end = new Date(site.end);
-            end.setDate(end.getDate() + 1); // 終了日+1
+            end.setDate(end.getDate() + 1); 
             site.end = formatDate(end);
             site.updatedAt = Date.now();
         });
-        
-        // ★雨ログ記録
         rainLog.push(rainDateStr);
         localStorage.setItem('dx_rain_log', JSON.stringify(rainLog));
-
-        autoSave(); renderTable(); renderGantt(); closeAllModals();
-        showToast('☔ 工期スライド＆記録完了');
+        autoSave(); renderTable(); renderGantt(); closeAllModals(); showToast('☔ 工期スライド＆記録完了');
     }
     function formatDate(d) { return `${d.getFullYear()}-${(d.getMonth()+1).toString().padStart(2,'0')}-${d.getDate().toString().padStart(2,'0')}`; }
 
-    // --- 既存機能 ---
     function toggleSelect(index, isChecked) { if(isChecked) selectedIndices.add(index); else selectedIndices.delete(index); updateBulkBar(); }
     function toggleSelectAll(checkbox) { document.querySelectorAll('#tableBody input[type="checkbox"]').forEach((cb, idx) => { cb.checked = checkbox.checked; if(checkbox.checked) selectedIndices.add(idx); else selectedIndices.delete(idx); }); updateBulkBar(); }
     function updateBulkBar() { const count = selectedIndices.size; const bar = document.getElementById('bulkActionBar'); document.getElementById('selectedCount').textContent = count; if(count > 0) bar.classList.add('show'); else bar.classList.remove('show'); }
@@ -389,13 +361,92 @@
     function openSettings() { document.getElementById('overlay').classList.add('show'); document.getElementById('settingsModal').classList.add('show'); }
     function closeAllModals() { document.getElementById('overlay').classList.remove('show'); document.getElementById('settingsModal').classList.remove('show'); document.getElementById('rainModal').classList.remove('show'); }
     function getNowStr() { const d = new Date(); return `${d.getFullYear()}${(d.getMonth()+1).toString().padStart(2,'0')}${d.getDate().toString().padStart(2,'0')}_${d.getHours().toString().padStart(2,'0')}${d.getMinutes().toString().padStart(2,'0')}`; }
-    async function exportJSON() { showToast('📤 準備中...'); const jsonContent = JSON.stringify(sites, null, 2); const fileName = `【カーナビ手帳】backup_${getNowStr()}.json`; const file = new File([jsonContent], fileName, { type: "application/json" }); if (navigator.share && navigator.canShare && navigator.canShare({ files: [file] })) { try { await navigator.share({ files: [file] }); } catch (e) { forceDL(file); } } else { forceDL(file); } }
-    function forceDL(file) { const url = URL.createObjectURL(file); const link = document.createElement("a"); link.setAttribute("href", url); link.setAttribute("download", file.name); document.body.appendChild(link); link.click(); document.body.removeChild(link); showToast('📥 保存しました'); }
-    function importJSON(input) { const file = input.files[0]; if (!file) return; const reader = new FileReader(); reader.onload = function(e) { try { const importedSites = JSON.parse(e.target.result); if (!Array.isArray(importedSites)) { alert('エラー'); return; } let updated=0; let added=0; let ignored=0; importedSites.forEach(newSite => { const index = sites.findIndex(s => s.id === newSite.id); if (index !== -1) { const existingTime = sites[index].updatedAt || 0; const newTime = newSite.updatedAt || 0; if(newTime > existingTime) { sites[index] = newSite; updated++; } else { ignored++; } } else { sites.push(newSite); added++; } }); autoSave(); renderTable(); renderGantt(); closeAllModals(); showToast(`更新:${updated} 新規:${added}`); } catch (err) { alert('読み込み失敗'); } input.value = ''; }; reader.readAsText(file); }
-    function deleteAllData() { if(confirm('全削除しますか？')) { sites = []; autoSave(); renderTable(); renderGantt(); closeAllModals(); } }
-    function getStatusText(status) { switch (status) { case 'active': return '施工中'; case 'done': return '完工'; case 'handover': return '引き渡し'; case 'plan': return '現調予定'; default: return '現調予定'; } }
+    
+    // ★修正：完全バックアップ（日報・雨ログ含む）
+    async function exportJSON() {
+        showToast('📤 準備中...');
+        
+        // 全データをまとめたオブジェクトを作成
+        const fullData = {
+            sites: sites,
+            rainLog: rainLog,
+            reports: reports
+        };
 
-    window.addEventListener('storage', function(e) { if(e.key === 'dx_sites') { sites = JSON.parse(e.newValue); renderTable(); renderGantt(); } });
+        const jsonContent = JSON.stringify(fullData, null, 2);
+        const fileName = `【DX手帳】完全バックアップ_${getNowStr()}.json`;
+        const file = new File([jsonContent], fileName, { type: "application/json" });
+        
+        if (navigator.share && navigator.canShare && navigator.canShare({ files: [file] })) {
+            try { await navigator.share({ files: [file] }); } catch (e) { forceDL(file); }
+        } else { forceDL(file); }
+    }
+    function forceDL(file) { const url = URL.createObjectURL(file); const link = document.createElement("a"); link.setAttribute("href", url); link.setAttribute("download", file.name); document.body.appendChild(link); link.click(); document.body.removeChild(link); showToast('📥 保存しました'); }
+    
+    // ★修正：新形式のインポート対応
+    function importJSON(input) { 
+        const file = input.files[0]; if (!file) return; 
+        const reader = new FileReader(); 
+        reader.onload = function(e) { 
+            try { 
+                const importedData = JSON.parse(e.target.result);
+                
+                // 配列（旧形式）かオブジェクト（新形式）かを判定
+                let importedSites = [];
+                if (Array.isArray(importedData)) {
+                    // 旧形式
+                    importedSites = importedData;
+                } else if (importedData.sites) {
+                    // 新形式（完全バックアップ）
+                    importedSites = importedData.sites;
+                    // 日報と雨ログも復元
+                    if(importedData.reports) {
+                        localStorage.setItem('dx_reports', JSON.stringify(importedData.reports));
+                        reports = importedData.reports; // 変数も更新
+                    }
+                    if(importedData.rainLog) {
+                        localStorage.setItem('dx_rain_log', JSON.stringify(importedData.rainLog));
+                        rainLog = importedData.rainLog; // 変数も更新
+                    }
+                } else {
+                    alert('エラー：データ形式が不明です'); return;
+                }
+
+                let updated=0; let added=0; 
+                importedSites.forEach(newSite => { 
+                    const index = sites.findIndex(s => s.id === newSite.id); 
+                    if (index !== -1) { 
+                        const existingTime = sites[index].updatedAt || 0; 
+                        const newTime = newSite.updatedAt || 0; 
+                        if(newTime > existingTime) { sites[index] = newSite; updated++; } 
+                    } else { sites.push(newSite); added++; } 
+                }); 
+                
+                autoSave(); 
+                renderTable(); 
+                renderGantt(); 
+                renderAnalysis(); // 分析も更新
+                closeAllModals(); 
+                showToast(`復元: ${updated}件更新, ${added}件追加`); 
+            } catch (err) { alert('読み込み失敗'); } 
+            input.value = ''; 
+        }; 
+        reader.readAsText(file); 
+    }
+    
+    function deleteAllData() { 
+        if(confirm('【危険】\n全ての現場データ、日報、雨ログを削除しますか？')) { 
+            sites = []; rainLog = []; reports = []; // メモリ上も消す
+            localStorage.setItem('dx_sites', JSON.stringify([]));
+            localStorage.setItem('dx_rain_log', JSON.stringify([]));
+            localStorage.setItem('dx_reports', JSON.stringify([]));
+            renderTable(); renderGantt(); renderAnalysis(); closeAllModals(); 
+        } 
+    }
+
+    window.addEventListener('storage', function(e) { 
+        if(e.key === 'dx_sites') { sites = JSON.parse(e.newValue); renderTable(); renderGantt(); } 
+    });
     renderTable(); renderGantt();
 </script>
 </body>
