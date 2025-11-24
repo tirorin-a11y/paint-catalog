@@ -29,28 +29,58 @@
         .mic-btn { background: #e74c3c; color: white; width: 50px; height: 50px; border-radius: 50%; border: none; font-size: 1.2rem; box-shadow: 0 4px 10px rgba(231, 76, 60, 0.4); position: absolute; bottom: 15px; right: 15px; cursor: pointer; display: flex; align-items: center; justify-content: center; z-index: 5; }
         .mic-active { animation: pulse 1.5s infinite; background: #c0392b; }
         
-        /* 履歴リスト */
         .history-box { margin-top: 20px; border-top: 1px solid #eee; padding-top: 10px; }
         .history-title { font-size: 0.85rem; color: #888; margin-bottom: 5px; }
         .history-list { list-style: none; padding: 0; margin: 0; max-height: 150px; overflow-y: auto; }
         .history-item { font-size: 0.8rem; padding: 8px; border-bottom: 1px solid #f0f0f0; color: #555; }
         .history-date { font-size: 0.7rem; color: #999; display: block; }
 
-        /* ★カメラ機能（本実装用） */
-        .camera-container { position: relative; width: 100%; height: 300px; background: #000; overflow: hidden; border-radius: 8px; margin-bottom: 10px; }
-        video#cameraVideo { width: 100%; height: 100%; object-fit: cover; }
-        canvas#cameraCanvas { display: none; } /* 保存用キャンバス（非表示） */
-        
-        /* 黒板オーバーレイ（見た目用） */
-        .blackboard-overlay { 
-            position: absolute; bottom: 10px; right: 10px; 
-            background: #004d40; border: 2px solid white; color: white; 
-            padding: 8px; font-family: "HiraMinProN-W3", "YuMincho", serif; 
-            width: 140px; text-align: left; box-shadow: 2px 2px 5px rgba(0,0,0,0.5); 
-            z-index: 20; pointer-events: none; 
+        /* ★カメラ機能（修正版） */
+        .camera-container { 
+            position: relative; 
+            width: 100%; 
+            /* 高さを固定せず、映像比率に合わせるための設定 */
+            aspect-ratio: 3/4; 
+            background: #000; 
+            overflow: hidden; 
+            border-radius: 8px; 
+            margin-bottom: 10px; 
         }
-        .board-row { font-size: 0.7rem; border-bottom: 1px solid rgba(255,255,255,0.3); padding-bottom: 2px; margin-bottom: 2px; }
-        .board-main { font-size: 0.9rem; font-weight: bold; line-height: 1.2; }
+        video#cameraVideo { 
+            width: 100%; 
+            height: 100%; 
+            /* ★重要：映像を切り抜かず、全体を表示する設定 */
+            object-fit: contain; 
+        }
+        canvas#cameraCanvas { display: none; }
+        
+        /* ★黒板（CSS版）：JSの描画ロジックと比率を合わせる */
+        .blackboard-overlay { 
+            position: absolute; 
+            bottom: 5%; /* 下から5%の位置 */
+            right: 5%;  /* 右から5%の位置 */
+            width: 35%; /* 画面幅の35% */
+            aspect-ratio: 1.4; /* 横長比率を固定 (140:100) */
+            
+            background: #004d40; 
+            border: 2px solid white; 
+            color: white; 
+            padding: 2%; /* パディングも％指定 */
+            font-family: "HiraMinProN-W3", "YuMincho", serif; 
+            box-shadow: 2px 2px 5px rgba(0,0,0,0.5); 
+            z-index: 20; 
+            pointer-events: none; 
+            
+            /* 中身のレイアウト */
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+        }
+        
+        /* 文字サイズもレスポンシブに（vwは使わず親要素基準で） */
+        .board-text { font-size: clamp(8px, 2.5vw, 12px); white-space: nowrap; }
+        .board-row { border-bottom: 1px solid rgba(255,255,255,0.3); padding-bottom: 2px; margin-bottom: 2px; }
+        .board-main { font-weight: bold; line-height: 1.2; font-size: clamp(10px, 3.5vw, 16px); }
 
         .process-btns { display: flex; gap: 5px; flex-wrap: wrap; margin-bottom: 10px; }
         .proc-btn { flex: 1; padding: 8px; font-size: 0.85rem; background: white; border: 1px solid #ddd; border-radius: 4px; cursor: pointer; white-space: nowrap; }
@@ -114,14 +144,16 @@
 
 <div class="overlay" id="overlay" onclick="closeAllModals()"></div>
 
-<div id="cameraModal" class="modal-box" style="width:100%; max-width:600px; padding:15px;">
+<div id="cameraModal" class="modal-box" style="width:100%; max-width:600px; padding:15px; max-height:90vh; overflow-y:auto;">
     <h3 style="margin-top:0;">📸 電子黒板撮影</h3>
     
     <div class="camera-container">
         <video id="cameraVideo" autoplay playsinline muted></video>
-        <canvas id="cameraCanvas"></canvas> <div class="blackboard-overlay" id="blackboardOverlay">
-            <div class="board-row" id="boardDate"></div>
-            <div class="board-row" id="boardName">現場名</div>
+        <canvas id="cameraCanvas"></canvas>
+        
+        <div class="blackboard-overlay" id="blackboardOverlay">
+            <div class="board-row board-text" id="boardDate"></div>
+            <div class="board-row board-text" id="boardName">現場名</div>
             <div class="board-main">
                 <span id="boardDetail"></span>
                 <span id="boardProcess">着工前</span>
@@ -130,7 +162,7 @@
     </div>
 
     <div class="input-toggle-area">
-        <label class="input-toggle-label"><input type="checkbox" id="manualModeSwitch" onchange="toggleInputMode()"> 完全手入力モードにする</label>
+        <label class="input-toggle-label"><input type="checkbox" id="manualModeSwitch" onchange="toggleInputMode()"> 完全手入力モード</label>
     </div>
 
     <label>撮影部位</label>
@@ -158,7 +190,7 @@
     </div>
 </div>
 
-<div id="reportModal" class="modal-box" style="background:#fffcf5;">
+<div id="reportModal" class="modal-box" style="background:#fffcf5; max-height:90vh; overflow-y:auto;">
     <h3>🎙️ しゃべる日報</h3>
     <p style="font-size:0.8rem; color:#666;">誤字脱字は気にしない！<br>「何をしたか」が伝わればOKです。</p>
     
@@ -208,19 +240,17 @@
     let currentSite = null;
     let sites = JSON.parse(localStorage.getItem('dx_sites')) || [];
     let allReports = JSON.parse(localStorage.getItem('dx_reports')) || [];
-    let stream = null; // カメラストリーム用
+    let stream = null;
 
     if (siteId) {
         currentSite = sites.find(s => s.id === siteId);
         if (currentSite) {
             document.getElementById('displaySiteName').textContent = currentSite.name;
             document.getElementById('displaySiteId').textContent = `No. ${currentSite.id}`;
-            // 黒板用初期値
             document.getElementById('boardName').textContent = currentSite.name;
             const d = new Date();
             document.getElementById('boardDate').textContent = `${d.getFullYear()}/${d.getMonth()+1}/${d.getDate()}`;
             
-            // カレンダーリンク
             let stLabel = '現調予定';
             if(currentSite.status === 'active') stLabel = '施工中';
             const text = encodeURIComponent(`【${stLabel}】${currentSite.name}`);
@@ -229,14 +259,19 @@
         }
     }
 
+    // --- モーダル表示時に位置合わせ ---
     function openCameraModal() {
         document.getElementById('overlay').classList.add('show');
-        document.getElementById('cameraModal').classList.add('show');
+        const modal = document.getElementById('cameraModal');
+        modal.classList.add('show');
+        modal.scrollIntoView({behavior: "smooth", block: "center"}); // ★位置合わせ
         startCamera();
     }
     function openReportModal() {
         document.getElementById('overlay').classList.add('show');
-        document.getElementById('reportModal').classList.add('show');
+        const modal = document.getElementById('reportModal');
+        modal.classList.add('show');
+        modal.scrollIntoView({behavior: "smooth", block: "center"}); // ★位置合わせ
         renderReportHistory();
     }
     function openEditForm() {
@@ -251,10 +286,10 @@
         document.querySelectorAll('.modal-box').forEach(el => el.classList.remove('show'));
         document.getElementById('overlay').classList.remove('show');
         stopSpeech();
-        stopCamera(); // カメラ停止
+        stopCamera();
     }
 
-    // --- 📸 カメラ機能（本実装） ---
+    // --- 📸 カメラ機能（比率同期版） ---
     async function startCamera() {
         const video = document.getElementById('cameraVideo');
         try {
@@ -263,7 +298,7 @@
             });
             video.srcObject = stream;
         } catch (err) {
-            alert('カメラを起動できませんでした。\n設定を確認してください。');
+            alert('カメラを起動できませんでした。設定を確認してください。');
         }
     }
     
@@ -279,67 +314,68 @@
         const canvas = document.getElementById('cameraCanvas');
         const ctx = canvas.getContext('2d');
         
-        // 1. ビデオサイズに合わせてキャンバス設定
-        canvas.width = video.videoWidth;
-        canvas.height = video.videoHeight;
+        // 実際のビデオサイズ
+        const vW = video.videoWidth;
+        const vH = video.videoHeight;
         
-        // 2. カメラ映像を描画
-        ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+        canvas.width = vW;
+        canvas.height = vH;
         
-        // 3. 黒板を描画（合成）
-        drawBlackboard(ctx, canvas.width, canvas.height);
+        // カメラ映像
+        ctx.drawImage(video, 0, 0, vW, vH);
         
-        // 4. 画像としてダウンロード
-        const link = document.createElement('a');
-        link.download = `現場写真_${getNowStr()}.jpg`;
-        link.href = canvas.toDataURL('image/jpeg');
-        link.click();
-        
-        // 5. カメラ停止して閉じる
-        closeAllModals();
-    }
-
-    function drawBlackboard(ctx, width, height) {
-        // 画面右下に黒板を描く計算
-        const boardW = width * 0.35; // 画面幅の35%
-        const boardH = boardW * 0.7; // 比率
-        const padding = 20;
-        const x = width - boardW - padding;
-        const y = height - boardH - padding;
+        // ★黒板描画（CSSの位置と完全に同期させる）
+        // CSS: right: 5%, bottom: 5%, width: 35%
+        const boardW = vW * 0.35; 
+        const boardH = boardW / 1.4; // aspect-ratio: 1.4
+        const x = vW - boardW - (vW * 0.05); // 右から5%
+        const y = vH - boardH - (vH * 0.05); // 下から5%
         
         // 黒板背景
         ctx.fillStyle = '#004d40';
         ctx.fillRect(x, y, boardW, boardH);
         ctx.strokeStyle = 'white';
-        ctx.lineWidth = 4;
+        ctx.lineWidth = boardW * 0.02; // 線の太さも相対的に
         ctx.strokeRect(x, y, boardW, boardH);
         
         // 文字設定
         ctx.fillStyle = 'white';
         ctx.textAlign = 'left';
-        ctx.font = `bold ${boardW * 0.1}px serif`;
         
-        const lineHeight = boardH * 0.25;
-        const textX = x + 15;
+        // 行の高さ計算
+        const lineHeight = boardH / 3.5;
+        const paddingX = boardW * 0.05;
         let textY = y + lineHeight;
         
+        // フォントサイズ計算 (幅に合わせて)
+        const fontSize = boardW * 0.1;
+        ctx.font = `bold ${fontSize}px serif`;
+
         // 日付
         const dateStr = document.getElementById('boardDate').textContent;
-        ctx.fillText(dateStr, textX, textY);
-        ctx.beginPath(); ctx.moveTo(x, textY + 5); ctx.lineTo(x + boardW, textY + 5); ctx.lineWidth=1; ctx.stroke();
+        ctx.fillText(dateStr, x + paddingX, textY);
+        ctx.beginPath(); ctx.moveTo(x, textY + 5); ctx.lineTo(x + boardW, textY + 5); ctx.lineWidth=2; ctx.stroke();
         
         // 現場名
         textY += lineHeight;
         const nameStr = document.getElementById('boardName').textContent;
-        ctx.fillText(nameStr, textX, textY);
+        ctx.fillText(nameStr, x + paddingX, textY);
         ctx.beginPath(); ctx.moveTo(x, textY + 5); ctx.lineTo(x + boardW, textY + 5); ctx.stroke();
         
-        // 詳細・工程
+        // 詳細・工程（少し大きく）
         textY += lineHeight * 1.2;
-        ctx.font = `bold ${boardW * 0.13}px serif`;
+        ctx.font = `bold ${fontSize * 1.2}px serif`;
         const detail = document.getElementById('boardDetail').textContent;
         const process = document.getElementById('boardProcess').textContent;
-        ctx.fillText(detail + process, textX, textY);
+        ctx.fillText(detail + process, x + paddingX, textY);
+        
+        // 保存
+        const link = document.createElement('a');
+        link.download = `現場写真_${getNowStr()}.jpg`;
+        link.href = canvas.toDataURL('image/jpeg');
+        link.click();
+        
+        closeAllModals();
     }
 
     function getNowStr() {
@@ -358,7 +394,6 @@
         } else {
             selArea.style.display = 'block';
             manArea.style.display = 'none';
-            // 選択状態を戻す
             const activeBtn = document.querySelector('.proc-btn.active');
             if(activeBtn) document.getElementById('boardProcess').textContent = activeBtn.textContent;
         }
@@ -405,7 +440,7 @@
         }
     }
 
-    // --- 🎙️ 日報機能（履歴＆LINE） ---
+    // --- 🎙️ 日報機能 ---
     function saveReportLocal() {
         const text = document.getElementById('reportText').value;
         if(!text) return;
@@ -433,7 +468,7 @@
     function sendReportLine() {
         const text = document.getElementById('reportText').value;
         if(!text) return;
-        saveReportLocal(); // 自動保存
+        saveReportLocal();
         const lineUrl = `https://line.me/R/msg/text/?【日報：${currentSite.name}】%0A${encodeURIComponent(text)}`;
         window.open(lineUrl, '_blank');
     }

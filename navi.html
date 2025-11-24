@@ -24,15 +24,11 @@
         .st-handover { background-color: #34495e; color: #fff; border: 1px solid #2c3e50; }
         .site-name { font-size: 1.25rem; font-weight: bold; margin-bottom: 6px; line-height: 1.4; }
         .site-address { font-size: 0.9rem; color: #555; margin-bottom: 16px; display: flex; align-items: center; gap: 4px; }
-        /* ★修正：ボタンの高さを統一 */
         .card-actions { margin-top: 15px; display: flex; gap: 8px; height: 60px; }
         .action-btn { border-radius: 6px; font-weight: bold; text-decoration: none; display: flex; flex-direction: column; align-items: center; justify-content: center; border: none; cursor: pointer; box-shadow: 0 2px 4px rgba(0,0,0,0.1); transition: opacity 0.1s; line-height: 1; }
         .action-btn:active { transform: translateY(2px); box-shadow: none; }
-        /* ★ナビボタン（両サイド） */
         .btn-navi-side { flex: 1.5; background-color: #00C853; color: white; font-size: 0.9rem; }
-        /* ★ツールボタン（中央） */
         .btn-center { flex: 1; background-color: #fdf2e9; border: 1px solid #f5c6cb; color: #d35400; font-size: 0.8rem; }
-        
         .sort-actions { display: none; width: 100%; gap: 8px; height: 60px; }
         body.sort-mode .card-actions { display: none; }
         body.sort-mode .sort-actions { display: flex; }
@@ -115,8 +111,11 @@
 
 <div id="settingsModal" class="modal-box settings-menu">
     <h3>⚙️ 設定・データ管理</h3>
-    <button class="settings-item" onclick="exportJSON()">📤 <strong>バックアップを作成</strong></button>
-    <button class="settings-item" onclick="document.getElementById('jsonInput').click()">📥 <strong>データを復元（取込）</strong></button>
+    <p style="font-size:0.8rem; color:#666; text-align:center;">
+        ※現場データ、日報、雨ログの全てを含んで<br>バックアップ・復元します。
+    </p>
+    <button class="settings-item" onclick="exportJSON()">📤 <strong>完全バックアップ作成</strong></button>
+    <button class="settings-item" onclick="document.getElementById('jsonInput').click()">📥 <strong>データ復元</strong></button>
     <a href="help.html" class="settings-item">📖 <strong>使い方ガイドを見る</strong></a>
     <div class="settings-footer">
         <button class="btn-delete-all" onclick="deleteAllData()">🗑️ 全削除</button>
@@ -134,6 +133,10 @@
 <script>
     // --- データ管理 ---
     let sites = JSON.parse(localStorage.getItem('dx_sites')) || [];
+    // ★日報と雨ログも読み込んでおく
+    let reports = JSON.parse(localStorage.getItem('dx_reports')) || [];
+    let rainLog = JSON.parse(localStorage.getItem('dx_rain_log')) || [];
+
     let isEditing = false;
     let tapCount = 0;
     let editingId = null;
@@ -147,7 +150,7 @@
         localStorage.setItem('dx_sites', JSON.stringify(sites));
     }
 
-    // --- ★ナビ回数カウント機能 ---
+    // --- ナビ回数カウント ---
     function countNavi(id) {
         const index = sites.findIndex(s => s.id === id);
         if (index !== -1) {
@@ -172,6 +175,9 @@
 
     // --- リスト描画 ---
     function renderList() {
+        // ★修正：ID（案件No）の新しい順にソート
+        sites.sort((a, b) => (b.id > a.id ? 1 : -1));
+
         const listEl = document.getElementById('siteList');
         const keyword = document.getElementById('searchInput').value.toLowerCase();
         listEl.innerHTML = '';
@@ -186,8 +192,7 @@
             if(site.status === 'done') { stLabel = '完工'; stClass = 'st-done'; }
             if(site.status === 'handover') { stLabel = '引き渡し'; stClass = 'st-handover'; }
             
-            // ★修正：URLの記述ミスを修正
-            const mapUrl = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(site.address)}`;
+            const mapUrl = `https://www.google.com/maps/search/ホームセンター+塗料+建材/@${encodeURIComponent(site.address)}`;
             
             const html = `
                 <div class="site-card">
@@ -364,16 +369,24 @@
         return `${d.getFullYear()}${(d.getMonth()+1).toString().padStart(2,'0')}${d.getDate().toString().padStart(2,'0')}_${d.getHours().toString().padStart(2,'0')}${d.getMinutes().toString().padStart(2,'0')}`;
     }
 
+    // --- ★完全バックアップ作成 ---
     async function exportJSON() {
         showNotification('📤 準備中...');
-        const jsonContent = JSON.stringify(sites, null, 2);
-        const fileName = `【カーナビ手帳】backup_${getNowStr()}.json`;
+        
+        // 全データをまとめたオブジェクトを作成
+        const fullData = {
+            sites: sites,
+            rainLog: rainLog || [],
+            reports: reports || [] // ★日報も含める！
+        };
+
+        const jsonContent = JSON.stringify(fullData, null, 2);
+        const fileName = `【DX手帳】完全バックアップ_${getNowStr()}.json`;
         const file = new File([jsonContent], fileName, { type: "application/json" });
+        
         if (navigator.share && navigator.canShare && navigator.canShare({ files: [file] })) {
             try { await navigator.share({ files: [file] }); } catch (e) { forceDL(file); }
-        } else {
-            forceDL(file);
-        }
+        } else { forceDL(file); }
     }
 
     function forceDL(file) {
@@ -387,43 +400,67 @@
         showNotification('📥 保存しました');
     }
 
-    function importJSON(input) {
-        const file = input.files[0];
-        if (!file) return;
-        const reader = new FileReader();
-        reader.onload = function(e) {
-            try {
-                const importedSites = JSON.parse(e.target.result);
-                if (!Array.isArray(importedSites)) { alert('エラー：正しい形式ではありません'); return; }
-                let countAdded = 0;
-                let countUpdated = 0;
-                importedSites.forEach(newSite => {
-                    const index = sites.findIndex(s => s.id === newSite.id);
-                    if (index !== -1) {
-                        const existingTime = sites[index].updatedAt || 0;
-                        const newTime = newSite.updatedAt || 0;
-                        if (newTime > existingTime) { sites[index] = newSite; countUpdated++; }
-                    } else { sites.push(newSite); countAdded++; }
-                });
+    // --- ★完全バックアップからの復元 ---
+    function importJSON(input) { 
+        const file = input.files[0]; if (!file) return; 
+        const reader = new FileReader(); 
+        reader.onload = function(e) { 
+            try { 
+                const importedData = JSON.parse(e.target.result);
+                
+                let importedSites = [];
+                
+                // 旧形式（配列）と新形式（オブジェクト）の両方に対応
+                if (Array.isArray(importedData)) {
+                    // 旧形式（配列のみ）
+                    importedSites = importedData;
+                } else if (importedData.sites) {
+                    // 新形式（オブジェクト）
+                    importedSites = importedData.sites;
+                    
+                    // ★日報と雨ログも復元
+                    if(importedData.reports) {
+                        localStorage.setItem('dx_reports', JSON.stringify(importedData.reports));
+                        reports = importedData.reports;
+                    }
+                    if(importedData.rainLog) {
+                        localStorage.setItem('dx_rain_log', JSON.stringify(importedData.rainLog));
+                        rainLog = importedData.rainLog;
+                    }
+                } else {
+                    alert('エラー：不明なデータ形式です'); return;
+                }
+
+                let countUpdated=0; let countAdded=0; 
+                
+                importedSites.forEach(newSite => { 
+                    const index = sites.findIndex(s => s.id === newSite.id); 
+                    if (index !== -1) { 
+                        const existingTime = sites[index].updatedAt || 0; 
+                        const newTime = newSite.updatedAt || 0; 
+                        if(newTime > existingTime) { sites[index] = newSite; countUpdated++; } 
+                    } else { sites.push(newSite); countAdded++; } 
+                }); 
+                
                 localStorage.setItem('dx_sites', JSON.stringify(sites));
-                renderList();
-                closeAllModals();
-                showNotification(`復元: ${countUpdated}件更新, ${countAdded}件追加`);
-            } catch (err) { alert('読み込みに失敗しました'); }
-            input.value = '';
-        };
-        reader.readAsText(file);
+                renderList(); 
+                closeAllModals(); 
+                showNotification(`復元: ${countUpdated}件更新, ${countAdded}件追加`); 
+            } catch (err) { alert('読み込み失敗'); } 
+            input.value = ''; 
+        }; 
+        reader.readAsText(file); 
     }
 
     function deleteAllData() {
-        if(confirm('【警告】\n本当に全データを削除しますか？')) {
-            if(confirm('本当に削除してよろしいですか？')) {
-                sites = [];
-                localStorage.setItem('dx_sites', JSON.stringify(sites));
-                renderList();
-                closeAllModals();
-                showNotification('🗑️ 全データを削除しました');
-            }
+        if(confirm('【危険】\n全ての現場データ、日報、雨ログを削除しますか？')) {
+            sites = []; rainLog = []; reports = [];
+            localStorage.setItem('dx_sites', JSON.stringify([]));
+            localStorage.setItem('dx_rain_log', JSON.stringify([]));
+            localStorage.setItem('dx_reports', JSON.stringify([]));
+            renderList();
+            closeAllModals();
+            showNotification('🗑️ 全データを削除しました');
         }
     }
 
@@ -461,7 +498,7 @@
         setTimeout(() => el.classList.remove('show'), 2000);
     }
 
-    // ★確実に初期表示を行う
+    // 確実に初期表示
     document.addEventListener('DOMContentLoaded', renderList);
 </script>
 </body>
