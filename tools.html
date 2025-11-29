@@ -3,235 +3,148 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>現場ツールボックス</title>
+    <title>現場ツール - 現場カーナビ手帳</title>
     <link rel="stylesheet" href="style.css">
     <style>
-        /* ツールボックス専用スタイル */
-        body { background-color: #f0f2f5; padding-bottom: 50px; }
-        .site-header { background: #2c3e50; color: white; padding: 20px 15px; text-align: center; border-radius: 0 0 20px 20px; margin-bottom: 20px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); position: sticky; top: 0; z-index: 10; }
-        .site-title { margin: 0; font-size: 1.3rem; font-weight: bold; }
-        
-        .container { max-width: 600px; margin: 0 auto; padding: 0 15px; }
-        .tool-section { background: white; border-radius: 12px; padding: 20px; margin-bottom: 20px; box-shadow: 0 2px 6px rgba(0,0,0,0.05); }
-        .section-title { font-size: 1rem; color: #7f8c8d; font-weight: bold; margin-bottom: 15px; border-bottom: 2px solid #f0f0f0; padding-bottom: 5px; display: flex; align-items: center; gap: 8px; }
-        
-        .tool-btn { display: flex; align-items: center; background: #f8f9fa; border: 1px solid #eee; padding: 15px; border-radius: 10px; text-decoration: none; color: #333; margin-bottom: 10px; transition: transform 0.1s, background 0.1s; cursor: pointer; }
-        .tool-btn:active { transform: scale(0.98); background: #eef2f5; }
-        .btn-icon { font-size: 2rem; margin-right: 15px; width: 40px; text-align: center; }
-        .btn-text h3 { margin: 0; font-size: 1.1rem; color: #2c3e50; }
-        .btn-text p { margin: 3px 0 0; font-size: 0.8rem; color: #777; }
-        .btn-arrow { margin-left: auto; font-size: 1.2rem; color: #ccc; }
-
-        /* 日報用 */
-        .rough-paper { background-color: #fff9c4; border: 2px dashed #dcdcdc; border-radius: 8px; padding: 15px; margin-top: 10px; position: relative; }
-        .rough-textarea { width: 100%; height: 120px; background: transparent; border: none; outline: none; font-size: 1rem; line-height: 1.6; color: #444; resize: none; }
-        .rough-textarea::placeholder { color: #aaa; font-style: italic; font-size: 0.9rem; }
-        .mic-btn { background: #e74c3c; color: white; width: 50px; height: 50px; border-radius: 50%; border: none; font-size: 1.2rem; box-shadow: 0 4px 10px rgba(231, 76, 60, 0.4); position: absolute; bottom: 15px; right: 15px; cursor: pointer; display: flex; align-items: center; justify-content: center; z-index: 5; }
+        /* --- 既存スタイル --- */
+        .site-header { background: #2c3e50; color: white; padding: 20px; text-align: center; border-radius: 0 0 20px 20px; margin-bottom: 30px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); }
+        .site-title { margin: 0; font-size: 1.4rem; font-weight: bold; }
+        .site-sub { font-size: 0.9rem; opacity: 0.8; margin-top: 5px; }
+        .tool-grid { display: grid; gap: 20px; padding: 0 20px; }
+        .tool-btn { display: flex; align-items: center; justify-content: space-between; background: white; padding: 25px; border-radius: 16px; text-decoration: none; color: #333; box-shadow: 0 4px 6px rgba(0,0,0,0.05); border: 2px solid transparent; transition: transform 0.1s; }
+        .tool-btn:active { transform: scale(0.98); background: #f9f9f9; }
+        .btn-icon { font-size: 2.5rem; margin-right: 20px; width: 50px; text-align: center; }
+        .btn-text h3 { margin: 0; font-size: 1.2rem; color: #2c3e50; }
+        .btn-text p { margin: 5px 0 0; font-size: 0.85rem; color: #777; }
+        .sub-action-area { display: flex; gap: 10px; padding: 0 20px; margin-bottom: 20px; }
+        .sub-btn { flex: 1; background: white; border: 1px solid #ddd; padding: 15px; border-radius: 12px; text-align: center; text-decoration: none; color: #555; font-weight: bold; font-size: 0.9rem; box-shadow: 0 2px 4px rgba(0,0,0,0.05); }
+        .rough-paper { background-color: #fff9c4; border: 2px dashed #dcdcdc; border-radius: 8px; padding: 15px; margin-top: 20px; box-shadow: 3px 3px 0px rgba(0,0,0,0.1); }
+        .rough-textarea { width: 100%; height: 150px; background: transparent; border: none; outline: none; font-size: 1.1rem; line-height: 1.6; color: #444; font-family: "Yu Gothic", sans-serif; resize: none; }
+        .mic-btn { background: #e74c3c; color: white; width: 60px; height: 60px; border-radius: 50%; border: none; font-size: 1.5rem; box-shadow: 0 4px 10px rgba(231, 76, 60, 0.4); position: absolute; bottom: 20px; right: 20px; cursor: pointer; display: flex; align-items: center; justify-content: center; }
         .mic-active { animation: pulse 1.5s infinite; background: #c0392b; }
-        
-        .history-box { margin-top: 20px; border-top: 1px solid #eee; padding-top: 10px; }
-        .history-title { font-size: 0.85rem; color: #888; margin-bottom: 5px; }
-        .history-list { list-style: none; padding: 0; margin: 0; max-height: 150px; overflow-y: auto; }
-        .history-item { font-size: 0.8rem; padding: 8px; border-bottom: 1px solid #f0f0f0; color: #555; }
-        .history-date { font-size: 0.7rem; color: #999; display: block; }
-
-        /* ★カメラ機能 */
-        .camera-container { 
-            position: relative; 
-            width: 100%; 
-            aspect-ratio: 3/4; /* 4:3 */
-            background: #000; 
-            overflow: hidden; 
-            border-radius: 8px; 
-            margin-bottom: 10px; 
-        }
-        video#cameraVideo { 
-            width: 100%; 
-            height: 100%; 
-            object-fit: cover; 
-        }
-        canvas#cameraCanvas { display: none; }
-        
-        /* 黒板（CSS表示用） */
-        .blackboard-overlay { 
-            position: absolute; 
-            bottom: 5%; right: 5%; width: 40%; 
-            aspect-ratio: 1.4; 
-            background: #004d40; 
-            border: 2px solid white; 
-            color: white; 
-            padding: 10px;
-            font-family: "HiraMinProN-W3", "YuMincho", serif; 
-            box-shadow: 2px 2px 5px rgba(0,0,0,0.5); 
-            z-index: 20; 
-            pointer-events: none; 
-            display: flex; flex-direction: column; justify-content: space-between;
-        }
-        .board-row { border-bottom: 1px solid rgba(255,255,255,0.3); padding-bottom: 2px; margin-bottom: 2px; font-size: 0.8rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-        
-        /* ★修正：CSS側も折り返し対応させる */
-        .board-main { 
-            font-weight: bold; line-height: 1.2; font-size: 1rem; 
-            overflow: hidden; 
-            display: -webkit-box;
-            -webkit-box-orient: vertical;
-            -webkit-line-clamp: 2; /* 2行まで表示 */
-        }
-
-        .process-btns { display: flex; gap: 5px; flex-wrap: wrap; margin-bottom: 10px; }
-        .proc-btn { flex: 1; padding: 8px; font-size: 0.85rem; background: white; border: 1px solid #ddd; border-radius: 4px; cursor: pointer; white-space: nowrap; }
-        .proc-btn.active { background: #2c3e50; color: white; border-color: #2c3e50; }
-        
-        .input-toggle-area { text-align: right; margin-bottom: 5px; }
-        .input-toggle-label { font-size: 0.8rem; color: #555; cursor: pointer; }
-
-        /* ★カメラフッターのボタン配置修正 */
-        .camera-footer {
-            display: flex;
-            align-items: center;
-            justify-content: space-between; /* 左と中央に配置 */
-            margin-top: 20px;
-            gap: 10px;
-        }
-        .btn-cam-close {
-            background: #95a5a6; color: white; border: none; padding: 10px 15px; border-radius: 8px; font-weight: bold; cursor: pointer;
-            flex: 0 0 auto; /* サイズ固定 */
-        }
-        .btn-cam-shoot {
-            background: #e74c3c; color: white; border: none; padding: 15px; border-radius: 50px; font-weight: bold; cursor: pointer; font-size: 1.1rem;
-            flex: 1; /* 残りの幅いっぱい */
-            box-shadow: 0 4px 10px rgba(231, 76, 60, 0.4);
-            display: flex; align-items: center; justify-content: center; gap: 10px;
-        }
-
-        @keyframes pulse { 0% { box-shadow: 0 0 0 0 rgba(231, 76, 60, 0.7); } 70% { box-shadow: 0 0 0 15px rgba(231, 76, 60, 0); } 100% { box-shadow: 0 0 0 0 rgba(231, 76, 60, 0); } }
+        @keyframes pulse { 0% { box-shadow: 0 0 0 0 rgba(231, 76, 60, 0.7); } 100% { box-shadow: 0 0 0 15px rgba(231, 76, 60, 0); } }
         .back-link { display: block; text-align: center; margin-top: 20px; color: #888; text-decoration: none; padding: 15px; background: white; border-radius: 8px; }
+
+        /* --- ★カメラ機能用スタイル --- */
+        #cameraModal { padding: 0; background: #000; color: white; overflow: hidden; height: 90vh; display: flex; flex-direction: column; }
+        /* 準備画面 */
+        #cameraSetup { padding: 20px; background: #fff; color: #333; height: 100%; display: flex; flex-direction: column; overflow-y: auto; }
+        .preview-canvas-wrapper { text-align: center; margin-bottom: 15px; background: #333; padding: 10px; border-radius: 8px; }
+        #boardCanvas { max-width: 100%; height: auto; box-shadow: 0 4px 8px rgba(0,0,0,0.3); }
+        
+        /* 撮影画面 */
+        #cameraView { display: none; position: relative; flex: 1; background: #000; overflow: hidden; }
+        #video { width: 100%; height: 100%; object-fit: cover; }
+        #overlayBoard { position: absolute; top: 50px; left: 20px; width: 180px; cursor: grab; z-index: 10; filter: drop-shadow(0 4px 6px rgba(0,0,0,0.5)); touch-action: none; }
+        
+        .camera-controls { position: absolute; bottom: 30px; width: 100%; display: flex; justify-content: space-around; align-items: center; z-index: 20; pointer-events: none; }
+        .camera-controls button { pointer-events: auto; }
+        .shutter-btn { width: 70px; height: 70px; border-radius: 50%; background: white; border: 5px solid #ccc; cursor: pointer; }
+        .shutter-btn:active { background: #ddd; transform: scale(0.95); }
+        .back-btn-cam { background: rgba(0,0,0,0.5); color: white; border: 1px solid white; padding: 10px 20px; border-radius: 30px; font-weight: bold; cursor: pointer; }
+        
+        #flash { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: white; opacity: 0; pointer-events: none; z-index: 50; transition: opacity 0.1s; }
+
+        .process-btns { display: flex; gap: 5px; flex-wrap: wrap; margin-bottom: 15px; }
+        .proc-btn { flex: 1; padding: 10px; font-size: 0.9rem; background: white; border: 1px solid #ddd; border-radius: 4px; cursor: pointer; white-space: nowrap; }
+        .proc-btn.active { background: #2c3e50; color: white; border-color: #2c3e50; }
+        label { margin-top: 10px; display: block; font-weight: bold; font-size: 0.9rem; }
+        input[type="text"] { width: 100%; padding: 10px; margin-top: 5px; border: 1px solid #ddd; border-radius: 6px; font-size: 1rem; }
     </style>
 </head>
 <body>
 
 <div class="site-header">
     <h2 class="site-title" id="displaySiteName">読み込み中...</h2>
-    <div style="font-size:0.8rem; opacity:0.8;" id="displaySiteId">---</div>
+    <div class="site-sub" id="displaySiteId">---</div>
 </div>
 
 <div class="container">
+    <div class="sub-action-area">
+        <button class="sub-btn" onclick="openForm()">✏️ 情報編集</button>
+        <a href="#" id="btnGoogleCal" target="_blank" class="sub-btn">📅 カレンダー</a>
+    </div>
 
-    <div class="tool-section">
-        <div class="section-title">📝 記録・報告</div>
+    <div class="tool-grid">
         <div class="tool-btn" onclick="openCameraModal()">
             <div class="btn-icon">📸</div>
-            <div class="btn-text"><h3>電子黒板カメラ</h3><p>黒板を自動合成して撮影</p></div>
-            <span class="btn-arrow">＞</span>
+            <div class="btn-text"><h3>電子黒板カメラ</h3><p>現場名と日付は自動入力。<br>工程を選んで撮影。</p></div>
+            <span style="font-size:1.5rem; color:#ccc;">＞</span>
         </div>
-        <div class="tool-btn" onclick="openReportModal()">
-            <div class="btn-icon">🎙️</div>
-            <div class="btn-text"><h3>しゃべる日報</h3><p>声で入力、履歴も保存</p></div>
-            <span class="btn-arrow">＞</span>
-        </div>
-    </div>
-
-    <div class="tool-section">
-        <div class="section-title">🧰 現場サポート</div>
         <div class="tool-btn" onclick="searchSupply()">
             <div class="btn-icon">🛒</div>
-            <div class="btn-text"><h3>資材SOSマップ</h3><p>近くのホームセンターを検索</p></div>
-            <span class="btn-arrow">＞</span>
+            <div class="btn-text"><h3>資材SOSマップ</h3><p>近くのホームセンターや<br>建材屋を一発検索。</p></div>
+            <span style="font-size:1.5rem; color:#ccc;">＞</span>
         </div>
-        <a href="#" id="btnGoogleCal" target="_blank" class="tool-btn">
-            <div class="btn-icon">📅</div>
-            <div class="btn-text"><h3>カレンダー登録</h3><p>Googleカレンダーに予定追加</p></div>
-            <span class="btn-arrow">↗</span>
-        </a>
-    </div>
-
-    <div class="tool-section" style="border: 1px solid #ffecb3;">
-        <div class="section-title">⚙️ 情報管理</div>
-        <div class="tool-btn" onclick="openEditForm()" style="background: #fff8e1;">
-            <div class="btn-icon">✏️</div>
-            <div class="btn-text"><h3>情報の編集・削除</h3><p>現場名や住所の修正はこちら</p></div>
-            <span class="btn-arrow">＞</span>
+        <div class="tool-btn" onclick="openModal('report')">
+            <div class="btn-icon">🎙️</div>
+            <div class="btn-text"><h3>しゃべる日報</h3><p>誤字脱字OK。<br>声でサクッと報告作成。</p></div>
+            <span style="font-size:1.5rem; color:#ccc;">＞</span>
         </div>
     </div>
 
-    <a href="navi.html" class="back-link">↩️ 現場一覧に戻る</a>
+    <a href="navi.html" class="back-link">↩️ 一覧に戻る</a>
 </div>
 
 <div class="overlay" id="overlay" onclick="closeAllModals()"></div>
 
-<div id="cameraModal" class="modal-box" style="width:100%; max-width:600px; padding:15px; max-height:90vh; overflow-y:auto;">
-    <h3 style="margin-top:0;">📸 電子黒板撮影</h3>
+<div id="cameraModal" class="modal-box" style="width:100%; height:100%; max-width:none; border-radius:0; top:0; left:0; transform:none;">
     
-    <div class="camera-container">
-        <video id="cameraVideo" autoplay playsinline muted></video>
-        <canvas id="cameraCanvas"></canvas>
-        
-        <div class="blackboard-overlay" id="blackboardOverlay">
-            <div class="board-row" id="boardDate"></div>
-            <div class="board-row" id="boardName">現場名</div>
-            <div class="board-main">
-                <span id="boardDetail"></span><br> <span id="boardProcess">着工前</span>
-            </div>
+    <div id="cameraSetup">
+        <h3 style="text-align:center; margin-top:0;">黒板の準備</h3>
+        <div class="preview-canvas-wrapper">
+            <canvas id="boardCanvas" width="400" height="300"></canvas>
         </div>
-    </div>
-
-    <div class="input-toggle-area">
-        <label class="input-toggle-label"><input type="checkbox" id="manualModeSwitch" onchange="toggleInputMode()"> 完全手入力モード</label>
-    </div>
-
-    <label>撮影部位</label>
-    <input type="text" id="photoDetail" class="detail-input" placeholder="例：北面、軒天など" oninput="updateBoard()">
-
-    <div id="processSelectArea">
+        
         <label>工程（選択）</label>
         <div class="process-btns">
-            <button class="proc-btn" onclick="setProcess(this, '着工前')">着工前</button>
+            <button class="proc-btn active" onclick="setProcess(this, '施工前')">施工前</button>
             <button class="proc-btn" onclick="setProcess(this, '下塗り')">下塗り</button>
             <button class="proc-btn" onclick="setProcess(this, '中塗り')">中塗り</button>
             <button class="proc-btn" onclick="setProcess(this, '上塗り')">上塗り</button>
             <button class="proc-btn" onclick="setProcess(this, '完了')">完了</button>
         </div>
+
+        <label>施工箇所（任意）</label>
+        <input type="text" id="photoDetail" placeholder="例：北面、軒天など" oninput="drawBoard()">
+
+        <div style="margin-top:auto; padding-top:20px; display:flex; gap:10px;">
+            <button class="btn-close" onclick="closeAllModals()">閉じる</button>
+            <button class="save-btn" onclick="startCamera()" style="background:#00C853;">📸 カメラ起動</button>
+        </div>
     </div>
 
-    <div id="processManualArea" style="display:none;">
-        <label>工程（自由入力）</label>
-        <input type="text" id="manualProcessInput" class="detail-input" placeholder="黒板に書く文字を入力" oninput="updateManualBoard()">
-    </div>
-
-    <div class="camera-footer">
-        <button class="btn-cam-close" onclick="closeAllModals()">閉じる</button>
-        <button class="btn-cam-shoot" onclick="takePhoto()">📷 撮影＆保存</button>
+    <div id="cameraView">
+        <video id="video" autoplay playsinline></video>
+        <img id="overlayBoard" src="" alt="黒板">
+        <div id="flash"></div>
+        
+        <div class="camera-controls">
+            <button class="back-btn-cam" onclick="stopCamera()">戻る</button>
+            <button class="shutter-btn" onclick="takePhoto()"></button>
+            <div style="width:60px;"></div>
+        </div>
     </div>
 </div>
 
-<div id="reportModal" class="modal-box" style="background:#fffcf5; max-height:90vh; overflow-y:auto;">
-    <h3>🎙️ しゃべる日報</h3>
-    <p style="font-size:0.8rem; color:#666;">誤字脱字は気にしない！<br>「何をしたか」が伝わればOKです。</p>
-    <div class="rough-paper">
-        <textarea id="reportText" class="rough-textarea" placeholder="（例）あー、えっと、北面の養生終わって、明日はシーラー塗ります。材料ちょっと足りないかも..."></textarea>
+<div id="reportModal" class="modal-box" style="background:#fffcf0;">
+    <h3>🎙️ かんたん日報</h3>
+    <div class="rough-paper" style="position:relative;">
+        <textarea id="reportText" class="rough-textarea" placeholder="（例）あー、えっと、北面の養生終わって..."></textarea>
         <button class="mic-btn" id="micBtn" onclick="toggleSpeech()">🎤</button>
     </div>
-    <div style="display:flex; gap:10px; margin-top:15px;">
-        <button class="save-btn" onclick="saveReportLocal()" style="flex:1; background:#f39c12;">💾 履歴に残す</button>
-        <button class="save-btn" onclick="sendReportLine()" style="flex:1; background:#00C300;">LINE送る</button>
-    </div>
-    <div class="history-box">
-        <div class="history-title">📜 過去の履歴（この現場のみ）</div>
-        <ul id="reportHistoryList" class="history-list"></ul>
-    </div>
-    <div class="settings-footer" style="margin-top:10px; padding-top:10px;">
+    <div class="settings-footer" style="border-top:none;">
+        <button class="save-btn" onclick="sendReport()">LINEに送る</button>
         <button class="btn-close" onclick="closeAllModals()">閉じる</button>
     </div>
 </div>
 
 <div id="inputForm" class="modal-box">
     <h3 style="margin-top:0; text-align:center;">情報の編集・削除</h3>
-    <label>現場名</label>
-    <input type="text" id="editSiteName">
-    <label>住所</label>
-    <input type="text" id="editAddress">
+    <label>現場名</label><input type="text" id="siteName">
+    <label>住所</label><input type="text" id="address">
     <label>状況</label>
-    <select id="editStatus">
+    <select id="status">
         <option value="plan">📝 現調予定</option>
         <option value="active">🏗️ 施工中</option>
         <option value="done">✅ 完工</option>
@@ -249,18 +162,15 @@
     const siteId = params.get('id');
     let currentSite = null;
     let sites = JSON.parse(localStorage.getItem('dx_sites')) || [];
-    let allReports = JSON.parse(localStorage.getItem('dx_reports')) || [];
-    let stream = null;
+    let currentProcess = '施工前';
 
+    // --- 初期化 ---
     if (siteId) {
         currentSite = sites.find(s => s.id === siteId);
         if (currentSite) {
             document.getElementById('displaySiteName').textContent = currentSite.name;
             document.getElementById('displaySiteId').textContent = `No. ${currentSite.id}`;
-            document.getElementById('boardName').textContent = currentSite.name;
-            const d = new Date();
-            document.getElementById('boardDate').textContent = `${d.getFullYear()}/${d.getMonth()+1}/${d.getDate()}`;
-            
+            // カレンダー
             let stLabel = '現調予定';
             if(currentSite.status === 'active') stLabel = '施工中';
             const text = encodeURIComponent(`【${stLabel}】${currentSite.name}`);
@@ -269,249 +179,202 @@
         }
     }
 
-    // --- モーダル制御（スクロール修正） ---
+    // --- モーダル制御 ---
+    function openModal(type) {
+        document.getElementById('overlay').classList.add('show');
+        if(type === 'report') document.getElementById('reportModal').classList.add('show');
+    }
     function openCameraModal() {
         document.getElementById('overlay').classList.add('show');
-        const modal = document.getElementById('cameraModal');
-        modal.classList.add('show');
-        // ★修正：スクロール位置を確実に合わせる
-        setTimeout(() => modal.scrollIntoView({behavior: "smooth", block: "center"}), 100);
-        startCamera();
+        document.getElementById('cameraModal').classList.add('show');
+        drawBoard(); // 黒板を描画
     }
-    function openReportModal() {
+    function openForm() {
         document.getElementById('overlay').classList.add('show');
-        const modal = document.getElementById('reportModal');
-        modal.classList.add('show');
-        setTimeout(() => modal.scrollIntoView({behavior: "smooth", block: "center"}), 100);
-        renderReportHistory();
+        document.getElementById('inputForm').classList.add('show');
+        document.getElementById('siteName').value = currentSite.name;
+        document.getElementById('address').value = currentSite.address;
+        document.getElementById('status').value = currentSite.status;
     }
-    function openEditForm() {
-        document.getElementById('overlay').classList.add('show');
-        const modal = document.getElementById('inputForm');
-        modal.classList.add('show');
-        // ★修正：編集フォームもスクロール
-        setTimeout(() => modal.scrollIntoView({behavior: "smooth", block: "center"}), 100);
-        
-        document.getElementById('editSiteName').value = currentSite.name;
-        document.getElementById('editAddress').value = currentSite.address;
-        document.getElementById('editStatus').value = currentSite.status;
-    }
-    
     function closeAllModals() {
         document.querySelectorAll('.modal-box').forEach(el => el.classList.remove('show'));
         document.getElementById('overlay').classList.remove('show');
+        stopCamera(); // カメラも停止
         stopSpeech();
-        stopCamera();
     }
 
-    // --- 📸 カメラ機能 ---
-    async function startCamera() {
-        const video = document.getElementById('cameraVideo');
-        try {
-            stream = await navigator.mediaDevices.getUserMedia({ 
-                video: { facingMode: "environment", aspectRatio: 0.75 } 
-            });
-            video.srcObject = stream;
-        } catch (err) {
-            alert('カメラを起動できませんでした。');
-        }
-    }
-    
-    function stopCamera() {
-        if (stream) {
-            stream.getTracks().forEach(track => track.stop());
-            stream = null;
-        }
-    }
-
-    function takePhoto() {
-        const video = document.getElementById('cameraVideo');
-        const canvas = document.getElementById('cameraCanvas');
-        const ctx = canvas.getContext('2d');
-        
-        const vW = video.videoWidth;
-        const vH = video.videoHeight;
-        
-        canvas.width = vW;
-        canvas.height = vH;
-        
-        ctx.drawImage(video, 0, 0, vW, vH);
-        
-        // ★黒板描画（自動改行ロジック）
-        const boardW = vW * 0.4; 
-        const boardH = boardW / 1.4;
-        const x = vW - boardW - (vW * 0.05);
-        const y = vH - boardH - (vH * 0.05);
-        
-        ctx.fillStyle = '#004d40';
-        ctx.fillRect(x, y, boardW, boardH);
-        ctx.strokeStyle = 'white';
-        ctx.lineWidth = boardW * 0.02;
-        ctx.strokeRect(x, y, boardW, boardH);
-        
-        ctx.fillStyle = 'white';
-        ctx.textAlign = 'left';
-        const fontSize = boardW * 0.09;
-        ctx.font = `bold ${fontSize}px serif`;
-        
-        const paddingX = boardW * 0.05;
-        const lineHeight = boardH * 0.28;
-        let textY = y + lineHeight;
-
-        const dateStr = document.getElementById('boardDate').textContent;
-        ctx.fillText(dateStr, x + paddingX, textY);
-        ctx.beginPath(); ctx.moveTo(x, textY + 5); ctx.lineTo(x + boardW, textY + 5); ctx.lineWidth=2; ctx.stroke();
-        
-        textY += lineHeight;
-        const nameStr = document.getElementById('boardName').textContent;
-        ctx.fillText(nameStr, x + paddingX, textY);
-        ctx.beginPath(); ctx.moveTo(x, textY + 5); ctx.lineTo(x + boardW, textY + 5); ctx.stroke();
-        
-        textY += lineHeight * 1.1;
-        ctx.font = `bold ${fontSize * 1.3}px serif`; 
-        
-        // ★ここが改行ロジック
-        const detail = document.getElementById('boardDetail').textContent;
-        const process = document.getElementById('boardProcess').textContent;
-        const fullText = detail + " " + process;
-        
-        // 文字幅を計算して、はみ出すなら2行にする
-        const maxTextWidth = boardW - (paddingX * 2);
-        const metrics = ctx.measureText(fullText);
-        
-        if (metrics.width > maxTextWidth) {
-            // はみ出す場合：無理やり改行（簡易版）
-            // 半分くらいで切る
-            const splitIndex = Math.floor(fullText.length / 2);
-            const line1 = fullText.substring(0, splitIndex + 2); // 少し多めに
-            const line2 = fullText.substring(splitIndex + 2);
-            ctx.fillText(line1, x + paddingX, textY - (fontSize * 0.5));
-            ctx.fillText(line2, x + paddingX, textY + (fontSize * 0.8));
-        } else {
-            // 収まる場合
-            ctx.fillText(fullText, x + paddingX, textY);
-        }
-        
-        const link = document.createElement('a');
-        link.download = `現場写真_${getNowStr()}.jpg`;
-        link.href = canvas.toDataURL('image/jpeg');
-        link.click();
-        closeAllModals();
-    }
-
-    function getNowStr() {
-        const d = new Date();
-        return `${d.getFullYear()}${(d.getMonth()+1).toString().padStart(2,'0')}${d.getDate().toString().padStart(2,'0')}_${d.getHours().toString().padStart(2,'0')}${d.getMinutes().toString().padStart(2,'0')}`;
-    }
-
-    function toggleInputMode() {
-        const isManual = document.getElementById('manualModeSwitch').checked;
-        const selArea = document.getElementById('processSelectArea');
-        const manArea = document.getElementById('processManualArea');
-        if(isManual) {
-            selArea.style.display = 'none';
-            manArea.style.display = 'block';
-            updateManualBoard();
-        } else {
-            selArea.style.display = 'block';
-            manArea.style.display = 'none';
-            const activeBtn = document.querySelector('.proc-btn.active');
-            if(activeBtn) document.getElementById('boardProcess').textContent = activeBtn.textContent;
-        }
-    }
-
-    function updateManualBoard() {
-        const val = document.getElementById('manualProcessInput').value;
-        document.getElementById('boardProcess').textContent = val || "";
-    }
+    // --- 📸 電子黒板ロジック（移植版） ---
+    const canvas = document.getElementById('boardCanvas');
+    const ctx = canvas.getContext('2d');
+    const video = document.getElementById('video');
+    let stream = null;
 
     function setProcess(btn, text) {
         document.querySelectorAll('.proc-btn').forEach(b => b.classList.remove('active'));
         btn.classList.add('active');
-        document.getElementById('boardProcess').textContent = text;
-    }
-    function updateBoard() {
-        const detail = document.getElementById('photoDetail').value;
-        document.getElementById('boardDetail').textContent = detail ? detail + " " : "";
+        currentProcess = text;
+        drawBoard();
     }
 
+    function drawBoard() {
+        const siteName = currentSite ? currentSite.name : "現場名";
+        const location = document.getElementById('photoDetail').value || "";
+        const d = new Date();
+        const dateStr = `${d.getFullYear()}/${d.getMonth()+1}/${d.getDate()}`;
+
+        // 黒板描画
+        ctx.fillStyle = '#004d40';
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+        ctx.strokeStyle = 'white';
+        ctx.lineWidth = 5;
+        ctx.strokeRect(5, 5, canvas.width - 10, canvas.height - 10);
+
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        ctx.moveTo(10, 80); ctx.lineTo(390, 80);
+        ctx.moveTo(10, 150); ctx.lineTo(390, 150);
+        ctx.stroke();
+
+        ctx.fillStyle = 'white';
+        ctx.textAlign = 'left';
+        ctx.textBaseline = 'middle';
+
+        ctx.font = 'bold 20px sans-serif'; ctx.fillText("工事名", 20, 30);
+        ctx.font = 'bold 24px sans-serif'; ctx.fillText(siteName, 20, 55);
+
+        ctx.font = 'bold 20px sans-serif'; ctx.fillText("工種 / 施工内容", 20, 100);
+        ctx.font = 'bold 32px sans-serif'; ctx.fillText(currentProcess, 40, 125);
+
+        ctx.font = 'bold 20px sans-serif'; ctx.fillText("施工箇所", 20, 175);
+        ctx.font = 'bold 28px sans-serif'; ctx.fillText(location, 40, 205);
+
+        ctx.textAlign = 'right';
+        ctx.font = 'bold 24px sans-serif'; ctx.fillText(dateStr, 380, 270);
+        
+        ctx.textAlign = 'left'; ctx.font = '16px sans-serif'; ctx.fillStyle = '#ccc';
+        ctx.fillText("ペイントハウス山岡", 20, 270);
+    }
+
+    async function startCamera() {
+        const dataUrl = canvas.toDataURL('image/png');
+        document.getElementById('overlayBoard').src = dataUrl;
+        
+        document.getElementById('cameraSetup').style.display = 'none';
+        document.getElementById('cameraView').style.display = 'flex'; // 全画面表示
+
+        try {
+            stream = await navigator.mediaDevices.getUserMedia({ 
+                video: { facingMode: { ideal: "environment" } }, audio: false 
+            });
+            video.srcObject = stream;
+        } catch (err) {
+            alert("カメラの起動に失敗しました。\n権限を確認してください。");
+            stopCamera();
+        }
+    }
+
+    function stopCamera() {
+        if (stream) { stream.getTracks().forEach(track => track.stop()); stream = null; }
+        document.getElementById('cameraSetup').style.display = 'flex';
+        document.getElementById('cameraView').style.display = 'none';
+    }
+
+    function takePhoto() {
+        const flash = document.getElementById('flash');
+        flash.style.opacity = 1; setTimeout(() => flash.style.opacity = 0, 100);
+
+        const captureCanvas = document.createElement('canvas');
+        captureCanvas.width = video.videoWidth;
+        captureCanvas.height = video.videoHeight;
+        const ctxCap = captureCanvas.getContext('2d');
+
+        // 映像を描画
+        ctxCap.drawImage(video, 0, 0, captureCanvas.width, captureCanvas.height);
+
+        // 黒板を合成（位置計算）
+        const rect = video.getBoundingClientRect();
+        const scaleX = captureCanvas.width / rect.width;
+        const scaleY = captureCanvas.height / rect.height;
+        const board = document.getElementById('overlayBoard');
+        const boardRect = board.getBoundingClientRect();
+        const boardX = (boardRect.left - rect.left) * scaleX;
+        const boardY = (boardRect.top - rect.top) * scaleY;
+        const boardW = boardRect.width * scaleX;
+        const boardH = boardRect.height * scaleY;
+
+        ctxCap.drawImage(board, boardX, boardY, boardW, boardH);
+
+        // 保存
+        const link = document.createElement('a');
+        const timeStr = new Date().toISOString().replace(/[:.]/g, '-');
+        link.href = captureCanvas.toDataURL('image/jpeg');
+        link.download = `${currentSite.name}_${currentProcess}_${timeStr}.jpg`;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+    }
+
+    // --- 黒板ドラッグ処理 ---
+    const overlayBoard = document.getElementById('overlayBoard');
+    let isDragging = false, startX, startY, initialLeft, initialTop;
+    overlayBoard.addEventListener('touchstart', (e) => {
+        isDragging = true;
+        startX = e.touches[0].clientX; startY = e.touches[0].clientY;
+        initialLeft = overlayBoard.offsetLeft; initialTop = overlayBoard.offsetTop;
+        e.preventDefault();
+    });
+    overlayBoard.addEventListener('touchmove', (e) => {
+        if (!isDragging) return;
+        const dx = e.touches[0].clientX - startX;
+        const dy = e.touches[0].clientY - startY;
+        overlayBoard.style.left = `${initialLeft + dx}px`;
+        overlayBoard.style.top = `${initialTop + dy}px`;
+        e.preventDefault();
+    });
+    overlayBoard.addEventListener('touchend', () => isDragging = false);
+
+    // --- その他（保存・日報など） ---
     function saveEdit() {
-        const name = document.getElementById('editSiteName').value;
-        const address = document.getElementById('editAddress').value;
-        const status = document.getElementById('editStatus').value;
+        const name = document.getElementById('siteName').value;
+        const address = document.getElementById('address').value;
+        const status = document.getElementById('status').value;
         if(!name) return;
         const index = sites.findIndex(s => s.id === siteId);
         if(index !== -1) {
-            sites[index].name = name;
-            sites[index].address = address;
-            sites[index].status = status;
+            sites[index].name = name; sites[index].address = address; sites[index].status = status;
             sites[index].updatedAt = Date.now();
             localStorage.setItem('dx_sites', JSON.stringify(sites));
-            alert('更新しました');
             location.reload();
         }
     }
     function deleteSite() {
-        if(confirm('【危険】\nこの現場データを完全に削除しますか？')) {
+        if(confirm('削除しますか？')) {
             const newSites = sites.filter(s => s.id !== siteId);
             localStorage.setItem('dx_sites', JSON.stringify(newSites));
-            alert('削除しました');
             window.location.href = 'navi.html';
         }
     }
-
-    function saveReportLocal() {
-        const text = document.getElementById('reportText').value;
-        if(!text) return;
-        const newReport = { siteId: siteId, date: new Date().toLocaleString(), text: text };
-        allReports.unshift(newReport);
-        localStorage.setItem('dx_reports', JSON.stringify(allReports));
-        alert('履歴に保存しました');
-        document.getElementById('reportText').value = '';
-        renderReportHistory();
+    function searchSupply() {
+        if (navigator.geolocation) {
+            navigator.geolocation.getCurrentPosition(pos => {
+                const url = `https://www.google.com/maps/search/ホームセンター+建材/@${pos.coords.latitude},${pos.coords.longitude},13z`;
+                window.open(url, '_blank');
+            }, () => { alert("位置情報が取得できません"); });
+        } else { alert('位置情報が使えません'); }
     }
-    function renderReportHistory() {
-        const listEl = document.getElementById('reportHistoryList');
-        listEl.innerHTML = '';
-        const myReports = allReports.filter(r => r.siteId === siteId);
-        if(myReports.length === 0) { listEl.innerHTML = '<li class="history-item">履歴はありません</li>'; return; }
-        myReports.forEach(r => {
-            const html = `<li class="history-item"><span class="history-date">${r.date}</span>${r.text}</li>`;
-            listEl.insertAdjacentHTML('beforeend', html);
-        });
-    }
-    function sendReportLine() {
-        const text = document.getElementById('reportText').value;
-        if(!text) return;
-        saveReportLocal();
-        const lineUrl = `https://line.me/R/msg/text/?【日報：${currentSite.name}】%0A${encodeURIComponent(text)}`;
-        window.open(lineUrl, '_blank');
-    }
-
+    // (音声入力は省略なしで前と同じものを入れてください)
     let recognition; let isRecognizing = false;
     if ('webkitSpeechRecognition' in window) {
-        recognition = new webkitSpeechRecognition();
-        recognition.continuous = true; recognition.interimResults = true; recognition.lang = 'ja-JP';
+        recognition = new webkitSpeechRecognition(); recognition.continuous = true; recognition.interimResults = true; recognition.lang = 'ja-JP';
         recognition.onresult = function(event) {
-            let finalTranscript = '';
-            for (let i = event.resultIndex; i < event.results.length; ++i) {
-                if (event.results[i].isFinal) finalTranscript += event.results[i][0].transcript;
-            }
+            let finalTranscript = ''; for (let i = event.resultIndex; i < event.results.length; ++i) { if (event.results[i].isFinal) finalTranscript += event.results[i][0].transcript; }
             if (finalTranscript) document.getElementById('reportText').value += (document.getElementById('reportText').value ? '\n' : '') + finalTranscript;
         };
         recognition.onend = function() { isRecognizing = false; document.getElementById('micBtn').classList.remove('mic-active'); };
     }
     function toggleSpeech() { if (!recognition) { alert('非対応です'); return; } if (isRecognizing) stopSpeech(); else { recognition.start(); isRecognizing = true; document.getElementById('micBtn').classList.add('mic-active'); } }
     function stopSpeech() { if(recognition) recognition.stop(); isRecognizing = false; document.getElementById('micBtn').classList.remove('mic-active'); }
-
-    function searchSupply() {
-        if (navigator.geolocation) {
-            navigator.geolocation.getCurrentPosition(pos => {
-                const url = `https://www.google.com/maps/search/ホームセンター+塗料+建材/@${pos.coords.latitude},${pos.coords.longitude},13z&q=ホームセンター`;
-                window.open(url, '_blank');
-            }, () => { window.open('https://www.google.com/maps/search/ホームセンター+塗料', '_blank'); });
-        } else { alert('位置情報が使えません'); }
-    }
+    function sendReport() { const text = document.getElementById('reportText').value; if(!text) return; const lineUrl = `https://line.me/R/msg/text/?【日報：${currentSite.name}】%0A${encodeURIComponent(text)}`; window.open(lineUrl, '_blank'); }
 </script>
 </body>
 </html>

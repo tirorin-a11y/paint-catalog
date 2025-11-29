@@ -3,17 +3,19 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>現場カーナビ手帳 DX</title>
+    <title>アクションギア - 職人ギア</title>
     <style>
         body { font-family: -apple-system, BlinkMacSystemFont, "Helvetica Neue", "Yu Gothic", sans-serif; background-color: #f0f2f5; margin: 0; padding: 0; color: #333; -webkit-font-smoothing: antialiased; }
         header { background-color: #2c3e50; color: white; padding: 10px 15px; position: sticky; top: 0; z-index: 100; box-shadow: 0 2px 5px rgba(0,0,0,0.2); display: flex; justify-content: space-between; align-items: center; }
-        h1 { margin: 0; font-size: 1.1rem; letter-spacing: 0.05em; }
+        h1 { margin: 0; font-size: 1.1rem; letter-spacing: 0.05em; font-weight: bold; }
         .header-btn-group { display: flex; align-items: center; gap: 15px; }
         .icon-btn { font-size: 1.4rem; cursor: pointer; text-decoration: none; color: white; display: flex; align-items: center; }
         body.sort-mode header { background-color: #e67e22; }
+        
         .search-area { background: #34495e; padding: 10px 15px; position: sticky; top: 50px; z-index: 99; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
         .search-input { width: 100%; padding: 10px; border-radius: 6px; border: none; font-size: 1rem; box-sizing: border-box; outline: none; }
-        .container { max-width: 600px; margin: 0 auto; padding: 15px; padding-bottom: 100px; }
+        .container { max-width: 600px; margin: 0 auto; padding: 15px; padding-top: 320px; padding-bottom: 100px; }
+        
         .site-card { background: white; border-radius: 12px; padding: 16px; margin-bottom: 16px; box-shadow: 0 2px 6px rgba(0,0,0,0.06); position: relative; transition: transform 0.2s; }
         .card-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
         .case-no { font-size: 0.8rem; color: #666; background: #eee; padding: 3px 8px; border-radius: 4px; font-family: monospace; font-weight: bold; }
@@ -24,19 +26,51 @@
         .st-handover { background-color: #34495e; color: #fff; border: 1px solid #2c3e50; }
         .site-name { font-size: 1.25rem; font-weight: bold; margin-bottom: 6px; line-height: 1.4; }
         .site-address { font-size: 0.9rem; color: #555; margin-bottom: 16px; display: flex; align-items: center; gap: 4px; }
-        .card-actions { margin-top: 15px; display: flex; gap: 8px; height: 60px; }
-        .action-btn { border-radius: 6px; font-weight: bold; text-decoration: none; display: flex; flex-direction: column; align-items: center; justify-content: center; border: none; cursor: pointer; box-shadow: 0 2px 4px rgba(0,0,0,0.1); transition: opacity 0.1s; line-height: 1; }
+        
+        .card-actions { margin-top: 15px; display: flex; gap: 8px; align-items: flex-end; }
+        
+        /* ボタン基本スタイル */
+        .action-btn { 
+            border-radius: 6px; font-weight: bold; text-decoration: none; 
+            display: flex; flex-direction: column; align-items: center; justify-content: center; 
+            border: none; cursor: pointer; box-shadow: 0 2px 4px rgba(0,0,0,0.1); 
+            transition: opacity 0.1s; line-height: 1; height: 60px; width: 100%;
+            position: relative; overflow: hidden; /* ★ゲージ用 */
+            -webkit-user-select: none; user-select: none; /* ★長押しメニュー禁止 */
+            -webkit-touch-callout: none;
+        }
         .action-btn:active { transform: translateY(2px); box-shadow: none; }
+        
         .btn-navi-side { flex: 1.5; background-color: #00C853; color: white; font-size: 0.9rem; }
         .btn-center { flex: 1; background-color: #fdf2e9; border: 1px solid #f5c6cb; color: #d35400; font-size: 0.8rem; }
+        
+        .navi-wrapper { flex: 1.5; display: flex; flex-direction: column; align-items: center; gap: 2px; }
+        .navi-count-label { font-size: 0.7rem; color: #888; font-family: monospace; font-weight: bold; }
+
+        /* ★長押しゲージ（ゲーム風） */
+        .hold-bar {
+            position: absolute; bottom: 0; left: 0; height: 6px; 
+            background-color: #e74c3c; /* 修正用なので赤色にしてみる？ */
+            opacity: 0.8;
+            width: 100%; /* 最初は満タン */
+            transition: width 0s; /* リセット時は即座に戻る */
+        }
+        /* アニメーション用クラス */
+        .holding .hold-bar {
+            width: 0%; /* 0に向かって減っていく */
+            transition: width 2.0s linear; /* ★2秒かけて減る */
+        }
+
         .sort-actions { display: none; width: 100%; gap: 8px; height: 60px; }
         body.sort-mode .card-actions { display: none; }
         body.sort-mode .sort-actions { display: flex; }
         .btn-up, .btn-down { flex: 1; background-color: #f39c12; color: white; font-size: 1.5rem; border-radius: 6px; border: none; cursor: pointer; }
+        
         .overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 150; display: none; opacity: 0; }
         .overlay.show { display: block; opacity: 1; }
-        .modal-box { position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 90%; max-width: 500px; background: white; padding: 24px; border-radius: 16px; z-index: 160; box-shadow: 0 10px 25px rgba(0,0,0,0.2); display: none; }
+        .modal-box { position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 90%; max-width: 500px; background: white; padding: 24px; border-radius: 16px; z-index: 160; box-shadow: 0 10px 25px rgba(0,0,0,0.2); display: none; max-height: 90vh; overflow-y: auto; }
         .modal-box.show { display: block; }
+        
         label { display: block; margin-top: 12px; font-size: 0.85rem; font-weight: bold; color: #444; }
         input, select { width: 100%; padding: 12px; margin-top: 6px; border: 1px solid #ddd; border-radius: 8px; box-sizing: border-box; font-size: 1rem; appearance: none; }
         .id-input-group { display: flex; align-items: center; gap: 10px; margin-top: 5px; }
@@ -44,15 +78,19 @@
         .input-num { width: 60%; text-align: center; font-family: monospace; letter-spacing: 2px; font-weight: bold; transition: 0.3s; }
         .input-num.locked { background: #f9f9f9; color: #999; border: 1px solid #eee; cursor: not-allowed; }
         .input-num.unlocked { background: #fff; color: #d35400; border: 2px solid #e67e22; }
-        .edit-footer { display: flex; gap: 10px; margin-top: 20px; }
+        
+        .edit-footer { display: flex; gap: 10px; margin-top: 20px; flex-wrap: wrap;}
         .btn-del-single { width: 50px; background-color: #fff5f5; border: 1px solid #e74c3c; color: #e74c3c; border-radius: 8px; font-size: 1.2rem; cursor: pointer; display: flex; align-items: center; justify-content: center; }
+        .btn-copy { width: 50px; background-color: #e8f6f3; border: 1px solid #1abc9c; color: #16a085; border-radius: 8px; font-size: 1.2rem; cursor: pointer; display: flex; align-items: center; justify-content: center; }
         .save-btn { flex: 2; background-color: #2980b9; color: white; padding: 14px; border: none; border-radius: 8px; font-weight: bold; font-size: 1rem; cursor: pointer; }
         .cancel-btn { flex: 1; background-color: #e0e0e0; color: #333; padding: 14px; border: none; border-radius: 8px; font-weight: bold; cursor: pointer; }
+        
         .settings-menu h3 { margin-top: 0; text-align: center; border-bottom: 1px solid #eee; padding-bottom: 10px; margin-bottom: 15px; }
         .settings-item { width: 100%; padding: 15px; margin-bottom: 10px; border: 1px solid #eee; background: #fcfcfc; border-radius: 8px; font-weight: bold; cursor: pointer; text-align: left; display: flex; align-items: center; gap: 10px; text-decoration: none; color: #333; box-sizing: border-box; }
         .settings-footer { display: flex; gap: 10px; margin-top: 20px; border-top: 1px solid #eee; padding-top: 15px; }
         .btn-close { flex: 2; background-color: #95a5a6; color: white; padding: 12px; border: none; border-radius: 8px; font-weight: bold; cursor: pointer; }
         .btn-delete-all { flex: 1; background-color: white; color: #e74c3c; border: 1px solid #e74c3c; padding: 12px; border-radius: 8px; font-weight: bold; cursor: pointer; font-size: 0.9rem; }
+        
         .fab-container { position: fixed; bottom: 24px; right: 20px; display: flex; flex-direction: column; gap: 12px; align-items: flex-end; z-index: 90; }
         .fab-btn { width: 56px; height: 56px; border-radius: 28px; border: none; color: white; font-size: 24px; box-shadow: 0 4px 10px rgba(0,0,0,0.3); cursor: pointer; display: flex; justify-content: center; align-items: center; transition: transform 0.1s; }
         .add-fab { background-color: #2980b9; font-size: 30px; }
@@ -67,7 +105,7 @@
 <body>
 
 <header>
-    <h1>🚗 現場カーナビ手帳</h1>
+    <h1>🚗 アクションギア</h1>
     <div class="header-btn-group">
         <span class="icon-btn" onclick="toggleSortMode()" title="並び替え">⇅</span>
         <span class="icon-btn" onclick="openSettings()" title="設定">⚙️</span>
@@ -91,10 +129,13 @@
         <span style="color:#888; font-weight:bold;">-</span>
         <input type="number" id="inputNum" class="input-num locked" readonly onclick="unlockCaseNo()">
     </div>
+    
     <label>現場名</label>
     <input type="text" id="siteName" placeholder="例：鈴木様邸">
+    
     <label>住所（ナビ用）</label>
     <input type="text" id="address" placeholder="例：東京都千代田区...">
+    
     <label>現在の状況</label>
     <select id="status">
         <option value="plan">📝 現調予定</option>
@@ -102,8 +143,13 @@
         <option value="done">✅ 完工</option>
         <option value="handover">🏠 引き渡し</option>
     </select>
+
+    <label>ナビ回数（誤タップ修正用）</label>
+    <input type="number" id="editNaviCount" value="0">
+
     <div class="edit-footer">
-        <button class="btn-del-single" id="btnDeleteSingle" onclick="deleteCurrentSite()">🗑️</button>
+        <button class="btn-del-single" id="btnDeleteSingle" onclick="deleteCurrentSite()" title="削除">🗑️</button>
+        <button class="btn-copy" id="btnDuplicate" onclick="duplicateSite()" title="複製して新規作成">©️</button>
         <button class="cancel-btn" onclick="closeAllModals()">中止</button>
         <button class="save-btn" onclick="saveSite()">保 存</button>
     </div>
@@ -111,11 +157,8 @@
 
 <div id="settingsModal" class="modal-box settings-menu">
     <h3>⚙️ 設定・データ管理</h3>
-    <p style="font-size:0.8rem; color:#666; text-align:center;">
-        ※現場データ、日報、雨ログの全てを含んで<br>バックアップ・復元します。
-    </p>
-    <button class="settings-item" onclick="exportJSON()">📤 <strong>完全バックアップ作成</strong></button>
-    <button class="settings-item" onclick="document.getElementById('jsonInput').click()">📥 <strong>データ復元</strong></button>
+    <button class="settings-item" onclick="exportJSON()">📤 <strong>バックアップを作成</strong></button>
+    <button class="settings-item" onclick="document.getElementById('jsonInput').click()">📥 <strong>データを復元（取込）</strong></button>
     <a href="help.html" class="settings-item">📖 <strong>使い方ガイドを見る</strong></a>
     <div class="settings-footer">
         <button class="btn-delete-all" onclick="deleteAllData()">🗑️ 全削除</button>
@@ -131,18 +174,13 @@
 <div id="notification" class="notification"></div>
 
 <script>
-    // --- データ管理 ---
     let sites = JSON.parse(localStorage.getItem('dx_sites')) || [];
-    // ★日報と雨ログも読み込んでおく
-    let reports = JSON.parse(localStorage.getItem('dx_reports')) || [];
-    let rainLog = JSON.parse(localStorage.getItem('dx_rain_log')) || [];
-
     let isEditing = false;
     let tapCount = 0;
     let editingId = null;
     let isSortMode = false;
+    let pressTimer = null; // 長押し用タイマー
 
-    // 初期データ（初回のみ）
     if (sites.length === 0) {
         sites = [
             { id: '2025-001', name: '【サンプル】鈴木様邸', address: '東京都墨田区押上1-1-2', status: 'active', updatedAt: Date.now(), naviCount: 0 }
@@ -150,50 +188,76 @@
         localStorage.setItem('dx_sites', JSON.stringify(sites));
     }
 
-    // --- ナビ回数カウント ---
-    function countNavi(id) {
-        const index = sites.findIndex(s => s.id === id);
-        if (index !== -1) {
-            sites[index].naviCount = (sites[index].naviCount || 0) + 1;
-            sites[index].updatedAt = Date.now();
-            localStorage.setItem('dx_sites', JSON.stringify(sites));
+    // --- ★タッチ＆長押し制御（-1機能） ---
+    function handleTouchStart(btn, id, address) {
+        if (btn.classList.contains('holding')) return;
+        
+        btn.classList.add('holding'); // ゲージアニメーション開始（2秒）
+
+        // 2秒後に「-1」を実行
+        pressTimer = setTimeout(() => {
+            // 長押し完了！
+            if (navigator.vibrate) navigator.vibrate(100); // バイブレーション
+            btn.classList.remove('holding');
+            
+            // ★カウントを減らす処理
+            updateNaviCount(id, -1); 
+            showNotification('修正しました：カウント -1');
+            
+            pressTimer = null; // タイマークリア
+        }, 2000);
+    }
+
+    function handleTouchEnd(btn, id, address) {
+        // タイマーが残っている＝2秒未満で指を離した＝「ナビ起動(+1)」
+        if (pressTimer) {
+            clearTimeout(pressTimer);
+            pressTimer = null;
+            btn.classList.remove('holding');
+            
+            // 通常のナビ起動処理 (+1)
+            updateNaviCount(id, 1);
+            const mapUrl = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(address)}`;
+            window.open(mapUrl, '_blank');
         }
     }
 
-    // --- 並び替えモード ---
+    // --- ナビ回数更新（+1 も -1 も対応） ---
+    function updateNaviCount(id, delta) {
+        const index = sites.findIndex(s => s.id === id);
+        if (index !== -1) {
+            let newCount = (sites[index].naviCount || 0) + delta;
+            if(newCount < 0) newCount = 0; // マイナスにはしない
+            sites[index].naviCount = newCount;
+            sites[index].updatedAt = Date.now();
+            localStorage.setItem('dx_sites', JSON.stringify(sites));
+            renderList();
+        }
+    }
+
     function toggleSortMode() {
         isSortMode = !isSortMode;
-        if(isSortMode) { 
-            document.body.classList.add('sort-mode'); 
-            showNotification('⇅ 並び替えモード：ON'); 
-        } else { 
-            document.body.classList.remove('sort-mode'); 
-            showNotification('並び替えを終了しました'); 
-        }
+        if(isSortMode) { document.body.classList.add('sort-mode'); showNotification('⇅ 並び替えモード：ON'); } 
+        else { document.body.classList.remove('sort-mode'); showNotification('並び替えを終了しました'); }
         renderList();
     }
 
-    // --- リスト描画 ---
     function renderList() {
-        // ★修正：ID（案件No）の新しい順にソート
-        sites.sort((a, b) => (b.id > a.id ? 1 : -1));
-
         const listEl = document.getElementById('siteList');
         const keyword = document.getElementById('searchInput').value.toLowerCase();
         listEl.innerHTML = '';
 
         sites.forEach((site, index) => {
-            if (keyword && !site.name.toLowerCase().includes(keyword) && !site.address.toLowerCase().includes(keyword) && !site.id.includes(keyword)) {
-                return; 
-            }
+            if (keyword && !site.name.toLowerCase().includes(keyword) && !site.address.toLowerCase().includes(keyword) && !site.id.includes(keyword)) { return; }
 
             let stLabel = '現調予定', stClass = 'st-plan';
             if(site.status === 'active') { stLabel = '施工中'; stClass = 'st-active'; }
             if(site.status === 'done') { stLabel = '完工'; stClass = 'st-done'; }
             if(site.status === 'handover') { stLabel = '引き渡し'; stClass = 'st-handover'; }
             
-            const mapUrl = `https://www.google.com/maps/search/ホームセンター+塗料+建材/@${encodeURIComponent(site.address)}`;
-            
+            const mapUrl = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(site.address)}`;
+            const naviCount = site.naviCount || 0;
+
             const html = `
                 <div class="site-card">
                     <div class="card-header">
@@ -204,7 +268,7 @@
                     <div class="site-address">📍 ${site.address}</div>
                     
                     <div class="card-actions">
-                        <a href="${mapUrl}" target="_blank" class="action-btn btn-navi-side" onclick="countNavi('${site.id}')">
+                        <a href="${mapUrl}" target="_blank" class="action-btn btn-navi-side" onclick="updateNaviCount('${site.id}', 1)">
                             🚀<br><span style="font-size:0.7rem">ナビ</span>
                         </a>
                         
@@ -212,9 +276,17 @@
                             🧰<br><span style="font-size:0.7rem">ツール</span>
                         </a>
                         
-                        <a href="${mapUrl}" target="_blank" class="action-btn btn-navi-side" onclick="countNavi('${site.id}')">
-                            🚀<br><span style="font-size:0.7rem">ナビ</span>
-                        </a>
+                        <div class="navi-wrapper">
+                            <span class="navi-count-label">${naviCount}回</span>
+                            <div class="action-btn btn-navi-side" 
+                                 onmousedown="handleTouchStart(this, '${site.id}', '${site.address}')" 
+                                 onmouseup="handleTouchEnd(this, '${site.id}', '${site.address}')"
+                                 ontouchstart="handleTouchStart(this, '${site.id}', '${site.address}')" 
+                                 ontouchend="handleTouchEnd(this, '${site.id}', '${site.address}')"
+                                 oncontextmenu="return false;"> 🚀<br><span style="font-size:0.7rem">ナビ</span>
+                                <div class="hold-bar"></div>
+                            </div>
+                        </div>
                     </div>
 
                     <div class="sort-actions">
@@ -227,18 +299,40 @@
         });
     }
 
-    // --- 並び替え実行 ---
     function moveItem(index, direction) {
-        if (direction === -1 && index > 0) { 
-            [sites[index], sites[index - 1]] = [sites[index - 1], sites[index]]; 
-        } else if (direction === 1 && index < sites.length - 1) { 
-            [sites[index], sites[index + 1]] = [sites[index + 1], sites[index]]; 
-        }
+        if (direction === -1 && index > 0) { [sites[index], sites[index - 1]] = [sites[index - 1], sites[index]]; } 
+        else if (direction === 1 && index < sites.length - 1) { [sites[index], sites[index + 1]] = [sites[index + 1], sites[index]]; }
         localStorage.setItem('dx_sites', JSON.stringify(sites));
         renderList();
     }
 
-    // --- 保存処理 ---
+    function duplicateSite() {
+        const name = document.getElementById('siteName').value;
+        const address = document.getElementById('address').value;
+        if(!name || !address) { showNotification('⚠️ 現場名と住所が必要です'); return; }
+        if(!confirm('この現場情報をコピーして、新規案件を作成しますか？')) return;
+
+        const todayYear = new Date().getFullYear();
+        const newIdNum = getNextNum(todayYear);
+        const newId = `${todayYear}-${newIdNum}`;
+        const now = Date.now();
+        
+        sites.unshift({
+            id: newId,
+            name: name + ' (コピー)', 
+            address: address,
+            status: 'plan', 
+            updatedAt: now,
+            naviCount: 0 
+        });
+
+        localStorage.setItem('dx_sites', JSON.stringify(sites));
+        closeAllModals();
+        renderList();
+        showNotification('🎉 複製しました');
+        setTimeout(() => openForm('edit', newId), 500);
+    }
+
     function saveSite() {
         const y = document.getElementById('inputYear').value;
         const n = document.getElementById('inputNum').value.toString().padStart(3, '0');
@@ -246,79 +340,59 @@
         const name = document.getElementById('siteName').value;
         const address = document.getElementById('address').value;
         const status = document.getElementById('status').value;
+        const naviCountVal = parseInt(document.getElementById('editNaviCount').value) || 0;
 
-        if(!name || !address) { 
-            showNotification('⚠️ 現場名と住所は必須です'); 
-            return; 
-        }
-
+        if(!name || !address) { showNotification('⚠️ 現場名と住所は必須です'); return; }
         const now = Date.now();
 
         if (isEditing) {
-            if (id !== editingId) { 
-                sites = sites.filter(s => s.id !== editingId); 
-            }
+            if (id !== editingId) { sites = sites.filter(s => s.id !== editingId); }
             const index = sites.findIndex(s => s.id === id);
-            
-            if(index !== -1) { 
-                sites[index] = { ...sites[index], name, address, status, updatedAt: now }; 
-            } else { 
-                sites.unshift({ id, name, address, status, updatedAt: now, naviCount: 0 }); 
-            }
+            if(index !== -1) { sites[index] = { ...sites[index], name, address, status, naviCount: naviCountVal, updatedAt: now }; } 
+            else { sites.unshift({ id, name, address, status, naviCount: naviCountVal, updatedAt: now }); }
         } else {
             if(sites.some(s => s.id === id)){ 
                 if(!confirm('⚠️ 重複しています。上書きしますか？')) return; 
                 const idx = sites.findIndex(s => s.id === id); 
-                sites[idx] = { ...sites[idx], name, address, status, updatedAt: now }; 
+                sites[idx] = { ...sites[idx], name, address, status, naviCount: naviCountVal, updatedAt: now }; 
             } else { 
-                sites.unshift({ id, name, address, status, updatedAt: now, naviCount: 0 }); 
+                sites.unshift({ id, name, address, status, naviCount: naviCountVal, updatedAt: now }); 
             }
         }
-        
         localStorage.setItem('dx_sites', JSON.stringify(sites));
-        closeAllModals(); 
-        renderList(); 
-        showNotification('🎉 保存しました');
+        closeAllModals(); renderList(); showNotification('🎉 保存しました');
     }
 
-    // --- 削除処理 ---
     function deleteCurrentSite() {
         if(!editingId) return;
         if(confirm('本当に削除しますか？\n（復元できません）')) {
             sites = sites.filter(s => s.id !== editingId);
             localStorage.setItem('dx_sites', JSON.stringify(sites));
-            closeAllModals();
-            renderList();
-            showNotification('🗑️ 削除しました');
+            closeAllModals(); renderList(); showNotification('🗑️ 削除しました');
         }
     }
 
-    // --- フォーム開閉 ---
     function openForm(mode, id = null) {
         document.getElementById('inputForm').classList.add('show'); 
         document.getElementById('overlay').classList.add('show');
-        
         const numInput = document.getElementById('inputNum');
-        numInput.readOnly = true; 
-        numInput.classList.remove('unlocked'); 
-        numInput.classList.add('locked'); 
-        tapCount = 0;
-
+        numInput.readOnly = true; numInput.classList.remove('unlocked'); numInput.classList.add('locked'); tapCount = 0;
         const todayYear = new Date().getFullYear();
 
         if (mode === 'new') {
-            isEditing = false;
-            editingId = null;
+            isEditing = false; editingId = null;
             document.getElementById('btnDeleteSingle').style.display = 'none';
+            document.getElementById('btnDuplicate').style.display = 'none';
             document.getElementById('inputYear').value = todayYear;
             document.getElementById('inputNum').value = getNextNum(todayYear);
             document.getElementById('siteName').value = '';
             document.getElementById('address').value = '';
             document.getElementById('status').value = 'plan';
+            document.getElementById('editNaviCount').value = 0;
         } else {
-            isEditing = true;
-            editingId = id;
+            isEditing = true; editingId = id;
             document.getElementById('btnDeleteSingle').style.display = 'flex';
+            document.getElementById('btnDuplicate').style.display = 'flex';
             const targetSite = sites.find(s => s.id === id);
             if(targetSite) {
                 const parts = targetSite.id.split('-');
@@ -327,6 +401,7 @@
                 document.getElementById('siteName').value = targetSite.name;
                 document.getElementById('address').value = targetSite.address;
                 document.getElementById('status').value = targetSite.status;
+                document.getElementById('editNaviCount').value = targetSite.naviCount || 0;
             }
         }
     }
@@ -334,171 +409,23 @@
     function getNextNum(year) {
         const thisYearSites = sites.filter(s => s.id.startsWith(year.toString()));
         let maxNum = 0;
-        thisYearSites.forEach(s => {
-            const numPart = parseInt(s.id.split('-')[1]);
-            if(numPart > maxNum) maxNum = numPart;
-        });
+        thisYearSites.forEach(s => { const numPart = parseInt(s.id.split('-')[1]); if(numPart > maxNum) maxNum = numPart; });
         return (maxNum + 1).toString().padStart(3, '0');
     }
 
-    function openSettings() { 
-        document.getElementById('overlay').classList.add('show'); 
-        document.getElementById('settingsModal').classList.add('show'); 
-    }
-
-    function closeAllModals() { 
-        document.querySelectorAll('.modal-box').forEach(el => el.classList.remove('show')); 
-        document.getElementById('overlay').classList.remove('show'); 
-    }
-
-    function unlockCaseNo() {
-        const el = document.getElementById('inputNum');
-        if(!el.readOnly) return;
-        tapCount++;
-        if(tapCount >= 5) {
-            el.readOnly = false;
-            el.classList.remove('locked');
-            el.classList.add('unlocked');
-            showNotification('🔓 ロック解除しました');
-            tapCount = 0;
-        }
-    }
-
-    function getNowStr() {
-        const d = new Date();
-        return `${d.getFullYear()}${(d.getMonth()+1).toString().padStart(2,'0')}${d.getDate().toString().padStart(2,'0')}_${d.getHours().toString().padStart(2,'0')}${d.getMinutes().toString().padStart(2,'0')}`;
-    }
-
-    // --- ★完全バックアップ作成 ---
-    async function exportJSON() {
-        showNotification('📤 準備中...');
-        
-        // 全データをまとめたオブジェクトを作成
-        const fullData = {
-            sites: sites,
-            rainLog: rainLog || [],
-            reports: reports || [] // ★日報も含める！
-        };
-
-        const jsonContent = JSON.stringify(fullData, null, 2);
-        const fileName = `【DX手帳】完全バックアップ_${getNowStr()}.json`;
-        const file = new File([jsonContent], fileName, { type: "application/json" });
-        
-        if (navigator.share && navigator.canShare && navigator.canShare({ files: [file] })) {
-            try { await navigator.share({ files: [file] }); } catch (e) { forceDL(file); }
-        } else { forceDL(file); }
-    }
-
-    function forceDL(file) {
-        const url = URL.createObjectURL(file);
-        const link = document.createElement("a");
-        link.setAttribute("href", url);
-        link.setAttribute("download", file.name);
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
-        showNotification('📥 保存しました');
-    }
-
-    // --- ★完全バックアップからの復元 ---
-    function importJSON(input) { 
-        const file = input.files[0]; if (!file) return; 
-        const reader = new FileReader(); 
-        reader.onload = function(e) { 
-            try { 
-                const importedData = JSON.parse(e.target.result);
-                
-                let importedSites = [];
-                
-                // 旧形式（配列）と新形式（オブジェクト）の両方に対応
-                if (Array.isArray(importedData)) {
-                    // 旧形式（配列のみ）
-                    importedSites = importedData;
-                } else if (importedData.sites) {
-                    // 新形式（オブジェクト）
-                    importedSites = importedData.sites;
-                    
-                    // ★日報と雨ログも復元
-                    if(importedData.reports) {
-                        localStorage.setItem('dx_reports', JSON.stringify(importedData.reports));
-                        reports = importedData.reports;
-                    }
-                    if(importedData.rainLog) {
-                        localStorage.setItem('dx_rain_log', JSON.stringify(importedData.rainLog));
-                        rainLog = importedData.rainLog;
-                    }
-                } else {
-                    alert('エラー：不明なデータ形式です'); return;
-                }
-
-                let countUpdated=0; let countAdded=0; 
-                
-                importedSites.forEach(newSite => { 
-                    const index = sites.findIndex(s => s.id === newSite.id); 
-                    if (index !== -1) { 
-                        const existingTime = sites[index].updatedAt || 0; 
-                        const newTime = newSite.updatedAt || 0; 
-                        if(newTime > existingTime) { sites[index] = newSite; countUpdated++; } 
-                    } else { sites.push(newSite); countAdded++; } 
-                }); 
-                
-                localStorage.setItem('dx_sites', JSON.stringify(sites));
-                renderList(); 
-                closeAllModals(); 
-                showNotification(`復元: ${countUpdated}件更新, ${countAdded}件追加`); 
-            } catch (err) { alert('読み込み失敗'); } 
-            input.value = ''; 
-        }; 
-        reader.readAsText(file); 
-    }
-
-    function deleteAllData() {
-        if(confirm('【危険】\n全ての現場データ、日報、雨ログを削除しますか？')) {
-            sites = []; rainLog = []; reports = [];
-            localStorage.setItem('dx_sites', JSON.stringify([]));
-            localStorage.setItem('dx_rain_log', JSON.stringify([]));
-            localStorage.setItem('dx_reports', JSON.stringify([]));
-            renderList();
-            closeAllModals();
-            showNotification('🗑️ 全データを削除しました');
-        }
-    }
-
-    function getStatusText(status) {
-        switch (status) {
-            case 'active': return '施工中'; case 'done': return '完工'; case 'handover': return '引き渡し'; case 'plan': return '現調予定'; default: return '現調予定';
-        }
-    }
-
-    async function exportCSV() {
-        showNotification('📤 準備中...');
-        let csvContent = "\uFEFF案件No,現場名,住所,ステータス,開始,終了\n"; 
-        sites.forEach(s => {
-            csvContent += `"${s.id}","${s.name}","${s.address}","${getStatusText(s.status)}","${s.start||''}","${s.end||''}"\n`;
-        });
-        const fileName = `現場リスト_${getNowStr()}.csv`;
-        const file = new File([csvContent], fileName, { type: "text/csv" });
-        if (navigator.share && navigator.canShare && navigator.canShare({ files: [file] })) {
-            try { await navigator.share({ files: [file] }); } catch (e) { forceDL(file); }
-        } else { forceDL(file); }
-    }
-
-    function copyToClipboard() {
-        let tsvContent = "";
-        sites.forEach(s => {
-            tsvContent += `${s.id}\t${s.name}\t${s.address}\t${getStatusText(s.status)}\t${s.start||''}\t${s.end||''}\n`;
-        });
-        navigator.clipboard.writeText(tsvContent).then(() => { showNotification('📋 コピーしました'); }).catch(err => { showNotification('⚠️ 失敗しました'); });
-    }
-
-    function showNotification(msg) {
-        const el = document.getElementById('notification');
-        el.textContent = msg;
-        el.classList.add('show');
-        setTimeout(() => el.classList.remove('show'), 2000);
-    }
-
-    // 確実に初期表示
+    function openSettings() { document.getElementById('overlay').classList.add('show'); document.getElementById('settingsModal').classList.add('show'); }
+    function closeAllModals() { document.querySelectorAll('.modal-box').forEach(el => el.classList.remove('show')); document.getElementById('overlay').classList.remove('show'); }
+    function unlockCaseNo() { const el = document.getElementById('inputNum'); if(!el.readOnly) return; tapCount++; if(tapCount >= 5) { el.readOnly = false; el.classList.remove('locked'); el.classList.add('unlocked'); showNotification('🔓 ロック解除しました'); tapCount = 0; } }
+    function getNowStr() { const d = new Date(); return `${d.getFullYear()}${(d.getMonth()+1).toString().padStart(2,'0')}${d.getDate().toString().padStart(2,'0')}_${d.getHours().toString().padStart(2,'0')}${d.getMinutes().toString().padStart(2,'0')}`; }
+    async function exportJSON() { showNotification('📤 準備中...'); const jsonContent = JSON.stringify(sites, null, 2); const fileName = `【職人ギア】backup_${getNowStr()}.json`; const file = new File([jsonContent], fileName, { type: "application/json" }); if (navigator.share && navigator.canShare && navigator.canShare({ files: [file] })) { try { await navigator.share({ files: [file] }); } catch (e) { forceDL(file); } } else { forceDL(file); } }
+    function forceDL(file) { const url = URL.createObjectURL(file); const link = document.createElement("a"); link.setAttribute("href", url); link.setAttribute("download", file.name); document.body.appendChild(link); link.click(); document.body.removeChild(link); showNotification('📥 保存しました'); }
+    function importJSON(input) { const file = input.files[0]; if (!file) return; const reader = new FileReader(); reader.onload = function(e) { try { const importedSites = JSON.parse(e.target.result); if (!Array.isArray(importedSites)) { alert('エラー：形式が違います'); return; } let countAdded = 0; let countUpdated = 0; importedSites.forEach(newSite => { const index = sites.findIndex(s => s.id === newSite.id); if (index !== -1) { const existingTime = sites[index].updatedAt || 0; const newTime = newSite.updatedAt || 0; if (newTime > existingTime) { sites[index] = newSite; countUpdated++; } } else { sites.push(newSite); countAdded++; } }); localStorage.setItem('dx_sites', JSON.stringify(sites)); renderList(); closeAllModals(); showNotification(`復元: ${countUpdated}件更新, ${countAdded}件追加`); } catch (err) { alert('読み込み失敗'); } input.value = ''; }; reader.readAsText(file); }
+    function deleteAllData() { if(confirm('【警告】\n本当に全データを削除しますか？')) { if(confirm('本当に削除してよろしいですか？')) { sites = []; localStorage.setItem('dx_sites', JSON.stringify(sites)); renderList(); closeAllModals(); showNotification('🗑️ 全データを削除しました'); } } }
+    function getStatusText(status) { switch (status) { case 'active': return '施工中'; case 'done': return '完工'; case 'handover': return '引き渡し'; case 'plan': return '現調予定'; default: return '現調予定'; } }
+    async function exportCSV() { showNotification('📤 準備中...'); let csvContent = "\uFEFF案件No,現場名,住所,ステータス,開始,終了\n"; sites.forEach(s => { csvContent += `"${s.id}","${s.name}","${s.address}","${getStatusText(s.status)}","${s.start||''}","${s.end||''}"\n`; }); const fileName = `現場リスト_${getNowStr()}.csv`; const file = new File([csvContent], fileName, { type: "text/csv" }); if (navigator.share && navigator.canShare && navigator.canShare({ files: [file] })) { try { await navigator.share({ files: [file] }); } catch (e) { forceDL(file); } } else { forceDL(file); } }
+    function copyToClipboard() { let tsvContent = ""; sites.forEach(s => { tsvContent += `${s.id}\t${s.name}\t${s.address}\t${getStatusText(s.status)}\t${s.start||''}\t${s.end||''}\n`; }); navigator.clipboard.writeText(tsvContent).then(() => { showNotification('📋 コピーしました'); }).catch(err => { showNotification('⚠️ 失敗しました'); }); }
+    function showNotification(msg) { const el = document.getElementById('notification'); el.textContent = msg; el.classList.add('show'); setTimeout(() => el.classList.remove('show'), 2000); }
+    
     document.addEventListener('DOMContentLoaded', renderList);
 </script>
 </body>
