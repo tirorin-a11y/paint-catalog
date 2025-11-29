@@ -1,10 +1,10 @@
 {
-  "name": "職人仕様 塗料カタログ検索",
-  "short_name": "塗料検索",
-  "start_url": ".",
+  "name": "職人ギア",
+  "short_name": "職人ギア",
+  "start_url": "./index.html",
   "display": "standalone",
   "background_color": "#ffffff",
-  "theme_color": "#007bff",
+  "theme_color": "#2c3e50",
   "icons": [
     {
       "src": "icon-192x192.png",
