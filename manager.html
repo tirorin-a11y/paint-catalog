@@ -4,11 +4,9 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>コントロールギア - 職人ギア</title>
-    <link rel="manifest" href="manifest.json">
-    <link rel="apple-touch-icon" href="icon-192x192.png">
-    <meta name="apple-mobile-web-app-capable" content="yes">
     <style>
-        /* (前回のmanager.htmlのCSSをそのまま維持してください) */
+        /* (CSSは以前と同じなので省略せず、前回のmanager.htmlのCSSをそのまま使います) */
+        /* ... (CSS code here) ... */
         * { box-sizing: border-box; }
         body { font-family: "Helvetica Neue", Arial, sans-serif; background-color: #f4f7f6; color: #333; margin: 0; padding: 0; }
         .sidebar { width: 240px; background: #2c3e50; color: white; position: fixed; height: 100%; padding: 20px; }
@@ -185,7 +183,6 @@
 <div id="toastSave" class="toast-save">✅ 保存しました</div>
 
 <script>
-    // --- JSは変更なし（タイトル以外は機能そのまま） ---
     let sites = JSON.parse(localStorage.getItem('dx_sites')) || [];
     let rainLog = JSON.parse(localStorage.getItem('dx_rain_log')) || [];
     let selectedIndices = new Set();
@@ -247,6 +244,7 @@
         updateBulkBar();
     }
 
+    // 分析
     function renderAnalysis() {
         document.getElementById('rainCount').textContent = rainLog.length;
         const logEl = document.getElementById('rainHistoryLog');
@@ -269,6 +267,7 @@
         }
     }
 
+    // 雨スライド
     function openRainModal() {
         document.getElementById('overlay').classList.add('show');
         document.getElementById('rainModal').classList.add('show');
@@ -331,12 +330,27 @@
     function autoSave() { localStorage.setItem('dx_sites', JSON.stringify(sites)); showToast(); }
     function showToast(msg = '✅ 保存しました') { const el = document.getElementById('toastSave'); el.textContent = msg; el.classList.add('show'); setTimeout(() => el.classList.remove('show'), 1500); }
     function getStatusLabel(st) { if(st==='active') return '施工中'; if(st==='done') return '完工'; if(st==='handover') return '引き渡し'; return '現調予定'; }
+
+    // ★修正：ガントチャートフィルター
     function renderGantt() {
         const header = document.getElementById('ganttHeader'); const body = document.getElementById('ganttBody');
         header.innerHTML = '<div style="width:180px; flex-shrink:0; padding-left:10px; background:white; position:sticky; left:0; z-index:40;">現場名</div>'; body.innerHTML = '';
         const now = new Date(); const startDate = new Date(now.getFullYear(), now.getMonth(), 1); const daysToShow = 60; const dayWidth = 30;
+        
+        // ヘッダー生成
         for(let i=0; i<daysToShow; i++) { const d = new Date(startDate); d.setDate(startDate.getDate() + i); const isToday = (d.toDateString() === new Date().toDateString()); header.innerHTML += `<div class="gantt-day ${isToday?'today':''}">${d.getMonth()+1}/${d.getDate()}</div>`; }
+        
+        // バー生成
+        const endDate = new Date(startDate); endDate.setDate(endDate.getDate() + daysToShow);
+
         sites.forEach(site => {
+            // ★フィルター: 引き渡し済み かつ 表示期間外 なら表示しない
+            if(site.status === 'handover') {
+                const s = new Date(site.start); const e = new Date(site.end);
+                // 終了日が期間開始より前、または開始日が期間終了より後の場合はスキップ
+                if(e < startDate || s > endDate) return;
+            }
+
             let rowHtml = `<div class="gantt-row"><div class="gantt-label">${site.name}</div>`;
             if(site.start && site.end) {
                 const start = new Date(site.start); const end = new Date(site.end);
@@ -352,13 +366,16 @@
             rowHtml += `</div>`; body.insertAdjacentHTML('beforeend', rowHtml);
         });
     }
+
     function openSettings() { document.getElementById('overlay').classList.add('show'); document.getElementById('settingsModal').classList.add('show'); }
     function closeAllModals() { document.getElementById('overlay').classList.remove('show'); document.getElementById('settingsModal').classList.remove('show'); document.getElementById('rainModal').classList.remove('show'); }
     function getNowStr() { const d = new Date(); return `${d.getFullYear()}${(d.getMonth()+1).toString().padStart(2,'0')}${d.getDate().toString().padStart(2,'0')}_${d.getHours().toString().padStart(2,'0')}${d.getMinutes().toString().padStart(2,'0')}`; }
-    async function exportJSON() { showToast('📤 準備中...'); const jsonContent = JSON.stringify(sites, null, 2); const fileName = `【職人ギア】backup_${getNowStr()}.json`; const file = new File([jsonContent], fileName, { type: "application/json" }); if (navigator.share && navigator.canShare && navigator.canShare({ files: [file] })) { try { await navigator.share({ files: [file] }); } catch (e) { forceDL(file); } } else { forceDL(file); } }
+    async function exportJSON() { showToast('📤 準備中...'); const jsonContent = JSON.stringify(sites, null, 2); const fileName = `【カーナビ手帳】backup_${getNowStr()}.json`; const file = new File([jsonContent], fileName, { type: "application/json" }); if (navigator.share && navigator.canShare && navigator.canShare({ files: [file] })) { try { await navigator.share({ files: [file] }); } catch (e) { forceDL(file); } } else { forceDL(file); } }
     function forceDL(file) { const url = URL.createObjectURL(file); const link = document.createElement("a"); link.setAttribute("href", url); link.setAttribute("download", file.name); document.body.appendChild(link); link.click(); document.body.removeChild(link); showToast('📥 保存しました'); }
     function importJSON(input) { const file = input.files[0]; if (!file) return; const reader = new FileReader(); reader.onload = function(e) { try { const importedSites = JSON.parse(e.target.result); if (!Array.isArray(importedSites)) { alert('エラー'); return; } let updated=0; let added=0; let ignored=0; importedSites.forEach(newSite => { const index = sites.findIndex(s => s.id === newSite.id); if (index !== -1) { const existingTime = sites[index].updatedAt || 0; const newTime = newSite.updatedAt || 0; if(newTime > existingTime) { sites[index] = newSite; updated++; } else { ignored++; } } else { sites.push(newSite); added++; } }); autoSave(); renderTable(); renderGantt(); closeAllModals(); showToast(`更新:${updated} 新規:${added}`); } catch (err) { alert('読み込み失敗'); } input.value = ''; }; reader.readAsText(file); }
     function deleteAllData() { if(confirm('全削除しますか？')) { sites = []; autoSave(); renderTable(); renderGantt(); closeAllModals(); } }
+    function getStatusText(status) { switch (status) { case 'active': return '施工中'; case 'done': return '完工'; case 'handover': return '引き渡し'; case 'plan': return '現調予定'; default: return '現調予定'; } }
+
     window.addEventListener('storage', function(e) { if(e.key === 'dx_sites') { sites = JSON.parse(e.newValue); renderTable(); renderGantt(); } });
     renderTable(); renderGantt();
 </script>

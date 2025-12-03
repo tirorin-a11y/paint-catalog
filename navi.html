@@ -4,9 +4,6 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>アクションギア - 職人ギア</title>
-    <link rel="manifest" href="manifest.json">
-    <link rel="apple-touch-icon" href="icon-192x192.png">
-    <meta name="apple-mobile-web-app-capable" content="yes">
     <style>
         body { font-family: -apple-system, BlinkMacSystemFont, "Helvetica Neue", "Yu Gothic", sans-serif; background-color: #f0f2f5; margin: 0; padding: 0; color: #333; -webkit-font-smoothing: antialiased; }
         header { background-color: #2c3e50; color: white; padding: 10px 15px; position: sticky; top: 0; z-index: 100; box-shadow: 0 2px 5px rgba(0,0,0,0.2); display: flex; justify-content: space-between; align-items: center; }
@@ -17,8 +14,6 @@
         
         .search-area { background: #34495e; padding: 10px 15px; position: sticky; top: 50px; z-index: 99; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
         .search-input { width: 100%; padding: 10px; border-radius: 6px; border: none; font-size: 1rem; box-sizing: border-box; outline: none; }
-        
-        /* 上部の余白（広告スペースｗ） */
         .container { max-width: 600px; margin: 0 auto; padding: 15px; padding-top: 320px; padding-bottom: 100px; }
         
         .site-card { background: white; border-radius: 12px; padding: 16px; margin-bottom: 16px; box-shadow: 0 2px 6px rgba(0,0,0,0.06); position: relative; transition: transform 0.2s; }
@@ -51,9 +46,9 @@
         .navi-wrapper { flex: 1.5; display: flex; flex-direction: column; align-items: center; gap: 2px; }
         .navi-count-label { font-size: 0.7rem; color: #888; font-family: monospace; font-weight: bold; }
 
-        /* 減っていくバー（赤色） */
+        /* ★修正：バーを上部(top:0)に移動 */
         .hold-bar {
-            position: absolute; bottom: 0; left: 0; height: 6px; 
+            position: absolute; top: 0; left: 0; height: 6px; 
             background-color: #e74c3c; 
             opacity: 0.8;
             width: 100%; 
@@ -61,7 +56,7 @@
         }
         .holding .hold-bar {
             width: 0%; 
-            transition: width 2.0s linear; /* 2秒 */
+            transition: width 2.0s linear;
         }
 
         .sort-actions { display: none; width: 100%; gap: 8px; height: 60px; }
@@ -94,11 +89,9 @@
         .btn-close { flex: 2; background-color: #95a5a6; color: white; padding: 12px; border: none; border-radius: 8px; font-weight: bold; cursor: pointer; }
         .btn-delete-all { flex: 1; background-color: white; color: #e74c3c; border: 1px solid #e74c3c; padding: 12px; border-radius: 8px; font-weight: bold; cursor: pointer; font-size: 0.9rem; }
         
-        /* 右下のボタン群 */
         .fab-container { position: fixed; bottom: 24px; right: 20px; display: flex; flex-direction: column; gap: 12px; align-items: flex-end; z-index: 90; }
         .fab-btn { width: 56px; height: 56px; border-radius: 28px; border: none; color: white; font-size: 24px; box-shadow: 0 4px 10px rgba(0,0,0,0.3); cursor: pointer; display: flex; justify-content: center; align-items: center; transition: transform 0.1s; }
         .add-fab { background-color: #2980b9; font-size: 30px; }
-        /* ★バックアップボタン用 */
         .share-fab { background-color: #f39c12; font-size: 22px; }
         .fab-label { font-size: 10px; background: rgba(0,0,0,0.7); color: white; padding: 2px 6px; border-radius: 4px; margin-right: 8px; position: absolute; right: 60px; pointer-events: none; white-space: nowrap; }
         
@@ -134,6 +127,9 @@
         <input type="number" id="inputNum" class="input-num locked" readonly onclick="unlockCaseNo()">
     </div>
     
+    <label>親案件No（管理システム連携用）</label>
+    <input type="text" id="parentCaseNo" placeholder="例：K-12345" style="background:#f9f9f9;">
+
     <label>現場名</label>
     <input type="text" id="siteName" placeholder="例：鈴木様邸">
     
@@ -198,13 +194,11 @@
         localStorage.setItem('dx_sites', JSON.stringify(sites));
     }
 
-    // --- ★タッチ＆長押し制御（左ボタンで -1） ---
     function handleTouchStart(btn, id, address) {
         if (btn.classList.contains('holding')) return;
         btn.classList.add('holding'); 
 
         pressTimer = setTimeout(() => {
-            // 長押し完了！
             if (navigator.vibrate) navigator.vibrate(100); 
             btn.classList.remove('holding');
             updateNaviCount(id, -1); 
@@ -218,7 +212,6 @@
             clearTimeout(pressTimer);
             pressTimer = null;
             btn.classList.remove('holding');
-            // 通常ナビ起動 (+1)
             updateNaviCount(id, 1);
             const mapUrl = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(address)}`;
             window.open(mapUrl, '_blank');
@@ -279,11 +272,9 @@
                             🚀<br><span style="font-size:0.7rem">ナビ</span>
                             <div class="hold-bar"></div>
                         </div>
-                        
                         <a href="tools.html?id=${site.id}" class="action-btn btn-center">
                             🧰<br><span style="font-size:0.7rem">ツール</span>
                         </a>
-                        
                         <div class="navi-wrapper">
                             <span class="navi-count-label">${naviCount}回</span>
                             <a href="${mapUrl}" target="_blank" class="action-btn btn-navi-side" onclick="updateNaviCount('${site.id}', 1)">
@@ -312,6 +303,8 @@
     function duplicateSite() {
         const name = document.getElementById('siteName').value;
         const address = document.getElementById('address').value;
+        const parentNo = document.getElementById('parentCaseNo').value; // 親Noもコピー
+        
         if(!name || !address) { showNotification('⚠️ 現場名と住所が必要です'); return; }
         if(!confirm('この現場情報をコピーして、新規案件を作成しますか？')) return;
 
@@ -321,7 +314,8 @@
         const now = Date.now();
         
         sites.unshift({
-            id: newId, name: name + ' (コピー)', address: address, status: 'plan', updatedAt: now, naviCount: 0 
+            id: newId, name: name + ' (コピー)', address: address, status: 'plan', 
+            parentCaseNo: parentNo, updatedAt: now, naviCount: 0 
         });
         localStorage.setItem('dx_sites', JSON.stringify(sites));
         closeAllModals(); renderList(); showNotification('🎉 複製しました');
@@ -336,19 +330,22 @@
         const address = document.getElementById('address').value;
         const status = document.getElementById('status').value;
         const naviCountVal = parseInt(document.getElementById('editNaviCount').value) || 0;
+        const parentNo = document.getElementById('parentCaseNo').value; // 親No保存
+
         if(!name || !address) { showNotification('⚠️ 現場名と住所は必須です'); return; }
         const now = Date.now();
+
         if (isEditing) {
             if (id !== editingId) { sites = sites.filter(s => s.id !== editingId); }
             const index = sites.findIndex(s => s.id === id);
-            if(index !== -1) { sites[index] = { ...sites[index], name, address, status, naviCount: naviCountVal, updatedAt: now }; } 
-            else { sites.unshift({ id, name, address, status, naviCount: naviCountVal, updatedAt: now }); }
+            if(index !== -1) { sites[index] = { ...sites[index], name, address, status, naviCount: naviCountVal, parentCaseNo: parentNo, updatedAt: now }; } 
+            else { sites.unshift({ id, name, address, status, naviCount: naviCountVal, parentCaseNo: parentNo, updatedAt: now }); }
         } else {
             if(sites.some(s => s.id === id)){ 
                 if(!confirm('⚠️ 重複しています。上書きしますか？')) return; 
                 const idx = sites.findIndex(s => s.id === id); 
-                sites[idx] = { ...sites[idx], name, address, status, naviCount: naviCountVal, updatedAt: now }; 
-            } else { sites.unshift({ id, name, address, status, naviCount: naviCountVal, updatedAt: now }); }
+                sites[idx] = { ...sites[idx], name, address, status, naviCount: naviCountVal, parentCaseNo: parentNo, updatedAt: now }; 
+            } else { sites.unshift({ id, name, address, status, naviCount: naviCountVal, parentCaseNo: parentNo, updatedAt: now }); }
         }
         localStorage.setItem('dx_sites', JSON.stringify(sites));
         closeAllModals(); renderList(); showNotification('🎉 保存しました');
@@ -369,6 +366,7 @@
         const numInput = document.getElementById('inputNum');
         numInput.readOnly = true; numInput.classList.remove('unlocked'); numInput.classList.add('locked'); tapCount = 0;
         const todayYear = new Date().getFullYear();
+
         if (mode === 'new') {
             isEditing = false; editingId = null;
             document.getElementById('btnDeleteSingle').style.display = 'none';
@@ -379,6 +377,7 @@
             document.getElementById('address').value = '';
             document.getElementById('status').value = 'plan';
             document.getElementById('editNaviCount').value = 0;
+            document.getElementById('parentCaseNo').value = '';
         } else {
             isEditing = true; editingId = id;
             document.getElementById('btnDeleteSingle').style.display = 'flex';
@@ -392,6 +391,7 @@
                 document.getElementById('address').value = targetSite.address;
                 document.getElementById('status').value = targetSite.status;
                 document.getElementById('editNaviCount').value = targetSite.naviCount || 0;
+                document.getElementById('parentCaseNo').value = targetSite.parentCaseNo || '';
             }
         }
     }
@@ -406,21 +406,32 @@
     function closeAllModals() { document.querySelectorAll('.modal-box').forEach(el => el.classList.remove('show')); document.getElementById('overlay').classList.remove('show'); }
     function unlockCaseNo() { const el = document.getElementById('inputNum'); if(!el.readOnly) return; tapCount++; if(tapCount >= 5) { el.readOnly = false; el.classList.remove('locked'); el.classList.add('unlocked'); showNotification('🔓 ロック解除しました'); tapCount = 0; } }
     function getNowStr() { const d = new Date(); return `${d.getFullYear()}${(d.getMonth()+1).toString().padStart(2,'0')}${d.getDate().toString().padStart(2,'0')}_${d.getHours().toString().padStart(2,'0')}${d.getMinutes().toString().padStart(2,'0')}`; }
-    
-    async function exportJSON() { 
-        showNotification('📤 準備中...'); 
-        const jsonContent = JSON.stringify(sites, null, 2); 
-        const fileName = `【職人ギア】backup_${getNowStr()}.json`; 
-        const file = new File([jsonContent], fileName, { type: "application/json" }); 
-        if (navigator.share && navigator.canShare && navigator.canShare({ files: [file] })) { try { await navigator.share({ files: [file] }); } catch (e) { forceDL(file); } } else { forceDL(file); } 
-    }
+    async function exportJSON() { showNotification('📤 準備中...'); const jsonContent = JSON.stringify(sites, null, 2); const fileName = `【職人ギア】backup_${getNowStr()}.json`; const file = new File([jsonContent], fileName, { type: "application/json" }); if (navigator.share && navigator.canShare && navigator.canShare({ files: [file] })) { try { await navigator.share({ files: [file] }); } catch (e) { forceDL(file); } } else { forceDL(file); } }
     function forceDL(file) { const url = URL.createObjectURL(file); const link = document.createElement("a"); link.setAttribute("href", url); link.setAttribute("download", file.name); document.body.appendChild(link); link.click(); document.body.removeChild(link); showNotification('📥 保存しました'); }
     function importJSON(input) { const file = input.files[0]; if (!file) return; const reader = new FileReader(); reader.onload = function(e) { try { const importedSites = JSON.parse(e.target.result); if (!Array.isArray(importedSites)) { alert('エラー'); return; } let countAdded = 0; let countUpdated = 0; importedSites.forEach(newSite => { const index = sites.findIndex(s => s.id === newSite.id); if (index !== -1) { const existingTime = sites[index].updatedAt || 0; const newTime = newSite.updatedAt || 0; if (newTime > existingTime) { sites[index] = newSite; countUpdated++; } } else { sites.push(newSite); countAdded++; } }); localStorage.setItem('dx_sites', JSON.stringify(sites)); renderList(); closeAllModals(); showNotification(`復元: ${countUpdated}件更新, ${countAdded}件追加`); } catch (err) { alert('読み込み失敗'); } input.value = ''; }; reader.readAsText(file); }
-    
-    function deleteAllData() { if(confirm('【警告】全削除しますか？')) { sites = []; localStorage.setItem('dx_sites', JSON.stringify(sites)); renderList(); closeAllModals(); showNotification('🗑️ 全データを削除しました'); } }
+    function deleteAllData() { if(confirm('【警告】\n本当に全データを削除しますか？')) { if(confirm('本当に削除してよろしいですか？')) { sites = []; localStorage.setItem('dx_sites', JSON.stringify(sites)); renderList(); closeAllModals(); showNotification('🗑️ 全データを削除しました'); } } }
     function getStatusText(status) { switch (status) { case 'active': return '施工中'; case 'done': return '完工'; case 'handover': return '引き渡し'; case 'plan': return '現調予定'; default: return '現調予定'; } }
-    async function exportCSV() { showNotification('📤 準備中...'); let csvContent = "\uFEFF案件No,現場名,住所,ステータス,開始,終了\n"; sites.forEach(s => { csvContent += `"${s.id}","${s.name}","${s.address}","${getStatusText(s.status)}","${s.start||''}","${s.end||''}"\n`; }); const fileName = `現場リスト_${getNowStr()}.csv`; const file = new File([csvContent], fileName, { type: "text/csv" }); if (navigator.share && navigator.canShare && navigator.canShare({ files: [file] })) { try { await navigator.share({ files: [file] }); } catch (e) { forceDL(file); } } else { forceDL(file); } }
-    function copyToClipboard() { let tsvContent = ""; sites.forEach(s => { tsvContent += `${s.id}\t${s.name}\t${s.address}\t${getStatusText(s.status)}\t${s.start||''}\t${s.end||''}\n`; }); navigator.clipboard.writeText(tsvContent).then(() => { showNotification('📋 コピーしました'); }).catch(err => { showNotification('⚠️ 失敗しました'); }); }
+    
+    // ★修正：CSV出力に親案件Noを追加
+    async function exportCSV() { 
+        showNotification('📤 準備中...'); 
+        let csvContent = "\uFEFF案件No,親案件No,現場名,住所,ステータス,開始,終了\n"; 
+        sites.forEach(s => { 
+            csvContent += `"${s.id}","${s.parentCaseNo||''}","${s.name}","${s.address}","${getStatusText(s.status)}","${s.start||''}","${s.end||''}"\n`; 
+        }); 
+        const fileName = `現場リスト_${getNowStr()}.csv`; 
+        const file = new File([csvContent], fileName, { type: "text/csv" }); 
+        if (navigator.share && navigator.canShare && navigator.canShare({ files: [file] })) { try { await navigator.share({ files: [file] }); } catch (e) { forceDL(file); } } else { forceDL(file); } 
+    }
+    
+    function copyToClipboard() { 
+        let tsvContent = ""; 
+        sites.forEach(s => { 
+            tsvContent += `${s.id}\t${s.parentCaseNo||''}\t${s.name}\t${s.address}\t${getStatusText(s.status)}\t${s.start||''}\t${s.end||''}\n`; 
+        }); 
+        navigator.clipboard.writeText(tsvContent).then(() => { showNotification('📋 コピーしました'); }).catch(err => { showNotification('⚠️ 失敗しました'); }); 
+    }
+    
     function showNotification(msg) { const el = document.getElementById('notification'); el.textContent = msg; el.classList.add('show'); setTimeout(() => el.classList.remove('show'), 2000); }
     
     document.addEventListener('DOMContentLoaded', renderList);

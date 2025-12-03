@@ -3,325 +3,352 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>現場電子小黒板カメラ</title>
+    <title>高画質・電子小黒板</title>
     <style>
-        /* --- 全体設定 --- */
-        body { margin: 0; padding: 0; background: #222; color: white; font-family: sans-serif; overflow: hidden; height: 100vh; display: flex; flex-direction: column; }
+        /* --- デザイン --- */
+        body { margin: 0; padding: 0; background: #f0f2f5; color: #333; font-family: sans-serif; display: flex; flex-direction: column; min-height: 100vh; touch-action: manipulation; }
         
-        /* --- 1. 準備画面（入力モード） --- */
-        #setupScreen { flex: 1; display: flex; flex-direction: column; padding: 10px; box-sizing: border-box; background: #f0f2f5; color: #333; }
-        
-        /* 上半分：黒板プレビューエリア */
-        .preview-area { flex: 1; display: flex; justify-content: center; align-items: center; background: #ccc; border-radius: 8px; margin-bottom: 10px; overflow: hidden; position: relative; }
-        
-        /* 黒板（Canvas） */
-        #boardCanvas { box-shadow: 0 5px 15px rgba(0,0,0,0.3); max-width: 90%; max-height: 90%; }
+        .header { background: #2c3e50; color: white; padding: 15px; text-align: center; font-weight: bold; }
+        .container { padding: 15px; flex: 1; display: flex; flex-direction: column; gap: 15px; max-width: 600px; margin: 0 auto; width: 100%; box-sizing: border-box; }
 
-        /* 下半分：入力フォーム */
-        .input-area { background: white; padding: 15px; border-radius: 12px; box-shadow: 0 -2px 10px rgba(0,0,0,0.1); }
-        .input-group { margin-bottom: 12px; }
+        /* 入力エリア */
+        .input-card { background: white; padding: 20px; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); }
         label { display: block; font-weight: bold; font-size: 0.9rem; margin-bottom: 5px; color: #555; }
-        select, input { width: 100%; padding: 10px; font-size: 1rem; border: 1px solid #ddd; border-radius: 6px; box-sizing: border-box; }
-        
-        .start-btn { width: 100%; padding: 15px; background: #00C853; color: white; font-weight: bold; font-size: 1.2rem; border: none; border-radius: 8px; cursor: pointer; margin-top: 10px; display: flex; align-items: center; justify-content: center; gap: 10px; }
-        
-        /* --- 2. 撮影画面（カメラモード） --- */
-        #cameraScreen { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: black; z-index: 100; }
-        
-        video { width: 100%; height: 100%; object-fit: cover; }
-        
-        /* 浮いてる黒板（ドラッグ用） */
-        #overlayBoard { position: absolute; top: 50px; left: 20px; width: 200px; cursor: grab; z-index: 110; filter: drop-shadow(0 4px 6px rgba(0,0,0,0.5)); touch-action: none; }
-        
-        /* 撮影UI */
-        .camera-controls { position: absolute; bottom: 30px; width: 100%; display: flex; justify-content: center; align-items: center; gap: 30px; z-index: 120; }
-        
-        .shutter-btn { width: 70px; height: 70px; border-radius: 50%; background: white; border: 5px solid #ccc; cursor: pointer; }
-        .shutter-btn:active { background: #ddd; transform: scale(0.95); }
-        
-        .back-btn { background: rgba(0,0,0,0.5); color: white; border: 1px solid white; padding: 10px 20px; border-radius: 30px; font-weight: bold; cursor: pointer; }
+        select, input { width: 100%; padding: 12px; font-size: 1rem; border: 1px solid #ddd; border-radius: 6px; box-sizing: border-box; margin-bottom: 15px; }
 
-        /* フラッシュ演出 */
-        #flash { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: white; opacity: 0; pointer-events: none; z-index: 200; transition: opacity 0.1s; }
+        /* 編集エリア */
+        .edit-area { display: none; flex-direction: column; gap: 10px; }
+        .photo-frame { 
+            position: relative; width: 100%; overflow: hidden; 
+            border-radius: 8px; box-shadow: 0 4px 10px rgba(0,0,0,0.2); 
+            background: #000; touch-action: none; 
+        }
+        #previewImg { width: 100%; display: block; }
+        #draggableBoard { 
+            position: absolute; top: 10px; left: 10px; 
+            width: 35%; cursor: grab; filter: drop-shadow(0 4px 6px rgba(0,0,0,0.5)); 
+        }
+
+        /* ボタン類 */
+        .camera-btn-label {
+            display: block; width: 100%; padding: 15px; background: #00C853; color: white; 
+            font-weight: bold; font-size: 1.2rem; text-align: center; border-radius: 8px; 
+            cursor: pointer; box-shadow: 0 4px 6px rgba(0,200,83,0.3); margin-top: 10px;
+        }
+        .camera-btn-label:active { transform: translateY(2px); }
+        #cameraInput { display: none; }
+
+        #saveBtn {
+            width: 100%; padding: 15px; background: #2980b9; color: white; 
+            font-weight: bold; font-size: 1.2rem; border: none; border-radius: 8px; 
+            cursor: pointer; margin-top: 10px;
+        }
+
+        .back-link { text-align: center; margin-top: 20px; }
+        .back-link a { color: #007bff; text-decoration: none; }
         
-        /* DX手帳へのリンク */
-        .navi-link { text-align: center; margin-bottom: 15px; }
-        .navi-link a { color: #007bff; text-decoration: none; font-weight: bold; }
+        #loading { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(255,255,255,0.8); z-index: 999; text-align: center; padding-top: 50vh; font-weight: bold; font-size: 1.2rem; }
+        .retake-btn { background: #95a5a6; color: white; border: none; padding: 10px; border-radius: 6px; width: 100%; font-weight: bold; margin-top: 5px; cursor: pointer; }
     </style>
 </head>
 <body>
 
-    <div id="setupScreen">
-        <div class="navi-link"><a href="navi.html">↩️ DX手帳に戻る</a></div>
-        
-        <div class="preview-area">
-            <canvas id="boardCanvas" width="400" height="300"></canvas>
+    <div class="header">📸 高画質・電子小黒板</div>
+
+    <div class="container">
+        <div id="step1" class="input-card">
+            <label>現場名 (DX手帳連携)</label>
+            <select id="siteSelect">
+                <option value="">(選択してください)</option>
+            </select>
+
+            <label>工種 / 作業内容</label>
+            <select id="processSelect">
+                <option value="施工前">施工前</option>
+                <option value="ケレン・清掃">ケレン・清掃</option>
+                <option value="高圧洗浄">高圧洗浄</option>
+                <option value="養生">養生</option>
+                <option value="下塗り">下塗り</option>
+                <option value="中塗り">中塗り</option>
+                <option value="上塗り">上塗り</option>
+                <option value="完了">完了</option>
+                <option value="自主検査">自主検査</option>
+            </select>
+
+            <label>施工箇所 (任意)</label>
+            <input type="text" id="locationInput" placeholder="例：外壁 東面">
+
+            <label for="cameraInput" class="camera-btn-label">📸 標準カメラで撮影</label>
+            <input type="file" id="cameraInput" accept="image/*" capture="environment" onchange="handlePhoto(this)">
         </div>
 
-        <div class="input-area">
-            <div class="input-group">
-                <label>現場名 (DX手帳から選択)</label>
-                <select id="siteSelect" onchange="updateBoard()">
-                    <option value="">(選択してください)</option>
-                </select>
-            </div>
-            <div class="input-group">
-                <label>施工内容 / 工種</label>
-                <select id="processSelect" onchange="updateBoard()">
-                    <option value="施工前">施工前</option>
-                    <option value="ケレン・清掃">ケレン・清掃</option>
-                    <option value="高圧洗浄">高圧洗浄</option>
-                    <option value="養生">養生</option>
-                    <option value="下塗り">下塗り</option>
-                    <option value="中塗り">中塗り</option>
-                    <option value="上塗り">上塗り</option>
-                    <option value="完了">完了</option>
-                </select>
-            </div>
-            <div class="input-group">
-                <label>施工箇所 (任意)</label>
-                <input type="text" id="locationInput" placeholder="例：外壁 東面" oninput="updateBoard()">
-            </div>
+        <div id="step2" class="edit-area">
+            <p style="text-align:center; font-weight:bold; color:#e67e22; margin:0;">👇 黒板をドラッグして位置調整</p>
             
-            <button class="start-btn" onclick="startCamera()">📸 カメラ起動</button>
+            <div class="photo-frame" id="photoFrame">
+                <img id="previewImg" src="" alt="撮影写真">
+                <canvas id="draggableBoard"></canvas>
+            </div>
+
+            <button id="saveBtn" onclick="finalizeImage()">💾 この位置で保存！</button>
+            <button class="retake-btn" onclick="location.reload()">🔄 撮り直す</button>
         </div>
+
+        <div class="back-link"><a href="navi.html">↩️ DX手帳に戻る</a></div>
     </div>
 
-    <div id="cameraScreen">
-        <video id="video" autoplay playsinline></video>
-        
-        <img id="overlayBoard" src="" alt="黒板">
-
-        <div class="camera-controls">
-            <button class="back-btn" onclick="stopCamera()">戻る</button>
-            <button class="shutter-btn" onclick="takePhoto()"></button>
-            <div style="width: 60px;"></div> </div>
-        
-        <div id="flash"></div>
-    </div>
+    <div id="loading">処理中...🎨</div>
+    <canvas id="finalCanvas" style="display:none;"></canvas>
 
     <script>
-        // --- 設定 ---
-        const canvas = document.getElementById('boardCanvas');
-        const ctx = canvas.getContext('2d');
-        const video = document.getElementById('video');
-        let stream = null;
-
-        // DX手帳のデータを読み込み
         const sites = JSON.parse(localStorage.getItem('dx_sites')) || [];
+        
+        const step1 = document.getElementById('step1');
+        const step2 = document.getElementById('step2');
+        const previewImg = document.getElementById('previewImg');
+        const boardCanvas = document.getElementById('draggableBoard');
+        const boardCtx = boardCanvas.getContext('2d');
+        const finalCanvas = document.getElementById('finalCanvas');
+        const finalCtx = finalCanvas.getContext('2d');
 
-        // 初期化
+        let isDragging = false;
+        let startX, startY, initLeft, initTop;
+        let originalImage = new Image();
+
         window.onload = () => {
-            loadSites();
-            drawBoard(); // 初期の空黒板を描画
-        };
-
-        // --- 1. データ読み込み & 黒板描画 ---
-        function loadSites() {
             const select = document.getElementById('siteSelect');
-            // 施工中のものを優先して表示
             const activeSites = sites.filter(s => s.status === 'active');
             const otherSites = sites.filter(s => s.status !== 'active');
-            
             [...activeSites, ...otherSites].forEach(site => {
                 const opt = document.createElement('option');
                 opt.value = site.name;
                 opt.textContent = site.status === 'active' ? `【施工中】${site.name}` : site.name;
                 select.appendChild(opt);
             });
+        };
+
+        function handlePhoto(input) {
+            if (input.files && input.files[0]) {
+                document.getElementById('loading').style.display = 'block';
+                const file = input.files[0];
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    originalImage.onload = function() {
+                        setupEditScreen();
+                    };
+                    originalImage.src = e.target.result;
+                };
+                reader.readAsDataURL(file);
+            }
         }
 
-        function updateBoard() {
-            drawBoard();
+        function setupEditScreen() {
+            previewImg.src = originalImage.src;
+            step1.style.display = 'none';
+            step2.style.display = 'flex';
+            document.getElementById('loading').style.display = 'none';
+
+            boardCanvas.width = 400; 
+            boardCanvas.height = 300;
+            drawBoardContent(boardCtx, boardCanvas.width, boardCanvas.height);
+            
+            const frameW = document.getElementById('photoFrame').clientWidth;
+            const frameH = document.getElementById('photoFrame').clientHeight;
+            boardCanvas.style.left = (frameW * 0.55) + 'px';
+            boardCanvas.style.top = (frameH * 0.6) + 'px';
         }
 
-        function drawBoard() {
-            const siteName = document.getElementById('siteSelect').value || "　";
-            const process = document.getElementById('processSelect').value;
-            const location = document.getElementById('locationInput').value || "";
-            
-            // 日付取得
-            const d = new Date();
-            const dateStr = `${d.getFullYear()}/${d.getMonth()+1}/${d.getDate()}`;
-
-            // --- 黒板のデザイン ---
-            // 背景（深緑）
-            ctx.fillStyle = '#004d40';
-            ctx.fillRect(0, 0, canvas.width, canvas.height);
-            
-            // 枠線（白）
-            ctx.strokeStyle = 'white';
-            ctx.lineWidth = 5;
-            ctx.strokeRect(5, 5, canvas.width - 10, canvas.height - 10);
-
-            // 罫線
-            ctx.lineWidth = 2;
-            ctx.beginPath();
-            // 横線1 (工事名の下)
-            ctx.moveTo(10, 80); ctx.lineTo(390, 80);
-            // 横線2 (工種の下)
-            ctx.moveTo(10, 150); ctx.lineTo(390, 150);
-            // 縦線 (日付の左)
-            ctx.moveTo(280, 230); ctx.lineTo(280, 290); // 日付枠を作る場合など
-            ctx.stroke();
-
-            // 文字設定
-            ctx.fillStyle = 'white';
+        // ★★★ ここが文字縮小の魔法の関数 ★★★
+        function drawTextFit(ctx, text, x, y, maxWidth, initialFontSize) {
             ctx.textAlign = 'left';
             ctx.textBaseline = 'middle';
-
-            // 工事名
-            ctx.font = 'bold 20px sans-serif';
-            ctx.fillText("工事名", 20, 30);
-            ctx.font = 'bold 28px sans-serif';
-            ctx.fillText(siteName, 20, 55);
-
-            // 工種・施工内容
-            ctx.font = 'bold 20px sans-serif';
-            ctx.fillText("工種 / 施工内容", 20, 100);
-            ctx.font = 'bold 32px sans-serif';
-            ctx.fillText(process, 40, 128);
-
-            // 施工箇所（空なら詰めない）
-            ctx.font = 'bold 20px sans-serif';
-            ctx.fillText("施工箇所", 20, 175);
-            ctx.font = 'bold 28px sans-serif';
-            ctx.fillText(location, 40, 205);
-
-            // 日付（右下）
-            ctx.textAlign = 'right';
-            ctx.font = 'bold 24px sans-serif';
-            ctx.fillText(dateStr, 380, 270);
+            let fontSize = initialFontSize;
+            ctx.font = `bold ${fontSize}px sans-serif`;
             
-            // 社名ロゴ的なもの（左下）
-            ctx.textAlign = 'left';
-            ctx.font = '16px sans-serif';
-            ctx.fillStyle = '#ccc';
-            ctx.fillText("ペイントハウス山岡", 20, 270);
+            // 幅に収まるまでフォントサイズを小さくするループ
+            while (ctx.measureText(text).width > maxWidth && fontSize > 10) {
+                fontSize--;
+                ctx.font = `bold ${fontSize}px sans-serif`;
+            }
+            ctx.fillText(text, x, y);
+        }
+        // ★★★ これが「2行対応」の賢い描画関数 ★★★
+        function drawSmartText(ctx, text, centerX, centerY, maxWidth, maxFontSize) {
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillStyle = 'white';
+
+        // 1. まず1行で入るかテスト
+        ctx.font = `bold ${maxFontSize}px sans-serif`;
+        const width = ctx.measureText(text).width;
+
+        // 2. 幅に余裕があれば、そのまま1行で描画
+        if (width <= maxWidth) {
+            ctx.fillText(text, centerX, centerY);
+            return;
         }
 
-        // --- 2. カメラ起動 & 黒板転送 ---
-        async function startCamera() {
-            // 黒板画像を生成して撮影画面のimgタグにセット
-            const dataUrl = canvas.toDataURL('image/png');
-            const overlay = document.getElementById('overlayBoard');
-            overlay.src = dataUrl;
+        // 3. 幅がキツイ場合、文字を小さくして粘る（最小サイズの70%まで）
+        let fontSize = maxFontSize;
+        while (ctx.measureText(text).width > maxWidth && fontSize > maxFontSize * 0.7) {
+            fontSize--;
+            ctx.font = `bold ${fontSize}px sans-serif`;
+        }
+
+        // 4. それでもはみ出るなら「2行」に分割！
+        if (ctx.measureText(text).width > maxWidth) {
+            const halfIndex = Math.ceil(text.length / 2);
+            const line1 = text.substring(0, halfIndex);
+            const line2 = text.substring(halfIndex);
             
-            // 画面切り替え
-            document.getElementById('setupScreen').style.display = 'none';
-            document.getElementById('cameraScreen').style.display = 'block';
+            // 2行用のフォントサイズ（少し小さめからスタート）
+            const multiLineSize = maxFontSize * 0.8;
+            ctx.font = `bold ${multiLineSize}px sans-serif`;
+            
+            // 行間（高さ）の調整
+            const lineHeight = multiLineSize * 1.2;
+            
+            // 2行を描画（Y座標を上下にずらす）
+            ctx.fillText(line1, centerX, centerY - lineHeight * 0.35);
+            ctx.fillText(line2, centerX, centerY + lineHeight * 0.55);
+        } else {
+            // 縮小して1行で収まった場合
+            ctx.fillText(text, centerX, centerY);
+        }
+    }
 
-            // カメラ起動（背面カメラ優先）
-            try {
-                stream = await navigator.mediaDevices.getUserMedia({ 
-                    video: { facingMode: { ideal: "environment" } }, 
-                    audio: false 
-                });
-                video.srcObject = stream;
-            } catch (err) {
-                alert("カメラの起動に失敗しました。\n権限を許可してください。");
-                stopCamera();
-            }
+    // --- 黒板描画の中身（書き換え） ---
+    function drawBoardContent(ctx, w, h) {
+        const siteName = document.getElementById('siteSelect').value || "　";
+        const process = document.getElementById('processSelect').value;
+        const location = document.getElementById('locationInput').value || "";
+        const d = new Date();
+        const dateStr = `${d.getFullYear()}/${d.getMonth()+1}/${d.getDate()}`;
+
+        // 背景と枠
+        ctx.fillStyle = '#004d40';
+        ctx.fillRect(0, 0, w, h);
+        
+        const border = w * 0.015;
+        ctx.strokeStyle = 'white';
+        ctx.lineWidth = border;
+        ctx.strokeRect(w*0.02, w*0.02, w*0.96, h*0.96);
+
+        // 罫線
+        ctx.lineWidth = w * 0.005;
+        ctx.beginPath();
+        const line1 = h * 0.28;
+        const line2 = h * 0.55;
+        const lineV = w * 0.72;
+        
+        ctx.moveTo(w*0.04, line1); ctx.lineTo(w*0.96, line1);
+        ctx.moveTo(w*0.04, line2); ctx.lineTo(w*0.96, line2);
+        ctx.moveTo(lineV, line2); ctx.lineTo(lineV, h*0.96);
+        ctx.stroke();
+
+        // --- 文字描画（drawSmartTextを使用） ---
+        const sizeS = w * 0.055; // 小見出しサイズ
+        const sizeL = w * 0.09;  // 本文基準サイズ
+        
+        // 項目名（左寄せ固定）
+        ctx.fillStyle = 'white';
+        ctx.textAlign = 'left';
+        ctx.textBaseline = 'middle';
+        ctx.font = `bold ${sizeS}px sans-serif`;
+        
+        ctx.fillText("工事名", w*0.05, h*0.12);
+        ctx.fillText("工種", w*0.05, h*0.38);
+        ctx.fillText("施工箇所", w*0.05, h*0.65);
+
+        // ★中身（長いと自動で2行になる！）
+        // 座標は「エリアの中心」を指定する
+        const contentCenterX = w * 0.52; // 中央より少し右
+        const maxContentW = w * 0.85;    // 許容幅
+
+        // 1段目：工事名
+        drawSmartText(ctx, siteName, contentCenterX, h*0.20, maxContentW, sizeL);
+
+        // 2段目：工種（少し右寄り）
+        drawSmartText(ctx, process, w*0.58, h*0.46, w*0.75, sizeL);
+
+        // 3段目：施工箇所（左側の狭いエリア）
+        drawSmartText(ctx, location, w*0.38, h*0.75, w*0.6, sizeL * 0.8);
+
+        // 日付（右下エリア）
+        const dateCenterX = lineV + (w - lineV) / 2;
+        drawSmartText(ctx, dateStr, dateCenterX, h*0.75, (w - lineV)*0.9, sizeS);
         }
 
-        function stopCamera() {
-            if (stream) {
-                stream.getTracks().forEach(track => track.stop());
-                stream = null;
-            }
-            document.getElementById('setupScreen').style.display = 'flex';
-            document.getElementById('cameraScreen').style.display = 'none';
-        }
+        // --- ドラッグ処理 ---
+        boardCanvas.addEventListener('touchstart', startDrag, {passive: false});
+        boardCanvas.addEventListener('touchmove', moveDrag, {passive: false});
+        boardCanvas.addEventListener('touchend', endDrag);
+        boardCanvas.addEventListener('mousedown', (e) => { e.preventDefault(); startDrag(e.type === 'mousedown' ? e : e.touches[0]); });
+        window.addEventListener('mousemove', (e) => { if(isDragging) moveDrag(e.type === 'mousemove' ? e : e.touches[0]); });
+        window.addEventListener('mouseup', endDrag);
 
-        // --- 3. ドラッグ機能（スマホ対応） ---
-        const overlay = document.getElementById('overlayBoard');
-        let isDragging = false;
-        let startX, startY, initialLeft, initialTop;
-
-        // タッチ開始
-        overlay.addEventListener('touchstart', (e) => {
+        function startDrag(e) {
             isDragging = true;
-            startX = e.touches[0].clientX;
-            startY = e.touches[0].clientY;
-            initialLeft = overlay.offsetLeft;
-            initialTop = overlay.offsetTop;
-            e.preventDefault(); // スクロール防止
-        });
-
-        // ドラッグ中
-        overlay.addEventListener('touchmove', (e) => {
+            const event = e.touches ? e.touches[0] : e;
+            startX = event.clientX;
+            startY = event.clientY;
+            initLeft = boardCanvas.offsetLeft;
+            initTop = boardCanvas.offsetTop;
+        }
+        function moveDrag(e) {
             if (!isDragging) return;
-            const dx = e.touches[0].clientX - startX;
-            const dy = e.touches[0].clientY - startY;
-            overlay.style.left = `${initialLeft + dx}px`;
-            overlay.style.top = `${initialTop + dy}px`;
             e.preventDefault();
-        });
+            const event = e.touches ? e.touches[0] : e;
+            const dx = event.clientX - startX;
+            const dy = event.clientY - startY;
+            boardCanvas.style.left = `${initLeft + dx}px`;
+            boardCanvas.style.top = `${initTop + dy}px`;
+        }
+        function endDrag() { isDragging = false; }
 
-        // 終了
-        overlay.addEventListener('touchend', () => { isDragging = false; });
+        // --- 合成保存 ---
+        function finalizeImage() {
+            document.getElementById('loading').style.display = 'block';
+            
+            finalCanvas.width = originalImage.width;
+            finalCanvas.height = originalImage.height;
+            finalCtx.drawImage(originalImage, 0, 0);
 
-        // PC（マウス）用も一応
-        overlay.addEventListener('mousedown', (e) => {
-            isDragging = true;
-            startX = e.clientX;
-            startY = e.clientY;
-            initialLeft = overlay.offsetLeft;
-            initialTop = overlay.offsetTop;
-        });
-        window.addEventListener('mousemove', (e) => {
-            if (!isDragging) return;
-            const dx = e.clientX - startX;
-            const dy = e.clientY - startY;
-            overlay.style.left = `${initialLeft + dx}px`;
-            overlay.style.top = `${initialTop + dy}px`;
-        });
-        window.addEventListener('mouseup', () => { isDragging = false; });
+            const frameW = document.getElementById('photoFrame').clientWidth;
+            const frameH = document.getElementById('photoFrame').clientHeight;
+            const scaleX = originalImage.width / frameW;
+            const scaleY = originalImage.height / frameH;
 
+            const boardStyle = window.getComputedStyle(boardCanvas);
+            const screenBoardLeft = parseFloat(boardCanvas.style.left);
+            const screenBoardTop = parseFloat(boardCanvas.style.top);
+            const screenBoardW = parseFloat(boardStyle.width);
+            const screenBoardH = parseFloat(boardStyle.height);
 
-        // --- 4. 撮影＆合成保存 ---
-        function takePhoto() {
-            // フラッシュ演出
-            const flash = document.getElementById('flash');
-            flash.style.opacity = 1;
-            setTimeout(() => flash.style.opacity = 0, 100);
+            const finalX = screenBoardLeft * scaleX;
+            const finalY = screenBoardTop * scaleY;
+            const finalW = screenBoardW * scaleX;
+            const finalH = screenBoardH * scaleY;
 
-            // 合成用キャンバス作成（動画サイズに合わせる）
-            const captureCanvas = document.createElement('canvas');
-            captureCanvas.width = video.videoWidth;
-            captureCanvas.height = video.videoHeight;
-            const ctxCap = captureCanvas.getContext('2d');
+            // 高画質用黒板キャンバス
+            const hdBoard = document.createElement('canvas');
+            hdBoard.width = finalW;
+            hdBoard.height = finalH;
+            const hdCtx = hdBoard.getContext('2d');
+            drawBoardContent(hdCtx, finalW, finalH);
 
-            // 1. カメラ映像を描画
-            ctxCap.drawImage(video, 0, 0, captureCanvas.width, captureCanvas.height);
+            finalCtx.drawImage(hdBoard, finalX, finalY);
 
-            // 2. 黒板を合成
-            // 画面上の位置と比率を計算して、キャンバス上の座標に変換する
-            const rect = video.getBoundingClientRect(); // 画面上の動画サイズ
-            const scaleX = captureCanvas.width / rect.width; // 実際の解像度との比率
-            const scaleY = captureCanvas.height / rect.height;
-
-            const board = document.getElementById('overlayBoard');
-            const boardRect = board.getBoundingClientRect();
-
-            // 黒板の位置（画面上）から動画内の座標へ変換
-            const boardX = (boardRect.left - rect.left) * scaleX;
-            const boardY = (boardRect.top - rect.top) * scaleY;
-            const boardW = boardRect.width * scaleX;
-            const boardH = boardRect.height * scaleY;
-
-            // 黒板画像を描画
-            ctxCap.drawImage(board, boardX, boardY, boardW, boardH);
-
-            // 3. ダウンロード
-            const dataUrl = captureCanvas.toDataURL('image/jpeg');
             const link = document.createElement('a');
-            const timeStr = new Date().toISOString().replace(/[:.]/g, '-');
-            link.href = dataUrl;
+            const d = new Date();
+            const timeStr = `${d.getHours()}${d.getMinutes()}${d.getSeconds()}`;
             link.download = `現場写真_${timeStr}.jpg`;
+            link.href = finalCanvas.toDataURL('image/jpeg', 0.9);
             document.body.appendChild(link);
             link.click();
             document.body.removeChild(link);
+            
+            document.getElementById('loading').style.display = 'none';
         }
     </script>
 </body>

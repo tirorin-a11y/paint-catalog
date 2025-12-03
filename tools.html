@@ -4,52 +4,79 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>現場ツール - 職人ギア</title>
-    <link rel="manifest" href="manifest.json">
-    <link rel="apple-touch-icon" href="icon-192x192.png">
-    <meta name="apple-mobile-web-app-capable" content="yes">
     <link rel="stylesheet" href="style.css">
     <style>
-        /* 既存スタイル省略（前回と同じ） */
-        .site-header { background: #2c3e50; color: white; padding: 20px; text-align: center; border-radius: 0 0 20px 20px; margin-bottom: 30px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); }
+        body { background-color: #f0f2f5; padding-bottom: 80px; scroll-behavior: smooth; }
+        
+        .site-header { background: #2c3e50; color: white; padding: 20px; text-align: center; border-radius: 0 0 20px 20px; margin-bottom: 15px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); position: sticky; top: 0; z-index: 10; }
         .site-title { margin: 0; font-size: 1.4rem; font-weight: bold; }
         .site-sub { font-size: 0.9rem; opacity: 0.8; margin-top: 5px; }
-        .tool-grid { display: grid; gap: 20px; padding: 0 20px; }
-        .tool-btn { display: flex; align-items: center; justify-content: space-between; background: white; padding: 25px; border-radius: 16px; text-decoration: none; color: #333; box-shadow: 0 4px 6px rgba(0,0,0,0.05); border: 2px solid transparent; transition: transform 0.1s; }
+        
+        /* ★ダッシュボードボタン（ショートカット） */
+        .dashboard-nav { display: flex; gap: 10px; justify-content: center; margin-bottom: 20px; padding: 0 15px; }
+        .dash-btn { background: #e0e6ed; color: #2c3e50; border: none; padding: 8px 15px; border-radius: 20px; font-size: 0.85rem; font-weight: bold; text-decoration: none; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+        .dash-btn:active { transform: translateY(2px); box-shadow: none; }
+
+        .container { max-width: 600px; margin: 0 auto; padding: 0 20px; }
+        
+        /* ★セクションごとのデザイン */
+        .section-header { font-size: 1.1rem; color: #34495e; font-weight: bold; margin-top: 30px; margin-bottom: 10px; border-left: 5px solid #2980b9; padding-left: 10px; }
+        
+        /* ★ツール間隔を広く（gap: 35px） */
+        .tool-grid { display: grid; gap: 35px; padding-bottom: 20px; }
+        
+        .tool-btn { display: flex; align-items: center; justify-content: space-between; background: white; padding: 25px; border-radius: 16px; text-decoration: none; color: #333; box-shadow: 0 4px 8px rgba(0,0,0,0.08); border: 2px solid transparent; transition: transform 0.1s; }
         .tool-btn:active { transform: scale(0.98); background: #f9f9f9; }
+        
         .btn-icon { font-size: 2.5rem; margin-right: 20px; width: 50px; text-align: center; }
         .btn-text h3 { margin: 0; font-size: 1.2rem; color: #2c3e50; }
         .btn-text p { margin: 5px 0 0; font-size: 0.85rem; color: #777; }
-        .sub-action-area { display: flex; gap: 10px; padding: 0 20px; margin-bottom: 20px; }
-        .sub-btn { flex: 1; background: white; border: 1px solid #ddd; padding: 15px; border-radius: 12px; text-align: center; text-decoration: none; color: #555; font-weight: bold; font-size: 0.9rem; box-shadow: 0 2px 4px rgba(0,0,0,0.05); }
-        .rough-paper { background-color: #fff9c4; border: 2px dashed #dcdcdc; border-radius: 8px; padding: 15px; margin-top: 20px; box-shadow: 3px 3px 0px rgba(0,0,0,0.1); }
-        .rough-textarea { width: 100%; height: 150px; background: transparent; border: none; outline: none; font-size: 1.1rem; line-height: 1.6; color: #444; font-family: "Yu Gothic", sans-serif; resize: none; }
-        .mic-btn { background: #e74c3c; color: white; width: 60px; height: 60px; border-radius: 50%; border: none; font-size: 1.5rem; box-shadow: 0 4px 10px rgba(231, 76, 60, 0.4); position: absolute; bottom: 20px; right: 20px; cursor: pointer; display: flex; align-items: center; justify-content: center; }
-        .mic-active { animation: pulse 1.5s infinite; background: #c0392b; }
-        @keyframes pulse { 0% { box-shadow: 0 0 0 0 rgba(231, 76, 60, 0.7); } 100% { box-shadow: 0 0 0 15px rgba(231, 76, 60, 0); } }
-        .back-link { display: block; text-align: center; margin-top: 20px; color: #888; text-decoration: none; padding: 15px; background: white; border-radius: 8px; }
+
+        .back-link { display: block; text-align: center; margin-top: 40px; color: #888; text-decoration: none; padding: 15px; background: white; border-radius: 8px; border: 1px solid #eee; }
         
-        /* カメラ関連スタイル */
+        /* モーダル内スタイル（省略せず記述） */
+        .overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 150; display: none; opacity: 0; }
+        .overlay.show { display: block; opacity: 1; }
+        .modal-box { position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 90%; max-width: 500px; background: white; padding: 24px; border-radius: 16px; z-index: 160; box-shadow: 0 10px 25px rgba(0,0,0,0.2); display: none; }
+        .modal-box.show { display: block; }
+
+        /* カメラ */
         #cameraModal { padding: 0; background: #000; color: white; overflow: hidden; height: 90vh; display: flex; flex-direction: column; }
         #cameraSetup { padding: 20px; background: #fff; color: #333; height: 100%; display: flex; flex-direction: column; overflow-y: auto; }
         .preview-canvas-wrapper { text-align: center; margin-bottom: 15px; background: #333; padding: 10px; border-radius: 8px; }
-        #boardCanvas { max-width: 100%; height: auto; box-shadow: 0 4px 8px rgba(0,0,0,0.3); }
+        #boardCanvas { max-width: 100%; height: auto; }
         #cameraView { display: none; position: relative; flex: 1; background: #000; overflow: hidden; }
         #video { width: 100%; height: 100%; object-fit: cover; }
-        #overlayBoard { position: absolute; top: 50px; left: 20px; width: 180px; cursor: grab; z-index: 10; filter: drop-shadow(0 4px 6px rgba(0,0,0,0.5)); touch-action: none; }
+        #overlayBoard { position: absolute; top: 50px; left: 20px; width: 180px; cursor: grab; z-index: 10; }
         .camera-controls { position: absolute; bottom: 30px; width: 100%; display: flex; justify-content: space-around; align-items: center; z-index: 20; pointer-events: none; }
         .camera-controls button { pointer-events: auto; }
         .shutter-btn { width: 70px; height: 70px; border-radius: 50%; background: white; border: 5px solid #ccc; cursor: pointer; }
-        .shutter-btn:active { background: #ddd; transform: scale(0.95); }
         .back-btn-cam { background: rgba(0,0,0,0.5); color: white; border: 1px solid white; padding: 10px 20px; border-radius: 30px; font-weight: bold; cursor: pointer; }
-        #flash { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: white; opacity: 0; pointer-events: none; z-index: 50; transition: opacity 0.1s; }
         
-        /* ボタン群 */
-        .process-btns { display: flex; gap: 5px; flex-wrap: wrap; margin-bottom: 10px; }
-        .proc-btn { flex: 1; padding: 10px; font-size: 0.85rem; background: white; border: 1px solid #ddd; border-radius: 4px; cursor: pointer; white-space: nowrap; min-width: 60px; }
-        .proc-btn.active { background: #2c3e50; color: white; border-color: #2c3e50; }
-        .custom-btn-area { border-top: 1px dashed #ddd; padding-top: 10px; margin-top: 5px; }
-        .btn-edit-custom { background: #f39c12; color: white; border: none; border-radius: 4px; padding: 2px 8px; font-size: 0.8rem; cursor: pointer; float: right; }
+        /* ★修正：工程ボタン */
+        .process-btns { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 15px; }
+        .proc-btn { 
+            flex: 1; padding: 10px; font-size: 0.9rem; 
+            background: #f0f0f0; /* 薄いグレー */
+            border: 1px solid #ccc; 
+            border-radius: 6px; cursor: pointer; white-space: nowrap; 
+            color: #555; font-weight: bold;
+        }
+        .proc-btn.active { background: #2c3e50; color: white; border-color: #2c3e50; box-shadow: inset 0 2px 4px rgba(0,0,0,0.2); }
         
+        /* 日報 */
+        .rough-paper { background-color: #fff9c4; border: 2px dashed #dcdcdc; border-radius: 8px; padding: 15px; margin-top: 20px; }
+        .rough-textarea { width: 100%; height: 150px; background: transparent; border: none; outline: none; font-size: 1.1rem; line-height: 1.6; color: #444; resize: none; }
+        .mic-btn { background: #e74c3c; color: white; width: 60px; height: 60px; border-radius: 50%; border: none; font-size: 1.5rem; position: absolute; bottom: 20px; right: 20px; cursor: pointer; }
+        .mic-active { animation: pulse 1.5s infinite; background: #c0392b; }
+        @keyframes pulse { 0% { box-shadow: 0 0 0 0 rgba(231, 76, 60, 0.7); } 100% { box-shadow: 0 0 0 15px rgba(231, 76, 60, 0); } }
+
+        .btn-close { background-color: #95a5a6; color: white; padding: 12px; border: none; border-radius: 8px; font-weight: bold; cursor: pointer; width: 100%; margin-top:10px; }
+        .save-btn { background-color: #2980b9; color: white; padding: 12px; border: none; border-radius: 8px; font-weight: bold; cursor: pointer; width: 100%; }
+        
+        /* 編集モーダル */
+        .edit-footer { display: flex; gap: 10px; margin-top: 20px; }
+        .btn-del-single { width: 50px; background-color: #fff5f5; border: 1px solid #e74c3c; color: #e74c3c; border-radius: 8px; font-size: 1.2rem; cursor: pointer; }
         label { margin-top: 10px; display: block; font-weight: bold; font-size: 0.9rem; }
         input[type="text"] { width: 100%; padding: 10px; margin-top: 5px; border: 1px solid #ddd; border-radius: 6px; font-size: 1rem; }
     </style>
@@ -61,21 +88,19 @@
     <div class="site-sub" id="displaySiteId">---</div>
 </div>
 
-<div class="container">
-    <div class="sub-action-area">
-        <button class="sub-btn" onclick="openForm()">✏️ 情報編集</button>
-        <a href="#" id="btnGoogleCal" target="_blank" class="sub-btn">📅 カレンダー</a>
-    </div>
+<div class="dashboard-nav">
+    <a href="#sec-record" class="dash-btn">📝 記録</a>
+    <a href="#sec-support" class="dash-btn">🧰 サポート</a>
+    <a href="#sec-manage" class="dash-btn">⚙️ 管理</a>
+</div>
 
+<div class="container">
+
+    <div id="sec-record" class="section-header">📝 記録・報告</div>
     <div class="tool-grid">
         <div class="tool-btn" onclick="openCameraModal()">
             <div class="btn-icon">📸</div>
             <div class="btn-text"><h3>電子黒板カメラ</h3><p>現場名と日付は自動入力。<br>工程を選んで撮影。</p></div>
-            <span style="font-size:1.5rem; color:#ccc;">＞</span>
-        </div>
-        <div class="tool-btn" onclick="searchSupply()">
-            <div class="btn-icon">🛒</div>
-            <div class="btn-text"><h3>資材SOSマップ</h3><p>近くのホームセンターや<br>建材屋を一発検索。</p></div>
             <span style="font-size:1.5rem; color:#ccc;">＞</span>
         </div>
         <div class="tool-btn" onclick="openModal('report')">
@@ -84,6 +109,30 @@
             <span style="font-size:1.5rem; color:#ccc;">＞</span>
         </div>
     </div>
+
+    <div id="sec-support" class="section-header">🧰 現場サポート</div>
+    <div class="tool-grid">
+        <div class="tool-btn" onclick="searchSupply()">
+            <div class="btn-icon">🛒</div>
+            <div class="btn-text"><h3>資材SOSマップ</h3><p>近くのホームセンターや<br>建材屋を一発検索。</p></div>
+            <span style="font-size:1.5rem; color:#ccc;">＞</span>
+        </div>
+        <a href="#" id="btnGoogleCal" target="_blank" class="tool-btn">
+            <div class="btn-icon">📅</div>
+            <div class="btn-text"><h3>カレンダー登録</h3><p>Googleカレンダーに予定追加</p></div>
+            <span style="font-size:1.5rem; color:#ccc;">↗</span>
+        </a>
+    </div>
+
+    <div id="sec-manage" class="section-header">⚙️ 情報管理</div>
+    <div class="tool-grid">
+        <div class="tool-btn" onclick="openForm()" style="background: #fff8e1; border-color: #ffecb3;">
+            <div class="btn-icon">✏️</div>
+            <div class="btn-text"><h3>情報の編集・削除</h3><p>現場名や住所の修正はこちら</p></div>
+            <span style="font-size:1.5rem; color:#ccc;">＞</span>
+        </div>
+    </div>
+
     <a href="navi.html" class="back-link">↩️ 一覧に戻る</a>
 </div>
 
@@ -92,14 +141,12 @@
 <div id="cameraModal" class="modal-box" style="width:100%; height:100%; max-width:none; border-radius:0; top:0; left:0; transform:none;">
     <div id="cameraSetup">
         <h3 style="text-align:center; margin-top:0;">黒板の準備</h3>
-        <div class="preview-canvas-wrapper">
-            <canvas id="boardCanvas" width="400" height="300"></canvas>
-        </div>
+        <div class="preview-canvas-wrapper"><canvas id="boardCanvas" width="400" height="300"></canvas></div>
         
         <label>会社名（変更可）</label>
         <input type="text" id="companyName" value="ペイントハウス山岡" oninput="drawBoard()">
 
-        <label>工程（基本）</label>
+        <label>工程（タップで選択/解除）</label>
         <div class="process-btns">
             <button class="proc-btn active" onclick="setProcess(this, '施工前')">施工前</button>
             <button class="proc-btn" onclick="setProcess(this, '下塗り')">下塗り</button>
@@ -108,15 +155,6 @@
             <button class="proc-btn" onclick="setProcess(this, '完了')">完了</button>
         </div>
         
-        <div class="custom-btn-area">
-            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:5px;">
-                <label style="margin:0;">任意ボタン（カスタム）</label>
-                <button class="btn-edit-custom" onclick="editCustomButtons()">⚙️ 名前変更</button>
-            </div>
-            <div class="process-btns" id="customBtnGroup">
-                </div>
-        </div>
-
         <label>施工箇所（任意）</label>
         <input type="text" id="photoDetail" placeholder="例：北面、軒天など" oninput="drawBoard()">
 
@@ -144,10 +182,11 @@
         <textarea id="reportText" class="rough-textarea" placeholder="（例）あー、えっと、北面の養生終わって..."></textarea>
         <button class="mic-btn" id="micBtn" onclick="toggleSpeech()">🎤</button>
     </div>
-    <div class="settings-footer" style="border-top:none;">
-        <button class="save-btn" onclick="sendReport()">LINEに送る</button>
-        <button class="btn-close" onclick="closeAllModals()">閉じる</button>
+    <div style="display:flex; gap:10px; margin-top:15px;">
+        <button class="save-btn" onclick="saveReportLocal()" style="flex:1; background:#f39c12;">💾 履歴に残す</button>
+        <button class="save-btn" onclick="sendReportLine()" style="flex:1; background:#00C300;">LINE送る</button>
     </div>
+    <div style="margin-top:10px;"><button class="btn-close" onclick="closeAllModals()">閉じる</button></div>
 </div>
 
 <div id="inputForm" class="modal-box">
@@ -174,15 +213,13 @@
     let currentSite = null;
     let sites = JSON.parse(localStorage.getItem('dx_sites')) || [];
     let currentProcess = '施工前';
-    
-    // カスタムボタン初期値
-    let customLabels = JSON.parse(localStorage.getItem('dx_custom_btns')) || ["ケレン", "洗浄", "養生", "シーリング", "足場"];
 
     if (siteId) {
         currentSite = sites.find(s => s.id === siteId);
         if (currentSite) {
             document.getElementById('displaySiteName').textContent = currentSite.name;
             document.getElementById('displaySiteId').textContent = `No. ${currentSite.id}`;
+            const d = new Date();
             let stLabel = '現調予定';
             if(currentSite.status === 'active') stLabel = '施工中';
             const text = encodeURIComponent(`【${stLabel}】${currentSite.name}`);
@@ -190,46 +227,24 @@
             document.getElementById('btnGoogleCal').href = `https://www.google.com/calendar/render?action=TEMPLATE&text=${text}&location=${location}`;
         }
     }
+    window.onload = () => { if(document.getElementById('boardCanvas')) drawBoard(); };
 
-    // 初期化
-    window.onload = () => {
-        renderCustomButtons();
-        if(document.getElementById('boardCanvas')) drawBoard();
-    };
-
-    // --- カスタムボタン制御 ---
-    function renderCustomButtons() {
-        const group = document.getElementById('customBtnGroup');
-        group.innerHTML = '';
-        customLabels.forEach((label, index) => {
-            const btn = document.createElement('button');
-            btn.className = 'proc-btn';
-            btn.textContent = label;
-            btn.onclick = function() { setProcess(this, label); };
-            group.appendChild(btn);
-        });
-    }
-
-    function editCustomButtons() {
-        // 簡易プロンプトで連続編集
-        for(let i=0; i<5; i++) {
-            const newName = prompt(`ボタン${i+1}の名前を変更:`, customLabels[i]);
-            if(newName) customLabels[i] = newName;
-        }
-        localStorage.setItem('dx_custom_btns', JSON.stringify(customLabels));
-        renderCustomButtons();
-    }
-
-    // --- 黒板描画 ---
+    // --- ★修正：黒板処理（トグル対応） ---
     const canvas = document.getElementById('boardCanvas');
     const ctx = canvas.getContext('2d');
     const video = document.getElementById('video');
     let stream = null;
 
     function setProcess(btn, text) {
-        document.querySelectorAll('.proc-btn').forEach(b => b.classList.remove('active'));
-        btn.classList.add('active');
-        currentProcess = text;
+        // トグル処理
+        if (btn.classList.contains('active')) {
+            btn.classList.remove('active');
+            currentProcess = ''; // 解除
+        } else {
+            document.querySelectorAll('.proc-btn').forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+            currentProcess = text;
+        }
         drawBoard();
     }
 
@@ -243,66 +258,43 @@
 
         ctx.fillStyle = '#004d40'; ctx.fillRect(0, 0, canvas.width, canvas.height);
         ctx.strokeStyle = 'white'; ctx.lineWidth = 5; ctx.strokeRect(5, 5, canvas.width - 10, canvas.height - 10);
-
         ctx.lineWidth = 2; ctx.beginPath();
         ctx.moveTo(10, 80); ctx.lineTo(390, 80);
         ctx.moveTo(10, 150); ctx.lineTo(390, 150);
         ctx.stroke();
 
         ctx.fillStyle = 'white'; ctx.textAlign = 'left'; ctx.textBaseline = 'middle';
-
         ctx.font = 'bold 20px sans-serif'; ctx.fillText("工事名", 20, 30);
         ctx.font = 'bold 24px sans-serif'; ctx.fillText(siteName, 20, 55);
-
         ctx.font = 'bold 20px sans-serif'; ctx.fillText("工種 / 施工内容", 20, 100);
-        ctx.font = 'bold 32px sans-serif'; ctx.fillText(currentProcess, 40, 125);
-
+        ctx.font = 'bold 32px sans-serif'; ctx.fillText(currentProcess || "（選択なし）", 40, 125); // 空なら表示変える
         ctx.font = 'bold 20px sans-serif'; ctx.fillText("施工箇所", 20, 175);
         ctx.font = 'bold 28px sans-serif'; ctx.fillText(location, 40, 205);
-
         ctx.textAlign = 'right'; ctx.font = 'bold 24px sans-serif'; ctx.fillText(dateStr, 380, 270);
-        
-        ctx.textAlign = 'left'; ctx.font = '16px sans-serif'; ctx.fillStyle = '#ccc';
-        ctx.fillText(company, 20, 270); // ★会社名描画
+        ctx.textAlign = 'left'; ctx.font = '16px sans-serif'; ctx.fillStyle = '#ccc'; ctx.fillText(company, 20, 270);
     }
 
-    // (カメラ起動・撮影・日報・編集機能は既存のまま)
+    // (カメラ・音声・保存系はそのまま)
     async function startCamera() {
         const dataUrl = canvas.toDataURL('image/png');
         document.getElementById('overlayBoard').src = dataUrl;
         document.getElementById('cameraSetup').style.display = 'none';
         document.getElementById('cameraView').style.display = 'flex';
-        try {
-            stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: { ideal: "environment" } }, audio: false });
-            video.srcObject = stream;
-        } catch (err) { alert("カメラ起動エラー"); stopCamera(); }
+        try { stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: { ideal: "environment" } }, audio: false }); video.srcObject = stream; } catch (err) { alert("エラー"); stopCamera(); }
     }
-    function stopCamera() {
-        if (stream) { stream.getTracks().forEach(track => track.stop()); stream = null; }
-        document.getElementById('cameraSetup').style.display = 'flex';
-        document.getElementById('cameraView').style.display = 'none';
-    }
+    function stopCamera() { if (stream) { stream.getTracks().forEach(track => track.stop()); stream = null; } document.getElementById('cameraSetup').style.display = 'flex'; document.getElementById('cameraView').style.display = 'none'; }
     function takePhoto() {
-        const flash = document.getElementById('flash');
-        flash.style.opacity = 1; setTimeout(() => flash.style.opacity = 0, 100);
-        const captureCanvas = document.createElement('canvas');
-        captureCanvas.width = video.videoWidth; captureCanvas.height = video.videoHeight;
-        const ctxCap = captureCanvas.getContext('2d');
-        ctxCap.drawImage(video, 0, 0, captureCanvas.width, captureCanvas.height);
-        const rect = video.getBoundingClientRect();
-        const scaleX = captureCanvas.width / rect.width; const scaleY = captureCanvas.height / rect.height;
-        const board = document.getElementById('overlayBoard');
-        const boardRect = board.getBoundingClientRect();
+        const flash = document.getElementById('flash'); flash.style.opacity = 1; setTimeout(() => flash.style.opacity = 0, 100);
+        const captureCanvas = document.createElement('canvas'); captureCanvas.width = video.videoWidth; captureCanvas.height = video.videoHeight;
+        const ctxCap = captureCanvas.getContext('2d'); ctxCap.drawImage(video, 0, 0, captureCanvas.width, captureCanvas.height);
+        const rect = video.getBoundingClientRect(); const scaleX = captureCanvas.width / rect.width; const scaleY = captureCanvas.height / rect.height;
+        const board = document.getElementById('overlayBoard'); const boardRect = board.getBoundingClientRect();
         ctxCap.drawImage(board, (boardRect.left - rect.left)*scaleX, (boardRect.top - rect.top)*scaleY, boardRect.width*scaleX, boardRect.height*scaleY);
-        const link = document.createElement('a');
-        const timeStr = new Date().toISOString().replace(/[:.]/g, '-');
-        link.href = captureCanvas.toDataURL('image/jpeg');
-        link.download = `${currentSite.name}_${currentProcess}_${timeStr}.jpg`;
+        const link = document.createElement('a'); const timeStr = new Date().toISOString().replace(/[:.]/g, '-');
+        link.href = captureCanvas.toDataURL('image/jpeg'); link.download = `${currentSite.name}_${currentProcess}_${timeStr}.jpg`;
         document.body.appendChild(link); link.click(); document.body.removeChild(link);
     }
-    // ドラッグ処理
-    const overlayBoard = document.getElementById('overlayBoard');
-    let isDragging = false, startX, startY, initialLeft, initialTop;
+    const overlayBoard = document.getElementById('overlayBoard'); let isDragging = false, startX, startY, initialLeft, initialTop;
     overlayBoard.addEventListener('touchstart', (e) => { isDragging = true; startX = e.touches[0].clientX; startY = e.touches[0].clientY; initialLeft = overlayBoard.offsetLeft; initialTop = overlayBoard.offsetTop; e.preventDefault(); });
     overlayBoard.addEventListener('touchmove', (e) => { if (!isDragging) return; const dx = e.touches[0].clientX - startX; const dy = e.touches[0].clientY - startY; overlayBoard.style.left = `${initialLeft + dx}px`; overlayBoard.style.top = `${initialTop + dy}px`; e.preventDefault(); });
     overlayBoard.addEventListener('touchend', () => isDragging = false);
@@ -322,6 +314,9 @@
     function toggleSpeech() { if (!recognition) { alert('非対応です'); return; } if (isRecognizing) stopSpeech(); else { recognition.start(); isRecognizing = true; document.getElementById('micBtn').classList.add('mic-active'); } }
     function stopSpeech() { if(recognition) recognition.stop(); isRecognizing = false; document.getElementById('micBtn').classList.remove('mic-active'); }
     function sendReport() { const text = document.getElementById('reportText').value; if(!text) return; const lineUrl = `https://line.me/R/msg/text/?【日報：${currentSite.name}】%0A${encodeURIComponent(text)}`; window.open(lineUrl, '_blank'); }
+    function saveReportLocal() { alert('保存しました（モック）'); }
+    function sendReportLine() { const text = document.getElementById('reportText').value; if(!text) return; const lineUrl = `https://line.me/R/msg/text/?【日報：${currentSite.name}】%0A${encodeURIComponent(text)}`; window.open(lineUrl, '_blank'); }
+
 </script>
 </body>
 </html>
