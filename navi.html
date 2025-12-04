@@ -157,6 +157,13 @@
 
 <div id="settingsModal" class="modal-box settings-menu">
     <h3>⚙️ 設定・データ管理</h3>
+
+    <div style="margin-bottom: 15px; padding-bottom: 15px; border-bottom: 1px solid #eee;">
+        <label style="margin-top:0;">📩 日報の送信先（管理者メアド）</label>
+        <input type="email" id="managerEmail" placeholder="example@gmail.com" onchange="saveManagerEmail()" style="background:#f9f9f9;">
+    </div>
+
+
     <button class="settings-item" onclick="copyToClipboard()">📋 <strong>スプレッドシート用コピー</strong></button>
     <button class="settings-item" onclick="exportCSV()">💾 <strong>CSV出力</strong></button>
     <hr style="border:0; border-top:1px solid #eee;">
@@ -435,6 +442,23 @@
     function showNotification(msg) { const el = document.getElementById('notification'); el.textContent = msg; el.classList.add('show'); setTimeout(() => el.classList.remove('show'), 2000); }
     
     document.addEventListener('DOMContentLoaded', renderList);
+
+    // ★追加：メールアドレスの保存・読み込み
+    function saveManagerEmail() {
+        const email = document.getElementById('managerEmail').value;
+        localStorage.setItem('dx_manager_email', email);
+        showNotification('📩 アドレスを保存しました');
+    }
+    
+    // 初期化時にアドレスを読み込む
+    document.addEventListener('DOMContentLoaded', function() {
+        renderList();
+        const savedEmail = localStorage.getItem('dx_manager_email');
+        if(savedEmail) document.getElementById('managerEmail').value = savedEmail;
+    });
+
+
+
 </script>
 </body>
 </html>
