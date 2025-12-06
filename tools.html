@@ -11,60 +11,111 @@
     <style>
         /* --- 既存スタイル調整 --- */
         body { background-color: #f0f2f5; padding-bottom: 80px; scroll-behavior: smooth; }
-        .site-header { background: #2c3e50; color: white; padding: 20px; text-align: center; border-radius: 0 0 20px 20px; margin-bottom: 30px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); position: sticky; top: 0; z-index: 100; }
+        
+        .site-header { 
+            background: #2c3e50; color: white; padding: 20px; text-align: center; 
+            border-radius: 0 0 20px 20px; margin-bottom: 30px; 
+            box-shadow: 0 4px 10px rgba(0,0,0,0.1); 
+            position: sticky; top: 0; z-index: 100; 
+        }
         .site-title { margin: 0; font-size: 1.4rem; font-weight: bold; }
         .site-sub { font-size: 0.9rem; opacity: 0.8; margin-top: 5px; }
-        .dashboard-nav { display: flex; gap: 10px; justify-content: center; margin-bottom: 20px; padding: 0 15px; position: sticky; top: 100px; z-index: 90; }
-        .dash-btn { background: white; color: #555; border: 1px solid #ddd; padding: 10px 20px; border-radius: 30px; font-size: 0.9rem; font-weight: bold; text-decoration: none; box-shadow: 0 2px 5px rgba(0,0,0,0.1); transition: transform 0.1s; }
+        
+        /* ダッシュボード（ショートカット） */
+        .dashboard-nav { 
+            display: flex; gap: 10px; justify-content: center; 
+            margin-bottom: 20px; padding: 0 15px; 
+            position: sticky; top: 100px; z-index: 90; 
+        }
+        .dash-btn { 
+            background: white; color: #555; border: 1px solid #ddd; 
+            padding: 10px 20px; border-radius: 30px; 
+            font-size: 0.9rem; font-weight: bold; text-decoration: none; 
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1); 
+            transition: transform 0.1s;
+        }
         .dash-btn:active { transform: translateY(2px); box-shadow: none; }
+        
+        /* 色分けボタン */
         .dash-btn.rec { border-bottom: 4px solid #27ae60; color: #27ae60; }
         .dash-btn.sup { border-bottom: 4px solid #e67e22; color: #e67e22; }
         .dash-btn.man { border-bottom: 4px solid #2980b9; color: #2980b9; }
+
         .container { max-width: 600px; margin: 0 auto; padding: 0 20px; }
-        .section-header { font-size: 1.2rem; font-weight: bold; margin-top: 40px; margin-bottom: 15px; padding: 10px 15px; border-radius: 8px; display: flex; align-items: center; gap: 10px; scroll-margin-top: 140px; }
+        
+        /* セクション見出し */
+        .section-header { 
+            font-size: 1.2rem; font-weight: bold; 
+            margin-top: 40px; margin-bottom: 15px; 
+            padding: 10px 15px; border-radius: 8px;
+            display: flex; align-items: center; gap: 10px;
+            scroll-margin-top: 140px; 
+        }
+        
+        /* 色分けスタイル */
         .section-record { background-color: #e8f5e9; color: #2e7d32; border-left: 6px solid #2e7d32; }
         .section-support { background-color: #fff3e0; color: #e65100; border-left: 6px solid #e65100; }
         .section-manage { background-color: #e3f2fd; color: #1565c0; border-left: 6px solid #1565c0; }
-        .tool-grid { display: grid; gap: 20px; padding-bottom: 20px; }
-        .tool-btn { display: flex; align-items: center; justify-content: space-between; background: white; padding: 25px; border-radius: 16px; text-decoration: none; color: #333; box-shadow: 0 4px 8px rgba(0,0,0,0.05); border: 2px solid transparent; transition: transform 0.1s; }
+
+        .tool-grid { display: grid; gap: 35px; padding-bottom: 20px; }
+        
+        .tool-btn { 
+            display: flex; align-items: center; justify-content: space-between;
+            background: white; padding: 25px; border-radius: 16px; 
+            text-decoration: none; color: #333;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.05); 
+            border: 2px solid transparent; 
+            transition: transform 0.1s;
+        }
+        /* 各セクションごとの枠線色 */
         .tool-grid.rec .tool-btn { border-color: #a5d6a7; }
         .tool-grid.sup .tool-btn { border-color: #ffcc80; }
         .tool-grid.man .tool-btn { border-color: #90caf9; }
+
         .tool-btn:active { transform: scale(0.98); background: #f9f9f9; }
+        
         .btn-icon { font-size: 2.5rem; margin-right: 20px; width: 50px; text-align: center; }
         .btn-text h3 { margin: 0; font-size: 1.2rem; color: #333; }
         .btn-text p { margin: 5px 0 0; font-size: 0.85rem; color: #777; }
+
+        .back-link { display: block; text-align: center; margin-top: 40px; color: #888; text-decoration: none; padding: 15px; background: white; border-radius: 8px; border: 1px solid #eee; }
+        
+        /* モーダル */
         .overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 150; display: none; opacity: 0; }
         .overlay.show { display: block; opacity: 1; }
         .modal-box { position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 90%; max-width: 500px; background: white; padding: 24px; border-radius: 16px; z-index: 160; box-shadow: 0 10px 25px rgba(0,0,0,0.2); display: none; max-height: 90vh; overflow-y: auto; }
         .modal-box.show { display: block; }
 
-        /* --- カメラ関連 --- */
+        /* カメラ */
         #cameraModal { padding: 0; background: #000; color: white; overflow: hidden; height: 90vh; flex-direction: column; }
         #cameraModal.show { display: flex; }
         #cameraSetup { padding: 20px; background: #fff; color: #333; height: 100%; display: flex; flex-direction: column; overflow-y: auto; }
         .preview-canvas-wrapper { text-align: center; margin-bottom: 15px; background: #333; padding: 10px; border-radius: 8px; }
         #boardCanvas { max-width: 100%; height: auto; box-shadow: 0 4px 8px rgba(0,0,0,0.3); }
-        
-        /* 撮影後プレビュー */
         #photoPreviewArea { display: none; position: relative; flex: 1; background: #000; overflow: hidden; justify-content: center; align-items: center; }
         #previewImage { max-width: 100%; max-height: 100%; object-fit: contain; }
         #overlayBoard { position: absolute; top: 20px; left: 20px; width: 200px; cursor: grab; z-index: 10; touch-action: none; } 
-        
         .camera-controls-area { padding: 15px; background: #111; display: flex; justify-content: space-between; align-items: center; }
         .btn-cam-action { padding: 10px 20px; border-radius: 30px; font-weight: bold; cursor: pointer; border: none; }
         .btn-retake { background: #e74c3c; color: white; }
         .btn-save-photo { background: #00C853; color: white; font-size: 1.1rem; padding: 12px 30px; }
-
-        /* 四隅スナップボタン */
         .snap-controls { position: absolute; bottom: 80px; left: 50%; transform: translateX(-50%); display: flex; gap: 15px; z-index: 20; background: rgba(0,0,0,0.6); padding: 8px 15px; border-radius: 30px; }
         .snap-btn { background: rgba(255,255,255,0.2); color: white; border: 1px solid rgba(255,255,255,0.5); width: 44px; height: 44px; border-radius: 50%; font-size: 1.5rem; cursor: pointer; display: flex; justify-content: center; align-items: center; transition: 0.1s; }
         .snap-btn:active { background: rgba(255,255,255,0.5); }
         
-        /* 工程ボタン等 */
+        /* 工程ボタン（グレーで見やすく・トグル対応） */
         .process-btns { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 15px; }
-        .proc-btn { flex: 1; min-width: 70px; padding: 12px 5px; font-size: 0.9rem; background: #f0f0f0; border: 1px solid #ccc; border-radius: 6px; cursor: pointer; white-space: nowrap; color: #555; font-weight: bold; transition: all 0.2s; }
-        .proc-btn.active { background: #2c3e50; color: white; border-color: #2c3e50; box-shadow: inset 0 2px 4px rgba(0,0,0,0.2); }
+        .proc-btn { 
+            flex: 1; min-width: 70px; padding: 12px 5px; font-size: 0.9rem; 
+            background: #f0f0f0; border: 1px solid #ccc; 
+            border-radius: 6px; cursor: pointer; white-space: nowrap; 
+            color: #555; font-weight: bold;
+            transition: all 0.2s;
+        }
+        .proc-btn.active { 
+            background: #2c3e50; color: white; border-color: #2c3e50; 
+            box-shadow: inset 0 2px 4px rgba(0,0,0,0.2);
+        }
         .custom-btn-area { border-top: 1px dashed #ddd; padding-top: 15px; margin-top: 10px; }
         .btn-edit-custom { background: #f39c12; color: white; border: none; border-radius: 4px; padding: 4px 10px; font-size: 0.8rem; cursor: pointer; float: right; }
         
@@ -74,14 +125,14 @@
         .mic-btn { background: #e74c3c; color: white; width: 60px; height: 60px; border-radius: 50%; border: none; font-size: 1.5rem; position: absolute; bottom: 20px; right: 20px; cursor: pointer; display: flex; align-items: center; justify-content: center; }
         .mic-active { animation: pulse 1.5s infinite; background: #c0392b; }
         @keyframes pulse { 0% { box-shadow: 0 0 0 0 rgba(231, 76, 60, 0.7); } 100% { box-shadow: 0 0 0 15px rgba(231, 76, 60, 0); } }
+
         .btn-close { background-color: #95a5a6; color: white; padding: 12px; border: none; border-radius: 8px; font-weight: bold; cursor: pointer; width: 100%; margin-top:10px; }
         .save-btn { background-color: #2980b9; color: white; padding: 12px; border: none; border-radius: 8px; font-weight: bold; cursor: pointer; width: 100%; }
+        
         .edit-footer { display: flex; gap: 10px; margin-top: 20px; }
         .btn-del-single { width: 50px; background-color: #fff5f5; border: 1px solid #e74c3c; color: #e74c3c; border-radius: 8px; font-size: 1.2rem; cursor: pointer; }
         label { margin-top: 15px; display: block; font-weight: bold; font-size: 0.95rem; color: #2c3e50; }
         input[type="text"] { width: 100%; padding: 12px; margin-top: 5px; border: 1px solid #ccc; border-radius: 6px; font-size: 1rem; box-sizing: border-box; background: #f9f9f9; }
-        .back-link { display: block; text-align: center; margin-top: 40px; color: #888; text-decoration: none; padding: 15px; background: white; border-radius: 8px; border: 1px solid #eee; }
-        /* 履歴 */
         .history-list { margin-top: 15px; max-height: 150px; overflow-y: auto; border-top: 1px solid #eee; padding-top: 10px; }
         .history-item { background: #fff; padding: 8px; margin-bottom: 5px; border-radius: 4px; font-size: 0.85rem; border: 1px solid #eee; }
         .history-date { font-weight: bold; color: #2980b9; font-size: 0.75rem; }
@@ -101,6 +152,7 @@
 </div>
 
 <div class="container">
+
     <div id="sec-record" class="section-header section-record">📝 記録・報告</div>
     <div class="tool-grid rec">
         <div class="tool-btn" onclick="openCameraModal()">
@@ -172,18 +224,15 @@
             <button class="save-btn" onclick="document.getElementById('nativeCameraInput').click()" style="background:#00C853; font-size:1.1rem;">📸 標準カメラ起動</button>
         </div>
     </div>
-
     <div id="photoPreviewArea">
         <img id="previewImage" src="" alt="撮影写真">
         <img id="overlayBoard" src="" alt="黒板">
-        
         <div class="snap-controls">
             <button class="snap-btn" onclick="snapBoard('tl')">↖️</button>
             <button class="snap-btn" onclick="snapBoard('tr')">↗️</button>
             <button class="snap-btn" onclick="snapBoard('bl')">↙️</button>
             <button class="snap-btn" onclick="snapBoard('br')">↘️</button>
         </div>
-
         <div class="camera-controls-area" style="position:absolute; bottom:0; width:100%;">
             <button class="btn-cam-action btn-retake" onclick="retakePhoto()">やり直す</button>
             <button class="btn-cam-action btn-save-photo" onclick="saveCompositePhoto()">💾 保存する</button>
@@ -197,12 +246,25 @@
         <textarea id="reportText" class="rough-textarea" placeholder="（例）あー、えっと、北面の養生終わって..."></textarea>
         <button class="mic-btn" id="micBtn" onclick="toggleSpeech()">🎤</button>
     </div>
-    <div style="display:flex; gap:5px; margin-top:15px;">
-        <button class="save-btn" onclick="saveReportLocal()" style="flex:1; background:#f39c12; font-size:0.8rem;">💾 履歴残す</button>
-        <button class="save-btn" onclick="sendReportLine()" style="flex:1; background:#00C300; font-size:0.8rem;">LINE</button>
-        <button class="save-btn" onclick="sendReportMail()" style="flex:1; background:#007bff; font-size:0.8rem;">📧 メール</button>
+    
+    <div style="margin-top:15px; display:flex; flex-direction:column; gap:10px;">
+        <button class="save-btn" onclick="saveReportLocal()" style="background:#f39c12; font-size:0.9rem;">
+            💾 まずは履歴に残す
+        </button>
+
+        <div style="display:flex; gap:5px;">
+            <button class="save-btn" onclick="sendReportCloud()" style="flex:1.5; background:#9b59b6; font-size:0.85rem;">
+                ☁️ クラウドへ提出
+            </button>
+            <button class="save-btn" onclick="sendReportLine()" style="flex:1; background:#00C300; font-size:0.8rem;">LINE</button>
+            <button class="save-btn" onclick="sendReportMail()" style="flex:1; background:#007bff; font-size:0.8rem;">メール</button>
+        </div>
     </div>
-    <div style="margin-top:15px;"><label style="margin:0; font-size:0.85rem;">📜 過去の履歴 (この現場のみ)</label><div id="reportHistoryList" class="history-list"></div></div>
+    
+    <div style="margin-top:15px;">
+        <label style="margin:0; font-size:0.85rem;">📜 過去の履歴 (この現場のみ)</label>
+        <div id="reportHistoryList" class="history-list"></div>
+    </div>
     <div class="settings-footer" style="border-top:none; margin-top:10px;"><button class="btn-close" onclick="closeAllModals()">閉じる</button></div>
 </div>
 
@@ -234,66 +296,36 @@
             const text = encodeURIComponent(`【${stLabel}】${currentSite.name}`);
             const location = encodeURIComponent(currentSite.address);
             document.getElementById('btnGoogleCal').href = `https://www.google.com/calendar/render?action=TEMPLATE&text=${text}&location=${location}`;
-        } else { document.getElementById('displaySiteName').textContent = "現場が見つかりません"; }
-    } else { document.getElementById('displaySiteName').textContent = "現場未選択 (プレビュー)"; document.getElementById('displaySiteId').textContent = "---"; }
-
-    window.onload = () => { renderCustomButtons(); if(document.getElementById('boardCanvas')) drawBoard(); };
-
-    // --- ★修正：黒板スナップ＆ドラッグ制御 ---
-    function snapBoard(pos) {
-        const board = document.getElementById('overlayBoard');
-        // 1. 初期CSSの指定を解除（autoにする）
-        board.style.top = 'auto'; board.style.bottom = 'auto'; 
-        board.style.left = 'auto'; board.style.right = 'auto';
-        
-        const padding = '10px';
-        switch(pos) {
-            case 'tl': board.style.top = padding; board.style.left = padding; break;
-            case 'tr': board.style.top = padding; board.style.right = padding; break;
-            case 'bl': board.style.bottom = padding; board.style.left = padding; break;
-            case 'br': board.style.bottom = padding; board.style.right = padding; break;
+        } else {
+             document.getElementById('displaySiteName').textContent = "現場が見つかりません";
+             // プレビュー用にアラートは出さない
         }
+    } else {
+        document.getElementById('displaySiteName').textContent = "現場未選択 (プレビュー)";
+        document.getElementById('displaySiteId').textContent = "---";
     }
 
-    // ドラッグ開始時（スナップ状態からの復帰を考慮）
-    const overlayBoard = document.getElementById('overlayBoard');
-    let isDragging = false, startX, startY, initialLeft, initialTop;
-    
-    overlayBoard.addEventListener('touchstart', (e) => { 
-        isDragging = true; 
-        // コンテナ内での現在位置（px）を計算して、top/left指定に書き換える
-        const rect = overlayBoard.getBoundingClientRect();
-        const containerRect = document.getElementById('photoPreviewArea').getBoundingClientRect();
-        
-        initialLeft = rect.left - containerRect.left;
-        initialTop = rect.top - containerRect.top;
-        
-        startX = e.touches[0].clientX; 
-        startY = e.touches[0].clientY; 
-        
-        // スナップ解除（絶対位置指定へ）
-        overlayBoard.style.bottom = 'auto'; 
-        overlayBoard.style.right = 'auto';
-        overlayBoard.style.left = initialLeft + 'px';
-        overlayBoard.style.top = initialTop + 'px';
-        e.preventDefault(); 
-    });
-    overlayBoard.addEventListener('touchmove', (e) => { 
-        if (!isDragging) return; 
-        const dx = e.touches[0].clientX - startX; 
-        const dy = e.touches[0].clientY - startY; 
-        overlayBoard.style.left = `${initialLeft + dx}px`; 
-        overlayBoard.style.top = `${initialTop + dy}px`; 
-        e.preventDefault(); 
-    });
-    overlayBoard.addEventListener('touchend', () => isDragging = false);
+    window.onload = () => {
+        renderCustomButtons();
+        if(document.getElementById('boardCanvas')) drawBoard();
+        // ★履歴の初期表示
+        if(siteId) renderReportHistory();
+    };
 
-
-    // --- その他JS（既存のまま） ---
-    function renderCustomButtons() { const group = document.getElementById('customBtnGroup'); group.innerHTML = ''; customLabels.forEach((label, index) => { const btn = document.createElement('button'); btn.className = 'proc-btn'; btn.textContent = label; btn.onclick = function() { setProcess(this, label); }; group.appendChild(btn); }); }
-    function editCustomButtons() { for(let i=0; i<5; i++) { const newName = prompt(`ボタン${i+1}の名前を変更:`, customLabels[i]); if(newName) customLabels[i] = newName; } localStorage.setItem('dx_custom_btns', JSON.stringify(customLabels)); renderCustomButtons(); }
-    const canvas = document.getElementById('boardCanvas'); const ctx = canvas.getContext('2d');
-    function setProcess(btn, text) { if (btn.classList.contains('active')) { btn.classList.remove('active'); currentProcess = ''; } else { document.querySelectorAll('.proc-btn').forEach(b => b.classList.remove('active')); btn.classList.add('active'); currentProcess = text; } drawBoard(); }
+    // --- ★修正：黒板処理（トグル対応） ---
+    const canvas = document.getElementById('boardCanvas');
+    const ctx = canvas.getContext('2d');
+    function setProcess(btn, text) {
+        if (btn.classList.contains('active')) {
+            btn.classList.remove('active');
+            currentProcess = ''; // 解除
+        } else {
+            document.querySelectorAll('.proc-btn').forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+            currentProcess = text;
+        }
+        drawBoard();
+    }
     function drawBoard() {
         if(!canvas) return;
         const siteName = currentSite ? currentSite.name : "（現場名未定）";
@@ -355,6 +387,34 @@
         document.body.appendChild(link); link.click(); document.body.removeChild(link);
         retakePhoto(); closeAllModals();
     }
+    function snapBoard(pos) {
+        const board = document.getElementById('overlayBoard');
+        board.style.top = 'auto'; board.style.bottom = 'auto'; board.style.left = 'auto'; board.style.right = 'auto';
+        const padding = '10px';
+        switch(pos) {
+            case 'tl': board.style.top = padding; board.style.left = padding; break;
+            case 'tr': board.style.top = padding; board.style.right = padding; break;
+            case 'bl': board.style.bottom = padding; board.style.left = padding; break;
+            case 'br': board.style.bottom = padding; board.style.right = padding; break;
+        }
+    }
+    const overlayBoard = document.getElementById('overlayBoard');
+    let isDragging = false, startX, startY, initialLeft, initialTop;
+    overlayBoard.addEventListener('touchstart', (e) => { 
+        isDragging = true; 
+        const style = window.getComputedStyle(overlayBoard);
+        initialLeft = parseInt(style.left, 10) || 0; initialTop = parseInt(style.top, 10) || 0;
+        startX = e.touches[0].clientX; startY = e.touches[0].clientY; 
+        overlayBoard.style.bottom = 'auto'; overlayBoard.style.right = 'auto';
+        overlayBoard.style.left = initialLeft + 'px'; overlayBoard.style.top = initialTop + 'px';
+        e.preventDefault(); 
+    });
+    overlayBoard.addEventListener('touchmove', (e) => { if (!isDragging) return; const dx = e.touches[0].clientX - startX; const dy = e.touches[0].clientY - startY; overlayBoard.style.left = `${initialLeft + dx}px`; overlayBoard.style.top = `${initialTop + dy}px`; e.preventDefault(); });
+    overlayBoard.addEventListener('touchend', () => isDragging = false);
+
+    function renderCustomButtons() { const group = document.getElementById('customBtnGroup'); group.innerHTML = ''; customLabels.forEach((label, index) => { const btn = document.createElement('button'); btn.className = 'proc-btn'; btn.textContent = label; btn.onclick = function() { setProcess(this, label); }; group.appendChild(btn); }); }
+    function editCustomButtons() { for(let i=0; i<5; i++) { const newName = prompt(`ボタン${i+1}の名前を変更:`, customLabels[i]); if(newName) customLabels[i] = newName; } localStorage.setItem('dx_custom_btns', JSON.stringify(customLabels)); renderCustomButtons(); }
+    
     function openModal(type) { document.getElementById('overlay').classList.add('show'); if(type === 'camera') openCameraModal(); if(type === 'report') { document.getElementById('reportModal').classList.add('show'); renderReportHistory(); } }
     function openCameraModal() { document.getElementById('overlay').classList.add('show'); document.getElementById('cameraModal').classList.add('show'); drawBoard(); }
     function openForm() { document.getElementById('overlay').classList.add('show'); document.getElementById('inputForm').classList.add('show'); document.getElementById('siteName').value = currentSite ? currentSite.name : ''; document.getElementById('address').value = currentSite ? currentSite.address : ''; document.getElementById('status').value = currentSite ? currentSite.status : 'plan'; }
@@ -367,8 +427,89 @@
     function stopSpeech() { if(recognition) recognition.stop(); isRecognizing = false; document.getElementById('micBtn').classList.remove('mic-active'); }
     function sendReport() { const text = document.getElementById('reportText').value; if(!text) return; const lineUrl = `https://line.me/R/msg/text/?【日報：${currentSite ? currentSite.name : '現場'}】%0A${encodeURIComponent(text)}`; window.open(lineUrl, '_blank'); }
     function sendReportMail() { const text = document.getElementById('reportText').value; if(!text) return; const mailTo = localStorage.getItem('dx_manager_email'); if(!mailTo) { alert("【設定エラー】\nナビ画面の「設定(⚙️)」から、管理者のメールアドレスを登録してください。"); return; } saveReportLocal(); const subject = `【日報】${currentSite ? currentSite.name : '現場'} (${new Date().toLocaleDateString()})`; const body = `${currentSite ? currentSite.name : '現場'}\n\n${text}\n\n--\nSent from 職人ギア`; const mailUrl = `mailto:${mailTo}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`; window.location.href = mailUrl; }
-    function saveReportLocal() { const text = document.getElementById('reportText').value; if(!text || !siteId) return; if (!reportHistory[siteId]) { reportHistory[siteId] = []; } reportHistory[siteId].unshift({ date: new Date().toLocaleString(), content: text }); localStorage.setItem('dx_reports', JSON.stringify(reportHistory)); renderReportHistory(); document.getElementById('reportText').value = ''; alert('履歴に保存しました'); }
-    function renderReportHistory() { const listEl = document.getElementById('reportHistoryList'); listEl.innerHTML = ''; if (!siteId || !reportHistory[siteId] || reportHistory[siteId].length === 0) { listEl.innerHTML = '<div style="color:#777; font-size:0.8rem;">履歴はありません</div>'; return; } reportHistory[siteId].forEach(item => { const dateStr = item.date || "日時不明"; const contentStr = item.content || item; const html = `<div class="history-item"><div class="history-date">${dateStr}</div><div>${contentStr}</div></div>`; listEl.insertAdjacentHTML('beforeend', html); }); }
+    
+    // ★修正：日報保存（履歴表示の不具合も修正）
+    function saveReportLocal() { 
+        const text = document.getElementById('reportText').value; 
+        if(!text) { alert('日報の内容が空です'); return; }
+        if(!siteId) { alert("現場IDが不明です"); return; }
+        
+        if (!reportHistory[siteId]) { reportHistory[siteId] = []; } 
+        reportHistory[siteId].unshift({ date: new Date().toLocaleString(), content: text }); 
+        localStorage.setItem('dx_reports', JSON.stringify(reportHistory)); 
+        
+        renderReportHistory(); // ★即座に表示更新
+        document.getElementById('reportText').value = ''; 
+        alert('履歴に保存しました'); 
+    }
+    
+    function renderReportHistory() { 
+        const listEl = document.getElementById('reportHistoryList'); 
+        listEl.innerHTML = ''; 
+        if (!siteId || !reportHistory[siteId] || reportHistory[siteId].length === 0) { 
+            listEl.innerHTML = '<div style="color:#777; font-size:0.8rem;">履歴はありません</div>'; return; 
+        } 
+        reportHistory[siteId].forEach(item => { 
+            const dateStr = item.date || "日時不明"; 
+            const contentStr = item.content || item; 
+            const html = `<div class="history-item"><div class="history-date">${dateStr}</div><div>${contentStr}</div></div>`; 
+            listEl.insertAdjacentHTML('beforeend', html); 
+        }); 
+    }
+
+    // ★クラウド送信（今日の分をまとめて）
+    function sendReportCloud() {
+        const text = document.getElementById('reportText').value;
+        if(text) { saveReportLocal(); } // 入力中なら保存
+
+        const gasUrl = localStorage.getItem('dx_gas_url');
+        if(!gasUrl) { alert("【設定エラー】\nナビ画面の設定から「GAS URL」を登録してください。"); return; }
+
+        const today = new Date().toLocaleDateString();
+        let todayReports = [];
+        if(reportHistory[siteId]) {
+            todayReports = reportHistory[siteId].filter(item => {
+                // item.date "YYYY/M/D H:m:s" -> "YYYY/M/D"
+                return item.date.split(' ')[0] === today;
+            });
+        }
+        
+        if(todayReports.length === 0) {
+            alert("本日の日報データがありません。\nまずは「履歴に残す」を押してください。");
+            return;
+        }
+
+        todayReports.reverse(); // 古い順に
+        let combinedText = todayReports.map(item => {
+            const time = item.date.split(' ')[1]; 
+            return `[${time}] ${item.content}`;
+        }).join('\n');
+
+        const data = {
+            type: "report",
+            id: currentSite ? currentSite.id : "",
+            siteName: currentSite ? currentSite.name : "未定",
+            address: currentSite ? currentSite.address : "",
+            content: combinedText
+        };
+
+        const btn = event.target;
+        const originalText = btn.innerText;
+        btn.innerText = "送信中..."; btn.disabled = true;
+
+        fetch(gasUrl, {
+            method: 'POST',
+            mode: 'no-cors',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(data)
+        }).then(() => {
+            alert("☁️ クラウドに日報を送信しました！");
+            btn.innerText = originalText; btn.disabled = false;
+        }).catch(err => {
+            alert("送信エラー"); console.error(err);
+            btn.innerText = originalText; btn.disabled = false;
+        });
+    }
 </script>
 </body>
 </html>
