@@ -3,126 +3,218 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>使い方ガイド - 現場カーナビ手帳</title>
+    <title>使い方ガイド - 職人ギア</title>
+    <link rel="manifest" href="manifest.json">
+    <link rel="apple-touch-icon" href="icon-192x192.png">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <link rel="stylesheet" href="style.css">
     <style>
-        /* --- 基本スタイル --- */
-        body { font-family: -apple-system, BlinkMacSystemFont, "Helvetica Neue", "Yu Gothic", sans-serif; background-color: #f0f2f5; margin: 0; padding: 0; color: #333; line-height: 1.8; }
-        header { background-color: #34495e; color: white; padding: 15px; text-align: center; position: sticky; top: 0; z-index: 100; }
-        h1 { margin: 0; font-size: 1.1rem; }
-        
-        .container { max-width: 600px; margin: 0 auto; padding: 20px; padding-bottom: 80px; }
-        
-        /* セクション */
-        section { background: white; border-radius: 12px; padding: 25px; margin-bottom: 25px; box-shadow: 0 2px 8px rgba(0,0,0,0.05); }
-        h2 { font-size: 1.2rem; border-bottom: 2px solid #eee; padding-bottom: 15px; margin-top: 0; color: #2c3e50; display: flex; align-items: center; gap: 10px; }
-        h3 { font-size: 1.05rem; margin-top: 25px; margin-bottom: 10px; color: #2980b9; font-weight: bold; border-left: 4px solid #2980b9; padding-left: 10px; }
-        
-        ol { padding-left: 20px; margin: 10px 0; }
-        li { margin-bottom: 10px; color: #444; font-weight: bold; }
-        p { font-size: 1rem; margin: 10px 0; color: #555; }
+        body { background-color: #f0f2f5; padding-bottom: 50px; color: #333; line-height: 1.6; }
+        .site-header { background: #34495e; color: white; padding: 20px; text-align: center; margin-bottom: 20px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); }
+        .site-title { margin: 0; font-size: 1.3rem; font-weight: bold; }
+        .container { max-width: 600px; margin: 0 auto; padding: 0 15px; }
 
-        .icon-badge { display: inline-block; padding: 3px 8px; border-radius: 4px; font-size: 0.9rem; margin: 0 3px; vertical-align: middle; color: white; font-weight: bold; }
-        .bg-navi { background: #00C853; }
-        .bg-csv { background: #27ae60; }
-        .bg-copy { background: #f39c12; }
-        .bg-json { background: #fff; color: #333; border: 1px solid #ccc; }
+        /* アコーディオン（開閉式）スタイル */
+        details {
+            background: white;
+            border-radius: 8px;
+            margin-bottom: 15px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+            overflow: hidden;
+        }
+        summary {
+            padding: 15px;
+            font-weight: bold;
+            cursor: pointer;
+            list-style: none; /* 三角マークを消す */
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            background-color: #fff;
+            transition: background 0.2s;
+        }
+        summary::-webkit-details-marker { display: none; } /* Safari用 */
+        summary::after {
+            content: '+'; 
+            font-size: 1.5rem; 
+            color: #999;
+            font-weight: normal;
+        }
+        details[open] summary {
+            background-color: #f8f9fa;
+            border-bottom: 1px solid #eee;
+        }
+        details[open] summary::after { content: '-'; }
 
-        .warning-box { background-color: #fff3cd; border: 1px solid #ffeeba; color: #856404; padding: 15px; border-radius: 8px; margin-top: 15px; }
-        .alert-mock { background: #fbeebc; border: 1px solid #d6d8db; padding: 10px; font-size: 0.85rem; color: #333; margin-bottom: 10px; border-left: 5px solid #ffc107; font-family: sans-serif; }
-
-        .security-box { background-color: #e8f8f5; border: 3px solid #2ecc71; padding: 25px; border-radius: 12px; text-align: center; }
-        .catch-copy { color: #27ae60; font-weight: bold; font-size: 1.4rem; margin-bottom: 20px; display: block; line-height: 1.4; border-bottom: 2px dashed #2ecc71; padding-bottom: 15px; }
+        .content { padding: 20px; font-size: 0.95rem; }
         
-        .json-box { background-color: #f4f6f7; border: 1px solid #dcdcdc; padding: 20px; border-radius: 8px; margin-top: 15px; }
-        .json-title { font-weight: bold; color: #2c3e50; font-size: 1.1rem; display: block; margin-bottom: 10px; }
-        .back-link { display: block; text-align: center; margin-top: 40px; color: #3498db; text-decoration: none; font-weight: bold; padding: 15px; background: white; border-radius: 8px; border: 1px solid #eee; }
+        /* 説明文の装飾 */
+        h3 { margin-top: 0; font-size: 1.1rem; color: #2c3e50; border-left: 4px solid #3498db; padding-left: 10px; }
+        .step { background: #f9f9f9; padding: 10px; border-radius: 6px; margin-bottom: 10px; border: 1px solid #eee; }
+        .step strong { color: #e67e22; }
+        .note { font-size: 0.85rem; color: #666; background: #fff3e0; padding: 10px; border-radius: 6px; margin-top: 10px; }
+        
+        /* ★追加：注意書き用スタイル */
+        .alert-box { font-size: 0.85rem; color: #c0392b; background: #fff5f5; padding: 10px; border-radius: 6px; margin-top: 5px; border: 1px solid #ffcdd2; }
+
+        .tag { display: inline-block; padding: 2px 6px; border-radius: 4px; font-size: 0.8rem; font-weight: bold; color: white; margin-right: 5px; }
+        .tag.blue { background: #3498db; }
+        .tag.green { background: #27ae60; }
+        .tag.orange { background: #f39c12; }
+        .tag.purple { background: #9b59b6; }
+
+        .back-link { display: block; text-align: center; margin-top: 30px; color: #007bff; text-decoration: none; padding: 15px; font-weight: bold; }
     </style>
 </head>
 <body>
 
-<header>
-    <h1>📖 使い方＆よくある質問</h1>
-</header>
+<div class="site-header">
+    <h2 class="site-title">📖 使い方ガイド</h2>
+    <div style="font-size:0.8rem; opacity:0.8;">困ったときの虎の巻</div>
+</div>
 
 <div class="container">
 
-    <section>
-        <div class="security-box">
-            <span class="catch-copy">
-                「あえて送信しない」という、<br>最強のセキュリティ。
-            </span>
-            <p style="text-align:left;">
-                現場カーナビ手帳は、お客様の大切な個人情報を守るため、<strong>サーバーへのデータ送信を一切行いません。</strong><br>
-                データはあなたの「スマホの中（ブラウザ）」だけに保存される金庫のような仕組みです。
-            </p>
-            <p style="text-align:left; font-size:0.95rem; margin-top:20px; color:#444;">
-                ✅ <strong>漏洩リスクゼロ：</strong>外部と通信しないため、情報が漏れる心配がありません。<br><br>
-                ✅ <strong>完全オフライン対応：</strong>電波の届かない現場でもサクサク動きます。
-            </p>
-            <div style="background:white; padding:15px; border-radius:8px; margin-top:20px; text-align:left; border: 2px solid #fadbd8;">
-                <p style="font-size:0.9rem; color:#c0392b; margin:0;">
-                    <strong>⚠️ データの消失にご注意ください</strong><br>
-                    スマホの「履歴削除」や「キャッシュクリア」を行うと、データごと消えてしまいます。<br>
-                    万が一に備えて、こまめに「バックアップ」を取ることを強くお勧めします。
-                </p>
+    <details>
+        <summary>🔰 初めに：データの保存場所について</summary>
+        <div class="content">
+            <h3>データは「あなたのスマホ」にあります</h3>
+            <p>このアプリは、入力したデータを<strong>あなたのスマホ（またはPC）のブラウザの中</strong>に保存しています。</p>
+            <div class="note">
+                <strong>⚠️ 注意点：</strong><br>
+                ・アプリを削除したり、ブラウザの「履歴・データを消去」を行うと、データは全て消えます。<br>
+                ・こまめに「バックアップ」を取ることを強くおすすめします。
             </div>
         </div>
-    </section>
+    </details>
 
-    <section>
-        <h2>📦 バックアップと「.json」ファイル</h2>
-        <div class="json-box">
-            <span class="json-title">❓ 「.json」ってどんなファイル？</span>
-            <p>
-                バックアップを取ると、最後に <strong>.json（ジェイソン）</strong> という名前がついたファイルが保存されます。<br>
-                これは、あなたの現場データをひとまとめにした<strong>「引っ越し用ダンボール」</strong>のようなものです。
-            </p>
-            <span class="json-title" style="margin-top:20px;">⚠️ ダブルクリックしないで！</span>
-            <p>
-                このファイルは、人間が読むためのものではありません。<br>
-                <strong>開こうとすると変な文字が出てきますが、壊れているわけではありません。</strong>
-            </p>
-            <p><strong>中身は見ずに、そのまま</strong>メールなどでパソコンに送ってください。</p>
+    <details>
+        <summary>📨 日報の送信方法（LINE / メール / GAS）</summary>
+        <div class="content">
+            <h3>3つの送信方法</h3>
+            
+            <div class="step">
+                <span class="tag green">LINE</span> <strong>手軽に報告</strong><br>
+                LINEアプリが起動し、文章が貼り付けられます。送信先を選んで送るだけです。<br>
+                ※あくまで「文字を送る」だけなので、自動集計はできません。
+            </div>
+
+            <div class="step">
+                <span class="tag blue">メール</span> <strong>記録に残す</strong><br>
+                管理者のメールアドレス宛に、件名（現場名）付きでメールを作成します。<br>
+                ※ナビ画面の「⚙️ 設定」で、送信先アドレスを登録しておく必要があります。
+            </div>
+
+            <div class="step">
+                <span class="tag purple">クラウド</span> <strong>全自動集計 (推奨)</strong><br>
+                ボタン一つで、管理者のGoogleスプレッドシート（日報シート）にデータが追記されます。<br>
+                ※1日分の日報をまとめて送信します。<br>
+                ※ナビ画面の「⚙️ 設定」で、GAS URLの登録が必要です。
+            </div>
         </div>
-    </section>
+    </details>
 
-    <section>
-        <h2>📲 スマホのデータをパソコンに移す</h2>
-        <p>スマホで入力したデータを、会社のパソコンで管理したい時の手順です。</p>
-        
-        <h3>手順A：LINEやメールで送る</h3>
-        <ol>
-            <li>トップ画面右上の <span class="icon-badge bg-json" style="color:#333">⚙️</span> を押します。</li>
-            <li><strong>「📤 バックアップを作成」</strong>を押します。</li>
-            <li><strong>「LINE（Keepメモ）」</strong>や<strong>「自分宛てのメール」</strong>を選んで送信します。</li>
-            <li>パソコンでそのファイルを受け取ります。</li>
-            <li>パソコン版のDX手帳を開き、設定から<strong>「📥 データを復元」</strong>を押し、さっきのファイルを選べば完了です！</li>
-        </ol>
+    <details>
+        <summary>📲 スマホ ⇔ 💻 PC のデータ連携</summary>
+        <div class="content">
+            <h3>スマホのデータをPC（司令塔）に移す</h3>
+            <p>スマホで登録した現場データを、PCの大画面で管理したい場合の手順です。</p>
 
-        <h3>手順B：Excel用の表だけ欲しい時</h3>
-        <ol>
-            <li>右下の <span class="icon-badge bg-csv">💾</span> ボタンを押します。</li>
-            <li>Excelで開ける一覧表データが作成されます。</li>
-        </ol>
-    </section>
+            <div class="step">
+                <strong>① スマホで書き出し（バックアップ）</strong><br>
+                1. ナビ画面右下の「📤 共有・バックアップ」ボタンを押す<br>
+                2. LINEやメールを選んで、自分（PC）宛にファイルを送る<br>
+                (ファイル名：<code>backup_スマホ_...json</code>)
+                
+                <div class="alert-box">
+                    <strong>⚠️ 「共有メニュー」が出ない場合</strong><br>
+                    機種によっては、ボタンを押すとすぐに「ダウンロード」が完了する場合があります。<br>
+                    その場合は、<strong>LINEやメールアプリを自分で開き、クリップマーク（📎）から「ファイル」を選んで</strong>、ダウンロードしたデータを送信してください。
+                </div>
+            </div>
 
-    <section>
-        <h2>💾 Excelで開く時の注意点</h2>
-        <p>ダウンロードしたCSVファイルをExcelで開くと、警告が出ることがありますが<strong>故障ではありません。</strong></p>
-        <div class="warning-box">
-            <p><strong>その1：黄色い帯が出る</strong></p>
-            <div class="alert-mock">セキュリティの警告：外部データ接続が無効にされました... [コンテンツの有効化]</div>
-            <p>👉 ウイルスではありません。<strong>「編集を有効にする」</strong>を押してください。</p>
+            <div class="step">
+                <strong>② PCで取り込み（復元）</strong><br>
+                1. PCで送られてきたファイルを保存する<br>
+                2. PC版職人ギアの「⚙️ 設定」を開く<br>
+                3. 「📥 データを復元（取込）」ボタンを押す<br>
+                4. 保存したファイルを選択すると、データが同期されます
+            </div>
 
-            <p style="margin-top:20px;"><strong>その2：保存時の警告</strong></p>
-            <div class="alert-mock">CSV形式では、ブックの一部の機能が失われる可能性があります...</div>
-            <p>👉 心配ありません。「はい」を押して大丈夫です。<br>保存時は「名前を付けて保存」から「Excelブック(*.xlsx)」を選ぶのがおすすめです。</p>
+            <div class="note">
+                <strong>💡 逆も可能です</strong><br>
+                PCで整理したデータをスマホに戻す場合も、同じ手順（PCで書き出し→スマホで取込）で行えます。<br>
+                ※取込を行うと、その端末の古いデータは上書きされるので注意してください。
+            </div>
         </div>
-    </section>
+    </details>
 
-    <a href="navi.html" class="back-link">↩️ ツールに戻る</a>
+    <details>
+        <summary>⚙️ 【管理者用】GAS連携の設定手順</summary>
+        <div class="content">
+            <h3>Googleスプレッドシート連携の準備</h3>
+            <p>日報や現場データをクラウドに集めるための設定です。</p>
+
+            <div class="step">
+                <strong>1. シートの準備</strong><br>
+                新しいスプレッドシートを作成し、以下の2つのシートを用意します。<br>
+                ・シート名：<code>日報</code><br>
+                ・シート名：<code>案件一覧</code>
+            </div>
+
+            <div class="step">
+                <strong>2. スクリプト(GAS)の設置</strong><br>
+                「拡張機能」＞「Apps Script」を開き、配布されたコード（<code>doPost</code>）を貼り付けます。
+            </div>
+
+            <div class="step">
+                <strong>3. デプロイ（重要！）</strong><br>
+                右上の「デプロイ」＞「新しいデプロイ」を選択。<br>
+                ・種類：ウェブアプリ<br>
+                ・アクセスできるユーザー：<strong>「全員」</strong>（※ここを間違えると動きません）<br>
+                発行された <code>https://script.google...</code> というURLをコピーします。
+            </div>
+
+            <div class="step">
+                <strong>4. アプリに登録</strong><br>
+                職人ギアの「⚙️ 設定」＞「☁️ GAS URL」欄に貼り付けて保存します。
+            </div>
+        </div>
+    </details>
+
+    <details>
+        <summary>🔗 既存管理システムとの連携</summary>
+        <div class="content">
+            <h3>案件Noを使った連携</h3>
+            <p>職人ギアのデータを、社内の基幹システム等と紐付ける方法です。</p>
+            
+            <div class="step">
+                <strong>親案件Noの登録</strong><br>
+                現場情報の編集画面に「親案件No」という項目があります。<br>
+                ここに既存システムのID（例: K-12345）を入力しておきます。
+            </div>
+
+            <div class="step">
+                <strong>CSV出力 / クラウド同期</strong><br>
+                データを出力すると、「親案件No」の列が含まれています。<br>
+                これをキーにして、ExcelやAccessなどで既存データと突き合わせることで、<br>
+                「現場名は違うけど同じ現場」としてデータを統合・集計できます。
+            </div>
+        </div>
+    </details>
+
+    <a href="navi.html" class="back-link">↩️ アクションギアに戻る</a>
 
 </div>
+
+<script>
+    // シンプルなアコーディオン制御（詳細はCSSで完結していますが念のため）
+    document.querySelectorAll('summary').forEach(el => {
+        el.addEventListener('click', () => {
+            // 他を閉じる動きを入れたい場合はここに記述
+        });
+    });
+</script>
 
 </body>
 </html>

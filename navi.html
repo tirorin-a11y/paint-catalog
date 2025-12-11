@@ -456,7 +456,26 @@
     function closeAllModals() { document.querySelectorAll('.modal-box').forEach(el => el.classList.remove('show')); document.getElementById('overlay').classList.remove('show'); }
     function unlockCaseNo() { const el = document.getElementById('inputNum'); if(!el.readOnly) return; tapCount++; if(tapCount >= 5) { el.readOnly = false; el.classList.remove('locked'); el.classList.add('unlocked'); showNotification('🔓 ロック解除しました'); tapCount = 0; } }
     function getNowStr() { const d = new Date(); return `${d.getFullYear()}${(d.getMonth()+1).toString().padStart(2,'0')}${d.getDate().toString().padStart(2,'0')}_${d.getHours().toString().padStart(2,'0')}${d.getMinutes().toString().padStart(2,'0')}`; }
-    async function exportJSON() { showNotification('📤 準備中...'); const jsonContent = JSON.stringify(sites, null, 2); const fileName = `【職人ギア】backup_${getNowStr()}.json`; const file = new File([jsonContent], fileName, { type: "application/json" }); if (navigator.share && navigator.canShare && navigator.canShare({ files: [file] })) { try { await navigator.share({ files: [file] }); } catch (e) { forceDL(file); } } else { forceDL(file); } }
+    // ★修正：デバイス名付きバックアップ
+    async function exportJSON() {
+        showNotification('📤 準備中...');
+        const jsonContent = JSON.stringify(sites, null, 2);
+        
+        // デバイス判定（スマホかPCか？）
+        const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+        const deviceLabel = isMobile ? 'スマホ' : 'PC';
+
+        // ファイル名に埋め込む（例：【職人ギア】backup_スマホ_20251124...）
+        const fileName = `【職人ギア】backup_${deviceLabel}_${getNowStr()}.json`;
+        
+        const file = new File([jsonContent], fileName, { type: "application/json" });
+        if (navigator.share && navigator.canShare && navigator.canShare({ files: [file] })) {
+            try { await navigator.share({ files: [file] }); } catch (e) { forceDL(file); }
+        } else {
+            forceDL(file);
+        }
+    }
+    
     function forceDL(file) { const url = URL.createObjectURL(file); const link = document.createElement("a"); link.setAttribute("href", url); link.setAttribute("download", file.name); document.body.appendChild(link); link.click(); document.body.removeChild(link); showNotification('📥 保存しました'); }
     function importJSON(input) { const file = input.files[0]; if (!file) return; const reader = new FileReader(); reader.onload = function(e) { try { const importedSites = JSON.parse(e.target.result); if (!Array.isArray(importedSites)) { alert('エラー'); return; } let countAdded = 0; let countUpdated = 0; importedSites.forEach(newSite => { const index = sites.findIndex(s => s.id === newSite.id); if (index !== -1) { const existingTime = sites[index].updatedAt || 0; const newTime = newSite.updatedAt || 0; if (newTime > existingTime) { sites[index] = newSite; countUpdated++; } } else { sites.push(newSite); countAdded++; } }); localStorage.setItem('dx_sites', JSON.stringify(sites)); renderList(); closeAllModals(); showNotification(`復元: ${countUpdated}件更新, ${countAdded}件追加`); } catch (err) { alert('読み込み失敗'); } input.value = ''; }; reader.readAsText(file); }
     function deleteAllData() { if(confirm('【警告】全削除しますか？')) { sites = []; localStorage.setItem('dx_sites', JSON.stringify(sites)); renderList(); closeAllModals(); showNotification('🗑️ 全データを削除しました'); } }
