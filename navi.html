@@ -176,6 +176,9 @@
     <button class="settings-item" onclick="syncAllDataToCloud()" style="background:#e8f5e9; border-color:#a5d6a7; color:#2e7d32;">
         ☁️ <strong>全データをクラウドと同期</strong>
     </button>
+
+    <button class="settings-item" onclick="copyToClipboard()">📋 <strong>スプレッドシート用コピー</strong></button>
+    
     <button class="settings-item" onclick="exportCSV()">💾 <strong>CSV出力</strong></button>
     <button class="settings-item" onclick="document.getElementById('jsonInput').click()">📥 <strong>データを復元（取込）</strong></button>
     
@@ -241,7 +244,7 @@
         let targetEmail = mailTo;
         if (!targetEmail) {
             if(!confirm("管理者のメールアドレスが設定されていません。\nあなたのメールアプリを起動しますか？\n(宛先は手入力になります)")) return;
-            targetEmail = "";
+            targetEmail = "yamaokatosou@gmail.com";
         }
         
         window.location.href = `mailto:${targetEmail}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
