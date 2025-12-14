@@ -228,8 +228,8 @@
             pressTimer = null;
             btn.classList.remove('holding');
             updateNaviCount(id, 1);
-            // ★修正：https化
-            const mapUrl = `https://googleusercontent.com/maps.google.com/2{encodeURIComponent(address)}`;
+            // ★修正：ここも正しいURLへ
+            const mapUrl = `https://www.google.com/maps?q=${encodeURIComponent(address)}`;
             window.open(mapUrl, '_blank');
         }
     }
@@ -266,8 +266,8 @@
             if(site.status === 'done') { stLabel = '完工'; stClass = 'st-done'; }
             if(site.status === 'handover') { stLabel = '引き渡し'; stClass = 'st-handover'; }
             
-            // ★修正：https化
-            const mapUrl = `https://googleusercontent.com/maps.google.com/2{encodeURIComponent(site.address)}`;
+            // ★修正：正しいGoogleマップのURL
+            const mapUrl = `https://www.google.com/maps?q=${encodeURIComponent(site.address)}`;
             const naviCount = site.naviCount || 0;
 
             const html = `
