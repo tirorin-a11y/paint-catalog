@@ -341,18 +341,13 @@
     function saveEdit() { const name = document.getElementById('siteName').value; const address = document.getElementById('address').value; const status = document.getElementById('status').value; if(!name) return; if (siteId) { const index = sites.findIndex(s => s.id === siteId); if(index !== -1) { sites[index].name = name; sites[index].address = address; sites[index].status = status; sites[index].updatedAt = Date.now(); localStorage.setItem('dx_sites', JSON.stringify(sites)); location.reload(); } } else { alert("現場IDがありません"); } }
     function deleteSite() { if(confirm('削除しますか？')) { const newSites = sites.filter(s => s.id !== siteId); localStorage.setItem('dx_sites', JSON.stringify(newSites)); window.location.href = 'navi.html'; } }
     function searchSupply() { 
-        if (navigator.geolocation) { 
-            navigator.geolocation.getCurrentPosition(
-                pos => { 
-                    // ★修正：現在地周辺のホームセンターを検索
-                    const url = `https://www.google.com/maps/search/ホームセンター/@${pos.coords.latitude},${pos.coords.longitude},13z`; 
-                    window.open(url, '_blank'); 
-                }, 
-                () => { alert("位置情報が取得できません"); }
-            ); 
-        } else { 
-            alert('位置情報が使えません'); 
-        } 
+    if (navigator.geolocation) { 
+        navigator.geolocation.getCurrentPosition(pos => { 
+            // 【修正後】★現在地周辺のホームセンターを検索する公式URL
+            const url = `https://www.google.com/maps/search/?api=1&query=ホームセンター&center=${pos.coords.latitude},${pos.coords.longitude}`; 
+            window.open(url, '_blank'); 
+        }, () => { alert("位置情報が取得できません"); }); 
+    } else { alert('位置情報が使えません'); } 
     }
     let recognition; let isRecognizing = false; if ('webkitSpeechRecognition' in window) { recognition = new webkitSpeechRecognition(); recognition.continuous = true; recognition.interimResults = true; recognition.lang = 'ja-JP'; recognition.onresult = function(event) { let finalTranscript = ''; for (let i = event.resultIndex; i < event.results.length; ++i) { if (event.results[i].isFinal) finalTranscript += event.results[i][0].transcript; } if (finalTranscript) document.getElementById('reportText').value += (document.getElementById('reportText').value ? '\n' : '') + finalTranscript; }; recognition.onend = function() { isRecognizing = false; document.getElementById('micBtn').classList.remove('mic-active'); }; }
     function toggleSpeech() { if (!recognition) { alert('このブラウザは音声入力非対応です。\nキーボードのマイクボタンを使ってください。'); return; } if (isRecognizing) stopSpeech(); else { recognition.start(); isRecognizing = true; document.getElementById('micBtn').classList.add('mic-active'); } }
