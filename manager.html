@@ -28,12 +28,54 @@
             box-shadow: 0 2px 5px rgba(0,0,0,0.1);
         }
         
+        .nav-links { 
+            display: flex; 
+            gap: 10px; 
+            padding: 10px; 
+            justify-content: center; 
+            background: #fff; 
+            box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+            position: sticky; /* ナビも追従させる */
+            top: 50px; /* headerの高さ分ずらす */
+            z-index: 90;
+        }
+        .nav-btn { text-decoration: none; font-size: 0.85rem; padding: 8px 20px; border-radius: 20px; background: #f8f9fa; color: #555; border: 1px solid #ddd; font-weight: bold; }
+
+        /* ★修正：月表示とボタンを横並びにするエリア */
+        .toggle-area { 
+            padding: 10px 15px; 
+            background: #fff; 
+            border-bottom: 1px solid #eee; 
+            border-top: 1px solid #eee;
+            display: flex; 
+            justify-content: space-between; /* 左右に配置 */
+            align-items: center;
+            position: sticky; /* ここも追従させる */
+            top: 98px; /* header + nav-links の高さ概算 */
+            z-index: 90;
+        }
+        
+        /* ★追加：月表示のスタイル */
+        .current-month {
+            font-size: 1.2rem;
+            font-weight: bold;
+            color: #2c3e50;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        .btn-toggle { background: #fff; border: 1px solid #2980b9; color: #2980b9; padding: 5px 12px; border-radius: 20px; font-size: 0.85rem; cursor: pointer; transition: 0.2s; }
+        .btn-toggle.active { background: #2980b9; color: white; }
+        
+        /* ガントチャート */
         .gantt-container { 
             overflow-x: auto; 
             background: white; 
-            margin-top: 10px; 
+            /* margin-top: 10px; 削除（stickyとの兼ね合い） */
             position: relative; 
             scrollbar-width: thin; 
+            height: calc(100vh - 150px); /* 画面下まで広げる */
         }
         
         .gantt-header { 
@@ -112,14 +154,8 @@
         .bar-plan { background: #f39c12; }
         .bar-active { background: #2980b9; }
         .bar-done { background: #7f8c8d; }
-        
-        .toggle-area { padding: 10px; text-align: right; background: #fff; border-bottom: 1px solid #eee; }
-        .btn-toggle { background: #fff; border: 1px solid #2980b9; color: #2980b9; padding: 5px 12px; border-radius: 20px; font-size: 0.85rem; cursor: pointer; transition: 0.2s; }
-        .btn-toggle.active { background: #2980b9; color: white; }
-        
-        .nav-links { display: flex; gap: 10px; padding: 10px; justify-content: center; background: #fff; margin-bottom: 10px; box-shadow: 0 1px 3px rgba(0,0,0,0.05); }
-        .nav-btn { text-decoration: none; font-size: 0.85rem; padding: 8px 20px; border-radius: 20px; background: #f8f9fa; color: #555; border: 1px solid #ddd; font-weight: bold; }
 
+        /* モーダル */
         .overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 150; display: none; }
         .overlay.show { display: block; }
         .modal-box { position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 85%; max-width: 400px; background: white; padding: 20px; border-radius: 12px; z-index: 160; box-shadow: 0 10px 25px rgba(0,0,0,0.3); display: none; }
@@ -141,10 +177,13 @@
 
 <div class="nav-links">
     <a href="navi.html" class="nav-btn">🏠 現場ナビ</a>
-    <a href="index.html" class="nav-btn">🔍 カタログ検索</a>
+    <a href="index.html" class="nav-btn">🔍 検索</a>
 </div>
 
 <div class="toggle-area">
+    <div class="current-month">
+        <span style="font-size:1.5rem;">📅</span> <span id="monthDisplay">--年 --月</span>
+    </div>
     <button class="btn-toggle" id="btnShowAll" onclick="toggleShowAll()">全ての現場を表示</button>
 </div>
 
@@ -171,6 +210,7 @@
     let sites = JSON.parse(localStorage.getItem('dx_sites')) || [];
     let isShowAll = false;
     let editingId = null;
+    let gStartDate = null; // ★追加：スクロール計算用に開始日を保持
 
     function toggleShowAll() {
         isShowAll = !isShowAll;
@@ -229,12 +269,34 @@
         }
     }
 
+    // ★追加：スクロール時の月表示更新
+    function updateMonthDisplay() {
+        const container = document.getElementById('ganttArea');
+        if(!gStartDate) return;
+        
+        // スクロール位置から「現在の日付」を計算（1日=40px）
+        // 左端から少し右（+20px）の日付を表示基準にする
+        const scrollLeft = container.scrollLeft;
+        const daysToAdd = Math.floor((scrollLeft + 20) / 40);
+        
+        const currentDate = new Date(gStartDate);
+        currentDate.setDate(gStartDate.getDate() + daysToAdd);
+        
+        const year = currentDate.getFullYear();
+        const month = currentDate.getMonth() + 1;
+        
+        document.getElementById('monthDisplay').textContent = `${year}年 ${month}月`;
+    }
+
     function renderGantt() {
         const container = document.getElementById('ganttArea');
         container.innerHTML = '';
 
+        // 日付範囲：今月1日 〜 3ヶ月後
         const today = new Date();
         const startDate = new Date(today.getFullYear(), today.getMonth(), 1); 
+        gStartDate = startDate; // ★保持
+        
         const endDate = new Date(today.getFullYear(), today.getMonth() + 3, 0);
         const totalDays = getDiffDays(startDate, endDate) + 1;
 
@@ -252,7 +314,7 @@
         headerHTML += '</div>';
         container.insertAdjacentHTML('beforeend', headerHTML);
 
-        // ★修正：フィルタリングロジック（完了・失注を隠す）
+        // フィルタリング
         const targetSites = isShowAll ? sites : sites.filter(s => s.status !== 'complete' && s.status !== 'lost' && s.status !== 'done' && s.status !== 'handover');
 
         targetSites.forEach(site => {
@@ -269,13 +331,12 @@
             let width = durationDays * 40;
             if (left < 0) { width += left; left = 0; } 
 
-            // ★修正：バーの色分けロジック
-            let barClass = 'bar-plan'; // デフォルト（見積中）
+            let barClass = 'bar-plan';
             if (site.status === 'contract' || site.status === 'active' || site.status === 'billing') {
-                barClass = 'bar-active'; // 稼働中（契約済み、請求）
+                barClass = 'bar-active';
             }
             if (site.status === 'complete' || site.status === 'lost' || site.status === 'done') {
-                barClass = 'bar-done'; // 完了系
+                barClass = 'bar-done';
             }
 
             const rowHTML = `
@@ -298,6 +359,13 @@
             container.insertAdjacentHTML('beforeend', rowHTML);
         });
 
+        // ★追加：スクロールイベント登録
+        container.onscroll = updateMonthDisplay;
+        
+        // 初回月表示更新
+        updateMonthDisplay();
+
+        // 今日へスクロール
         if(todayLeftPos > 0) {
             setTimeout(() => {
                 container.scrollTo({ left: todayLeftPos - 100, behavior: 'smooth' });
