@@ -51,6 +51,11 @@
         .modal-box.show { display: block; }
         label { display: block; margin-top: 12px; font-size: 0.85rem; font-weight: bold; color: #444; }
         input, select { width: 100%; padding: 12px; margin-top: 6px; border: 1px solid #ddd; border-radius: 8px; box-sizing: border-box; font-size: 1rem; appearance: none; }
+        
+        /* ★追加：工期入力用の横並びスタイル */
+        .date-group { display: flex; gap: 10px; align-items: center; }
+        .date-input { flex: 1; text-align: center; }
+
         .id-input-group { display: flex; align-items: center; gap: 10px; margin-top: 5px; }
         .input-year { width: 30%; text-align: center; background: #f0f0f0; color: #555; border: 1px solid #ccc; }
         .input-num { width: 60%; text-align: center; font-family: monospace; letter-spacing: 2px; font-weight: bold; transition: 0.3s; }
@@ -114,6 +119,13 @@
     
     <label>住所（ナビ用）</label>
     <input type="text" id="address" placeholder="例：東京都千代田区...">
+    
+    <label>工期（開始 - 終了）</label>
+    <div class="date-group">
+        <input type="date" id="startDate" class="date-input">
+        <span style="color:#888;">〜</span>
+        <input type="date" id="endDate" class="date-input">
+    </div>
     
     <label>現在の状況</label>
     <select id="status">
@@ -192,7 +204,6 @@
     let isSortMode = false;
     let pressTimer = null; 
 
-    // 初期データがない場合
     if (sites.length === 0) {
         sites = [
             { id: '2025-001', name: '【サンプル】鈴木様邸', address: '東京都墨田区押上1-1-2', status: 'active', updatedAt: Date.now(), naviCount: 0 }
@@ -238,7 +249,6 @@
             pressTimer = null;
             btn.classList.remove('holding');
             updateNaviCount(id, 1);
-            // ★修正：https化
             const mapUrl = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(address)}`;
             window.open(mapUrl, '_blank');
         }
@@ -303,11 +313,9 @@
                             🚀<br><span style="font-size:0.7rem">ナビ</span>
                             <div class="hold-bar"></div>
                         </div>
-                        
                         <a href="tools.html?id=${site.id}" class="action-btn btn-center">
                             🧰<br><span style="font-size:0.7rem">ツール</span>
                         </a>
-                        
                         <div class="navi-wrapper">
                             <span class="navi-count-label">${naviCount}回</span>
                             <a href="${mapUrl}" target="_blank" class="action-btn btn-navi-side" onclick="updateNaviCount('${site.id}', 1)">
@@ -348,7 +356,8 @@
         
         sites.unshift({
             id: newId, name: name + ' (コピー)', address: address, status: 'plan', 
-            parentCaseNo: parentNo, updatedAt: now, naviCount: 0 
+            parentCaseNo: parentNo, updatedAt: now, naviCount: 0,
+            start: '', end: '' // 複製時は日付はクリア
         });
         localStorage.setItem('dx_sites', JSON.stringify(sites));
         closeAllModals(); renderList(); showNotification('🎉 複製しました');
@@ -364,21 +373,34 @@
         const status = document.getElementById('status').value;
         const naviCountVal = parseInt(document.getElementById('editNaviCount').value) || 0;
         const parentNo = document.getElementById('parentCaseNo').value;
+        // ★修正：日付取得
+        const startDate = document.getElementById('startDate').value;
+        const endDate = document.getElementById('endDate').value;
 
         if(!name || !address) { showNotification('⚠️ 現場名と住所は必須です'); return; }
         
+        // 保存するデータオブジェクト
+        const siteData = {
+            id, name, address, status, 
+            naviCount: naviCountVal, 
+            parentCaseNo: parentNo, 
+            start: startDate, // ★追加
+            end: endDate,     // ★追加
+            updatedAt: Date.now()
+        };
+
         if (isEditing) {
             if (id !== editingId) { sites = sites.filter(s => s.id !== editingId); }
             const index = sites.findIndex(s => s.id === id);
-            if(index !== -1) { sites[index] = { ...sites[index], name, address, status, naviCount: naviCountVal, parentCaseNo: parentNo, updatedAt: Date.now() }; } 
-            else { sites.unshift({ id, name, address, status, naviCount: naviCountVal, parentCaseNo: parentNo, updatedAt: Date.now() }); }
+            if(index !== -1) { sites[index] = siteData; } 
+            else { sites.unshift(siteData); }
         } else {
             if(sites.some(s => s.id === id)){ 
                 if(!confirm('⚠️ 既存の現場データを上書き更新しますか？')) return; 
                 const idx = sites.findIndex(s => s.id === id); 
-                sites[idx] = { ...sites[idx], name, address, status, naviCount: naviCountVal, parentCaseNo: parentNo, updatedAt: Date.now() }; 
+                sites[idx] = siteData; 
             } else { 
-                sites.unshift({ id, name, address, status, naviCount: naviCountVal, parentCaseNo: parentNo, updatedAt: Date.now() }); 
+                sites.unshift(siteData); 
             }
         }
         localStorage.setItem('dx_sites', JSON.stringify(sites));
@@ -398,7 +420,7 @@
         document.getElementById('inputForm').classList.add('show'); 
         document.getElementById('overlay').classList.add('show');
         const numInput = document.getElementById('inputNum');
-        numInput.readOnly = true; numInput.classList.remove('unlocked'); numInput.classList.remove('locked'); numInput.classList.add('locked'); tapCount = 0;
+        numInput.readOnly = true; numInput.classList.remove('unlocked'); numInput.classList.add('locked'); tapCount = 0;
         const todayYear = new Date().getFullYear();
 
         if (mode === 'new') {
@@ -414,6 +436,8 @@
             document.getElementById('status').value = 'plan';
             document.getElementById('editNaviCount').value = 0;
             document.getElementById('parentCaseNo').value = '';
+            document.getElementById('startDate').value = ''; // ★追加
+            document.getElementById('endDate').value = '';   // ★追加
         } else {
             isEditing = true; editingId = id;
             document.getElementById('btnDeleteSingle').style.display = 'flex';
@@ -430,6 +454,9 @@
                 document.getElementById('status').value = targetSite.status;
                 document.getElementById('editNaviCount').value = targetSite.naviCount || 0;
                 document.getElementById('parentCaseNo').value = targetSite.parentCaseNo || '';
+                // ★追加：日付の読み込み
+                document.getElementById('startDate').value = targetSite.start || '';
+                document.getElementById('endDate').value = targetSite.end || '';
             }
         }
     }
@@ -448,6 +475,10 @@
             document.getElementById('status').value = found.status;
             document.getElementById('parentCaseNo').value = found.parentCaseNo || '';
             document.getElementById('editNaviCount').value = found.naviCount || 0;
+            // ★追加：日付の読み込み
+            document.getElementById('startDate').value = found.start || '';
+            document.getElementById('endDate').value = found.end || '';
+
             isEditing = true;
             editingId = checkId;
             document.getElementById('btnDeleteSingle').style.display = 'flex';
@@ -499,11 +530,8 @@
     async function exportJSON() { 
         showNotification('📤 準備中...'); 
         const jsonContent = JSON.stringify(sites, null, 2); 
-        
-        // スマホかPCかの判定（ファイル名用）
         const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
         const deviceLabel = isMobile ? 'スマホ' : 'PC';
-        
         const fileName = `【職人ギア】backup_${deviceLabel}_${getNowStr()}.json`; 
         const file = new File([jsonContent], fileName, { type: "application/json" }); 
         
@@ -577,7 +605,6 @@
         } 
     }
     
-    // ★クラウド同期処理
     function syncAllDataToCloud() {
         const gasUrl = localStorage.getItem('dx_gas_url');
         if(!gasUrl) { alert("設定から「GAS URL」を登録してください"); return; }

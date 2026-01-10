@@ -11,7 +11,6 @@
     <style>
         /* --- 共通デザイン --- */
         body { font-family: -apple-system, BlinkMacSystemFont, "Helvetica Neue", "Yu Gothic", sans-serif; background-color: #f0f2f5; margin: 0; padding: 0; color: #333; -webkit-font-smoothing: antialiased; padding-bottom: 80px; }
-        
         header { background-color: #2c3e50; color: white; padding: 10px 15px; position: sticky; top: 0; z-index: 100; box-shadow: 0 2px 5px rgba(0,0,0,0.2); display: flex; justify-content: space-between; align-items: center; }
         h1 { margin: 0; font-size: 1.1rem; letter-spacing: 0.05em; font-weight: bold; }
         
@@ -23,13 +22,13 @@
         .search-input { width: 100%; padding: 12px; border-radius: 8px; border: 1px solid #ddd; font-size: 1rem; box-sizing: border-box; outline: none; box-shadow: 0 2px 5px rgba(0,0,0,0.05); }
         
         .container { max-width: 600px; margin: 0 auto; padding: 0 15px; }
-        
+        .loading-msg { text-align: center; padding: 20px; color: #666; font-size: 0.9rem; }
+
         /* カタログカード */
         .catalog-card { background: white; border-radius: 12px; padding: 15px; margin-bottom: 15px; box-shadow: 0 2px 6px rgba(0,0,0,0.06); display: flex; flex-direction: column; gap: 5px; border-left: 5px solid #bdc3c7; }
-        /* メーカーごとの色分け */
-        .maker-nippon { border-left-color: #e74c3c; } /* 日本ペイント(赤) */
-        .maker-sk { border-left-color: #f39c12; } /* SK化研(オレンジ) */
-        .maker-kansai { border-left-color: #3498db; } /* 関西ペイント(青) */
+        .maker-nippon { border-left-color: #e74c3c; } 
+        .maker-sk { border-left-color: #f39c12; } 
+        .maker-kansai { border-left-color: #3498db; }
         
         .card-header { display: flex; justify-content: space-between; align-items: flex-start; }
         .maker-badge { font-size: 0.7rem; color: white; background: #95a5a6; padding: 2px 8px; border-radius: 4px; font-weight: bold; }
@@ -60,39 +59,86 @@
 </div>
 
 <div class="search-area">
-    <input type="search" id="searchInput" class="search-input" placeholder="商品名、メーカー、用途で検索..." oninput="filterList()">
+    <input type="search" id="searchInput" class="search-input" placeholder="商品名 メーカー 用途 (スペースで絞り込み)" oninput="filterList()">
 </div>
 
 <div class="container" id="catalogList">
-    </div>
+    <div class="loading-msg">📦 データを読み込んでいます...</div>
+</div>
 
 <script>
-    // ★サンプルデータ（必要に応じて書き換えてください）
-    const catalogData = [
-        { name: "パーフェクトトップ", maker: "日本ペイント", desc: "ラジカル制御形ハイブリッド高耐候性塗料。作業性が良く、光沢が高い。", type: "nippon", tags: ["外壁", "水性", "ラジカル", "上塗り"], url: "https://www.nipponpaint.co.jp/" },
-        { name: "ファインパーフェクトベスト", maker: "日本ペイント", desc: "ターペン可溶2液ラジカル制御形ハイブリッド高耐候性屋根用塗料。", type: "nippon", tags: ["屋根", "弱溶剤", "ラジカル", "2液"], url: "https://www.nipponpaint.co.jp/" },
-        { name: "エスケープレミアムシリコン", maker: "SK化研", desc: "シリコン樹脂を凌ぐ高い耐候性。メンテナンスコストを削減。", type: "sk", tags: ["外壁", "水性", "シリコン", "ラジカル"], url: "https://www.sk-kaken.co.jp/" },
-        { name: "クールタイト", maker: "SK化研", desc: "遮熱性能に優れた屋根用塗料。幅広い色相に対応。", type: "sk", tags: ["屋根", "弱溶剤", "遮熱", "ウレタン/シリコン"], url: "https://www.sk-kaken.co.jp/" },
-        { name: "アレスダイナミックTOP", maker: "関西ペイント", desc: "天候に関わらず塗装可能な「ロイヤルシリコン」技術。", type: "kansai", tags: ["外壁", "水性", "ラジカル", "湿潤面可"], url: "https://www.kansai.co.jp/" },
-        { name: "カチオンシーラーEPO", maker: "共通・汎用", desc: "下地への浸透性・付着性に優れたカチオン系シーラー。", type: "common", tags: ["下塗り", "シーラー", "カチオン"], url: "#" }
-    ];
+    // ★重要：ここにカタログデータ取得用のGAS URLを入れてください
+    // ※以前作成した「カタログ検索用」のGASです（日報用とは別のURLのはずです）
+    // もしURLがわからなければ、localStorageから読み込むなど調整します
+    const CATALOG_GAS_URL = "https://script.google.com/macros/s/AKfycbxxDC7Ak1PVF1sWYmDJlnLDokqndsNugtp1koaZgWZg51ihzksYe9hKJ4y_sTqVjUfp/exec"; // ←ここを正しいURLに書き換えてください！
+
+    let catalogData = [];
+
+    // データ取得
+    async function fetchData() {
+        try {
+            // URLが設定されていない場合はサンプルを表示（エラー回避）
+            if(CATALOG_GAS_URL.includes("...")) {
+                console.warn("GAS URLが設定されていません。サンプルを表示します。");
+                catalogData = [
+                    { name: "パーフェクトトップ", maker: "日本ペイント", desc: "ラジカル制御形ハイブリッド高耐候性塗料", type: "nippon", tags: "外壁 水性", url: "" },
+                    { name: "プレミアムシリコン", maker: "SK化研", desc: "シリコン樹脂", type: "sk", tags: "外壁 水性", url: "" }
+                ];
+                renderList();
+                return;
+            }
+
+            const res = await fetch(CATALOG_GAS_URL);
+            const data = await res.json();
+            
+            // データの整形（スプレッドシートの列に合わせて調整してください）
+            // 例: [商品名, メーカー, 説明, タイプ, タグ, URL] の順と仮定
+            catalogData = data.map(row => ({
+                name: row.name || row[0],
+                maker: row.maker || row[1],
+                desc: row.desc || row[2],
+                type: row.type || row[3] || 'common', // nippon, sk, kansai 等
+                tags: row.tags || row[4] || '',
+                url: row.url || row[5] || ''
+            }));
+            
+            renderList();
+        } catch (e) {
+            document.getElementById('catalogList').innerHTML = '<div class="loading-msg">⚠️ 読み込みエラー<br>ネット接続を確認してください</div>';
+            console.error(e);
+        }
+    }
 
     function renderList() {
         const listEl = document.getElementById('catalogList');
-        const keyword = document.getElementById('searchInput').value.toLowerCase();
+        const inputVal = document.getElementById('searchInput').value.toLowerCase();
+        
+        // スペース区切りでキーワードリストを作成（アバウト検索用）
+        const keywords = inputVal.split(/\s+/).filter(k => k !== "");
+        
         listEl.innerHTML = '';
-
         let count = 0;
-        catalogData.forEach(item => {
-            // 検索フィルター
-            const searchText = `${item.name} ${item.maker} ${item.desc} ${item.tags.join(' ')}`.toLowerCase();
-            if (keyword && !searchText.includes(keyword)) return;
 
-            // タグ生成
-            const tagsHtml = item.tags.map(tag => `<span class="tag">#${tag}</span>`).join('');
+        catalogData.forEach(item => {
+            // 検索対象の文字列結合
+            const targetText = `${item.name} ${item.maker} ${item.desc} ${item.tags}`.toLowerCase();
+            
+            // 全てのキーワードが含まれているかチェック (AND検索)
+            const isMatch = keywords.every(kw => targetText.includes(kw));
+            if (!isMatch) return;
+
+            // タグのHTML生成
+            const tagArray = item.tags.split ? item.tags.split(' ') : [];
+            const tagsHtml = tagArray.map(t => `<span class="tag">#${t}</span>`).join('');
+            
+            // 色分けクラス
+            let makerClass = "";
+            if(item.maker.includes("日本")) makerClass = "maker-nippon";
+            if(item.maker.includes("SK") || item.maker.includes("エスケー")) makerClass = "maker-sk";
+            if(item.maker.includes("関西")) makerClass = "maker-kansai";
 
             const html = `
-                <div class="catalog-card maker-${item.type}">
+                <div class="catalog-card ${makerClass}">
                     <div class="card-header">
                         <span class="maker-badge">${item.maker}</span>
                     </div>
@@ -101,7 +147,7 @@
                     <div class="product-tags">${tagsHtml}</div>
                     <div class="card-links">
                         <a href="https://www.google.com/search?q=${encodeURIComponent(item.maker + ' ' + item.name + ' SDS')}" target="_blank" class="link-btn">📄 SDS検索</a>
-                        <a href="${item.url}" target="_blank" class="link-btn">🌐 公式サイト</a>
+                        ${item.url ? `<a href="${item.url}" target="_blank" class="link-btn">🌐 公式サイト</a>` : ''}
                     </div>
                 </div>
             `;
@@ -110,7 +156,7 @@
         });
 
         if(count === 0) {
-            listEl.innerHTML = '<div style="text-align:center; color:#888; padding:20px;">該当する商品がありません</div>';
+            listEl.innerHTML = '<div class="loading-msg">該当なし</div>';
         }
     }
 
@@ -118,8 +164,7 @@
         renderList();
     }
 
-    // 初期表示
-    document.addEventListener('DOMContentLoaded', renderList);
+    document.addEventListener('DOMContentLoaded', fetchData);
 </script>
 
 </body>
