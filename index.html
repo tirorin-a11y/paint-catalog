@@ -3,179 +3,124 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>職人ギア - 塗装サポートツール</title>
+    <title>カタログ検索 - 職人ギア</title>
     <link rel="manifest" href="manifest.json">
     <link rel="apple-touch-icon" href="icon-192x192.png">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <link rel="stylesheet" href="style.css">
     <style>
-        /* ボタン用の追加スタイル */
-        .nav-btn {
-            width: 100%;
-            padding: 20px;
-            font-size: 1.2rem;
-            font-weight: bold;
-            box-shadow: 0 4px 10px rgba(0,0,0,0.1);
-            color: white;
-            border: none;
-            border-radius: 12px;
-            cursor: pointer;
-            transition: transform 0.1s;
-        }
-        .nav-btn:active {
-            transform: scale(0.98);
-        }
+        /* --- 共通デザイン --- */
+        body { font-family: -apple-system, BlinkMacSystemFont, "Helvetica Neue", "Yu Gothic", sans-serif; background-color: #f0f2f5; margin: 0; padding: 0; color: #333; -webkit-font-smoothing: antialiased; padding-bottom: 80px; }
+        
+        header { background-color: #2c3e50; color: white; padding: 10px 15px; position: sticky; top: 0; z-index: 100; box-shadow: 0 2px 5px rgba(0,0,0,0.2); display: flex; justify-content: space-between; align-items: center; }
+        h1 { margin: 0; font-size: 1.1rem; letter-spacing: 0.05em; font-weight: bold; }
+        
+        /* ダッシュボードナビ */
+        .dashboard-nav { display: flex; gap: 10px; justify-content: center; margin-bottom: 20px; padding: 10px 15px; background: #fff; box-shadow: 0 2px 5px rgba(0,0,0,0.05); position: sticky; top: 50px; z-index: 90; }
+        .dash-btn { background: #f8f9fa; color: #555; border: 1px solid #ddd; padding: 8px 15px; border-radius: 20px; font-size: 0.85rem; font-weight: bold; text-decoration: none; flex: 1; text-align: center; white-space: nowrap; }
+        
+        .search-area { padding: 15px; }
+        .search-input { width: 100%; padding: 12px; border-radius: 8px; border: 1px solid #ddd; font-size: 1rem; box-sizing: border-box; outline: none; box-shadow: 0 2px 5px rgba(0,0,0,0.05); }
+        
+        .container { max-width: 600px; margin: 0 auto; padding: 0 15px; }
+        
+        /* カタログカード */
+        .catalog-card { background: white; border-radius: 12px; padding: 15px; margin-bottom: 15px; box-shadow: 0 2px 6px rgba(0,0,0,0.06); display: flex; flex-direction: column; gap: 5px; border-left: 5px solid #bdc3c7; }
+        /* メーカーごとの色分け */
+        .maker-nippon { border-left-color: #e74c3c; } /* 日本ペイント(赤) */
+        .maker-sk { border-left-color: #f39c12; } /* SK化研(オレンジ) */
+        .maker-kansai { border-left-color: #3498db; } /* 関西ペイント(青) */
+        
+        .card-header { display: flex; justify-content: space-between; align-items: flex-start; }
+        .maker-badge { font-size: 0.7rem; color: white; background: #95a5a6; padding: 2px 8px; border-radius: 4px; font-weight: bold; }
+        .maker-nippon .maker-badge { background: #e74c3c; }
+        .maker-sk .maker-badge { background: #f39c12; }
+        .maker-kansai .maker-badge { background: #3498db; }
+
+        .product-name { font-size: 1.1rem; font-weight: bold; color: #2c3e50; margin: 5px 0; }
+        .product-desc { font-size: 0.85rem; color: #666; line-height: 1.5; }
+        .product-tags { margin-top: 8px; display: flex; gap: 5px; flex-wrap: wrap; }
+        .tag { font-size: 0.7rem; background: #f0f2f5; color: #555; padding: 3px 8px; border-radius: 10px; border: 1px solid #eee; }
+        
+        .card-links { margin-top: 15px; padding-top: 10px; border-top: 1px dashed #eee; display: flex; justify-content: flex-end; gap: 10px; }
+        .link-btn { text-decoration: none; font-size: 0.8rem; color: #2980b9; font-weight: bold; display: flex; align-items: center; gap: 3px; }
     </style>
 </head>
 <body>
 
-    <header>
-        <h1>職人ギア</h1>
-    </header>
+<header>
+    <h1>🔍 カタログ検索</h1>
+    <a href="navi.html" style="color:white; text-decoration:none; font-size:1.5rem;">🏠</a>
+</header>
 
-    <main>
-        <section class="tool-section">
-            <h2>📱 現場管理・工程表</h2>
-            <div style="display:flex; flex-direction:column; gap:15px; margin-bottom:10px;">
-                
-                <a href="navi.html" style="text-decoration:none; display:block;">
-                    <button class="nav-btn" style="background-color:#00C853;">
-                        🚗 現場ナビ
-                    </button>
-                </a>
+<div class="dashboard-nav">
+    <a href="navi.html" class="dash-btn" style="border-bottom: 3px solid #27ae60; color: #27ae60;">🏠 現場ナビ</a>
+    <a href="index.html" class="dash-btn" style="background:#e67e22; color:white; border:none;">🔍 検索</a>
+    <a href="manager.html" class="dash-btn" style="border-bottom: 3px solid #2980b9; color: #2980b9;">📊 工程管理</a>
+</div>
 
-                <a href="manager.html" style="text-decoration:none; display:block;">
-                    <button class="nav-btn" style="background-color:#2c3e50;">
-                        📊 工程表（全体スケジュール）
-                    </button>
-                </a>
+<div class="search-area">
+    <input type="search" id="searchInput" class="search-input" placeholder="商品名、メーカー、用途で検索..." oninput="filterList()">
+</div>
 
-            </div>
-            <p style="font-size:12px; color:#666; text-align:center;">
-                ※データは端末内に保存されます
-            </p>
-        </section>
-        
-        <section class="tool-section">
-            <h2>📢 更新情報・開発予定</h2>
-            <div class="news-scroll-box">
-                <ul>
-                    <li><strong>2025.11.16</strong> : 絞り込み機能をカスケード（連動）式に強化！</li>
-                    <li><strong>2025.11.16</strong> : 絞り込みリストを自動更新する機能を追加！</li>
-                    <li><strong>2025.11.15</strong> : 日本ペイントのデータを追加しました！</li>
-                    <li><strong>2025.11.14</strong> : サイト公開！エスケー化研に対応。</li>
-                    <li style="color:#0056b3;"><strong>開発中</strong> : 関西ペイントのデータ収集中...</li>
-                </ul>
-            </div>
-        </section>
-
-        <section class="tool-section">
-            <h2>職人仕様 塗料カタログ検索</h2>
-            
-            <div class="search-main-area" style="margin-bottom: 20px;">
-                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:5px;">
-                    <label for="catalogSearch" style="font-weight:bold; font-size:18px; color:#007bff; margin:0;">
-                        🔍 全メーカー横断検索
-                    </label>
-                    <button id="hintButton" style="font-size:12px; background:#f0f8ff; border:1px solid #007bff; color:#007bff; border-radius:15px; padding:2px 10px; cursor:pointer;">
-                        💡 キーワード候補
-                    </button>
-                </div>
-                <p style="font-size:12px; color:#666; margin-bottom:10px;">
-                    品名、一般名称、キーワード（例：「バイオ」）などで一括検索できます。
-                </p>
-                <div style="display: flex; gap: 5px;">
-                    <input type="text" id="catalogSearch" placeholder="キーワード（例: シリコン 屋根）" 
-                           style="flex: 1; padding: 12px; font-size: 16px; border: 2px solid #007bff; border-radius: 4px;">
-                </div>
-            </div>
-
-            <div class="search-filter-area" style="background-color: #f9f9f9; padding: 15px; border-radius: 8px; border: 1px solid #eee;">
-                <p style="margin: 0 0 10px 0; font-size: 14px; font-weight:bold; color:#555;">
-                    ⚙️ メーカーで絞り込む <span style="font-weight:normal; font-size:12px; color:#888;">（指定しなくてもOK）</span>
-                </p>
-                <select id="maker1" style="width:100%; padding:8px; border:1px solid #ccc; border-radius:4px; background:white;">
-                    <option value="">指定なし（全社検索）</option>
-                    <option disabled>読み込み中...</option>
-                </select>
-            </div>
-
-            <div class="search-filter-area" style="margin-top: 10px; background-color: #f1f8ff; border: 1px solid #c8e1ff; padding: 15px; border-radius: 8px;">
-                <p style="margin: 0 0 10px 0; font-size: 14px; font-weight:bold; color:#004a99;">
-                    ⚙️ さらに絞り込む
-                </p>
-                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
-                    <div>
-                        <label for="filter_j" style="font-size:12px; font-weight:bold;">大分類 (J列)</label>
-                        <select id="filter_j" style="width:100%; padding:8px; border:1px solid #ccc; border-radius:4px; background:white;">
-                            <option value="">指定なし</option><option disabled>読み込み中...</option>
-                        </select>
-                    </div>
-                    <div>
-                        <label for="filter_k" style="font-size:12px; font-weight:bold;">用途 (K列)</label>
-                        <select id="filter_k" style="width:100%; padding:8px; border:1px solid #ccc; border-radius:4px; background:white;">
-                            <option value="">指定なし</option><option disabled>読み込み中...</option>
-                        </select>
-                    </div>
-                    <div>
-                        <label for="filter_l" style="font-size:12px; font-weight:bold;">タイプ (L列)</label>
-                        <select id="filter_l" style="width:100%; padding:8px; border:1px solid #ccc; border-radius:4px; background:white;">
-                            <option value="">指定なし</option><option disabled>読み込み中...</option>
-                        </select>
-                    </div>
-                    <div>
-                        <label for="filter_m" style="font-size:12px; font-weight:bold;">樹脂 (M列)</label>
-                        <select id="filter_m" style="width:100%; padding:8px; border:1px solid #ccc; border-radius:4px; background:white;">
-                            <option value="">指定なし</option><option disabled>読み込み中...</option>
-                        </select>
-                    </div>
-                </div>
-            </div>
-
-            <p id="searchStatus" style="color:#d9534f; margin-top:15px; font-weight:bold; font-size:14px; text-align:center; min-height: 20px;"></p>
-            <ul id="catalogList"></ul>
-        </section>
-
-        <section class="tool-section" style="opacity: 0.6;">
-            <h2>カンタン見積もり <span style="font-size: 14px; color: #d9534f; border: 1px solid #d9534f; padding: 2px 5px; border-radius: 4px;">準備中</span></h2>
-            <div class="input-group">
-                <label for="area" disabled>延床面積 (m²):</label>
-                <input type="number" id="area" placeholder="例: 100" disabled>
-            </div>
-            <div class="input-group">
-                <label for="paintGrade" disabled>塗料グレード:</label>
-                <select id="paintGrade" disabled>
-                    <option value="silicone">シリコン</option>
-                </select>
-            </div>
-            <button id="calcButton" style="background-color: #999; cursor: default;">計算する</button>
-        </section>
-
-        <section style="margin-top: 30px; padding: 20px; background-color: #f9f9f9; font-size: 12px; color: #666; border-top: 1px solid #ddd;">
-            <h3 style="font-size: 13px; margin-top: 0; margin-bottom: 10px; color: #333;">⚠️ 免責事項・著作権について</h3>
-            <p style="margin-bottom: 10px;">当サイトは、塗装職人の業務効率化を目的として作成された<strong>非公式のリンク集（検索ツール）</strong>です。<br>掲載している各塗料メーカー様とは一切関係ございません。</p>
-            <p style="margin-bottom: 10px;">カタログデータ（PDF）および製品情報の著作権は、全て各メーカー様に帰属します。<br>当サイトは公式サイトで公開されているPDFへの「リンク」を提供しているのみであり、データの再配布、複製、改変等は行っておりません。</p>
-            <p style="margin: 0;">万が一、掲載内容に問題がある場合や、メーカー様の方針にそぐわない場合は、直ちに該当リンクを削除いたします。<br>お手数ですが、管理者までご連絡ください。</p>
-        </section>
-
-    </main>
-    
-    <div id="hintPopup" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.5); z-index:2000;">
-        <div style="background:white; width:85%; max-width:400px; margin:100px auto; padding:20px; border-radius:8px; position:relative; max-height: 60vh; overflow-y: auto;">
-            <h3 style="margin-top:0;">💡 キーワード候補</h3>
-            <p style="font-size:12px; color:#666;">タップすると検索できます（H列から自動取得）</p>
-            <div id="hintTagContainer" style="display: flex; flex-wrap: wrap; gap: 8px; margin-top: 15px;">
-                <span style="font-size:12px; color:#999;">読み込み中...</span>
-            </div>
-            <button id="closeHint" style="width:100%; padding:10px; background:#eee; color:#333; border:none; border-radius:4px; cursor:pointer; margin-top:20px;">閉じる</button>
-        </div>
+<div class="container" id="catalogList">
     </div>
 
-    <footer>
-        <p>&copy; 2025 ペイントハウス（仮）</p>
-    </footer>
+<script>
+    // ★サンプルデータ（必要に応じて書き換えてください）
+    const catalogData = [
+        { name: "パーフェクトトップ", maker: "日本ペイント", desc: "ラジカル制御形ハイブリッド高耐候性塗料。作業性が良く、光沢が高い。", type: "nippon", tags: ["外壁", "水性", "ラジカル", "上塗り"], url: "https://www.nipponpaint.co.jp/" },
+        { name: "ファインパーフェクトベスト", maker: "日本ペイント", desc: "ターペン可溶2液ラジカル制御形ハイブリッド高耐候性屋根用塗料。", type: "nippon", tags: ["屋根", "弱溶剤", "ラジカル", "2液"], url: "https://www.nipponpaint.co.jp/" },
+        { name: "エスケープレミアムシリコン", maker: "SK化研", desc: "シリコン樹脂を凌ぐ高い耐候性。メンテナンスコストを削減。", type: "sk", tags: ["外壁", "水性", "シリコン", "ラジカル"], url: "https://www.sk-kaken.co.jp/" },
+        { name: "クールタイト", maker: "SK化研", desc: "遮熱性能に優れた屋根用塗料。幅広い色相に対応。", type: "sk", tags: ["屋根", "弱溶剤", "遮熱", "ウレタン/シリコン"], url: "https://www.sk-kaken.co.jp/" },
+        { name: "アレスダイナミックTOP", maker: "関西ペイント", desc: "天候に関わらず塗装可能な「ロイヤルシリコン」技術。", type: "kansai", tags: ["外壁", "水性", "ラジカル", "湿潤面可"], url: "https://www.kansai.co.jp/" },
+        { name: "カチオンシーラーEPO", maker: "共通・汎用", desc: "下地への浸透性・付着性に優れたカチオン系シーラー。", type: "common", tags: ["下塗り", "シーラー", "カチオン"], url: "#" }
+    ];
 
-    <script src="script.js"></script>
-    
+    function renderList() {
+        const listEl = document.getElementById('catalogList');
+        const keyword = document.getElementById('searchInput').value.toLowerCase();
+        listEl.innerHTML = '';
+
+        let count = 0;
+        catalogData.forEach(item => {
+            // 検索フィルター
+            const searchText = `${item.name} ${item.maker} ${item.desc} ${item.tags.join(' ')}`.toLowerCase();
+            if (keyword && !searchText.includes(keyword)) return;
+
+            // タグ生成
+            const tagsHtml = item.tags.map(tag => `<span class="tag">#${tag}</span>`).join('');
+
+            const html = `
+                <div class="catalog-card maker-${item.type}">
+                    <div class="card-header">
+                        <span class="maker-badge">${item.maker}</span>
+                    </div>
+                    <div class="product-name">${item.name}</div>
+                    <div class="product-desc">${item.desc}</div>
+                    <div class="product-tags">${tagsHtml}</div>
+                    <div class="card-links">
+                        <a href="https://www.google.com/search?q=${encodeURIComponent(item.maker + ' ' + item.name + ' SDS')}" target="_blank" class="link-btn">📄 SDS検索</a>
+                        <a href="${item.url}" target="_blank" class="link-btn">🌐 公式サイト</a>
+                    </div>
+                </div>
+            `;
+            listEl.insertAdjacentHTML('beforeend', html);
+            count++;
+        });
+
+        if(count === 0) {
+            listEl.innerHTML = '<div style="text-align:center; color:#888; padding:20px;">該当する商品がありません</div>';
+        }
+    }
+
+    function filterList() {
+        renderList();
+    }
+
+    // 初期表示
+    document.addEventListener('DOMContentLoaded', renderList);
+</script>
+
 </body>
 </html>

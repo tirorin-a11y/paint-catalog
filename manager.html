@@ -3,381 +3,303 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>工程表（全体スケジュール） - 職人ギア</title>
+    <title>工程管理 - 職人ギア</title>
+    <link rel="manifest" href="manifest.json">
+    <link rel="apple-touch-icon" href="icon-192x192.png">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <link rel="stylesheet" href="style.css">
     <style>
-        /* (CSSは以前と同じなので省略せず、前回のmanager.htmlのCSSをそのまま使います) */
-        /* ... (CSS code here) ... */
-        * { box-sizing: border-box; }
-        body { font-family: "Helvetica Neue", Arial, sans-serif; background-color: #f4f7f6; color: #333; margin: 0; padding: 0; }
-        .sidebar { width: 240px; background: #2c3e50; color: white; position: fixed; height: 100%; padding: 20px; }
-        .menu-item { display: block; padding: 15px; color: #b0c4de; text-decoration: none; border-radius: 8px; margin-bottom: 10px; transition: 0.3s; cursor: pointer; }
-        .menu-item:hover, .menu-item.active { background: #34495e; color: white; }
-        .main { margin-left: 240px; padding: 40px; padding-bottom: 100px; }
-        .page-section { display: none; }
-        .page-section.active { display: block; animation: fadeIn 0.3s; }
-        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
-        .main-header { display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #ddd; padding-bottom: 15px; margin-bottom: 30px; }
-        h1 { margin: 0; font-size: 1.8rem; }
-        .settings-btn { font-size: 1.5rem; cursor: pointer; margin-left: 15px; padding: 5px; border-radius: 4px; }
-        .settings-btn:hover { background: #e0e0e0; }
-        .rain-btn { background: #34495e; color: #fff; border: none; padding: 8px 16px; border-radius: 6px; cursor: pointer; font-weight: bold; margin-right: 10px; display: flex; align-items: center; gap: 5px; }
-        .rain-btn:hover { background: #2c3e50; }
-        .data-table { width: 100%; border-collapse: collapse; background: white; box-shadow: 0 2px 10px rgba(0,0,0,0.05); border-radius: 8px; overflow: hidden; margin-bottom: 40px; }
-        th, td { padding: 15px; text-align: left; border-bottom: 1px solid #eee; vertical-align: middle; }
-        th { background-color: #ecf0f1; font-weight: bold; color: #555; }
-        tr:hover { background-color: #f9f9f9; }
-        .check-col { width: 40px; text-align: center; }
-        input[type="checkbox"] { transform: scale(1.2); cursor: pointer; }
-        tr.overdue { background-color: #fff0f0; }
-        tr.overdue td { color: #c0392b; }
-        .warning-badge { background: #c0392b; color: white; font-size: 0.7rem; padding: 2px 6px; border-radius: 4px; margin-left: 5px; font-weight: bold; }
-        input[type="date"], select { padding: 8px; border: 1px solid #ccc; border-radius: 4px; width: 100%; }
-        .gcal-btn { background: #fff; color: #e67e22; border: 1px solid #e67e22; padding: 6px 12px; border-radius: 4px; cursor: pointer; text-decoration: none; display: inline-block; font-size: 0.8rem; text-align: center; width: 100%; }
-        .gantt-wrapper { background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.05); }
-        .gantt-container { overflow-x: auto; overflow-y: auto; max-height: 600px; border: 1px solid #eee; position: relative; }
-        .gantt-header { display: flex; border-bottom: 2px solid #ddd; padding-bottom: 5px; margin-bottom: 0; position: sticky; top: 0; background: white; z-index: 30; }
-        .gantt-day { width: 30px; text-align: center; font-size: 0.75rem; color: #777; flex-shrink: 0; border-right: 1px dashed #eee; }
-        .gantt-day.today { background-color: #fff3e0; color: #e67e22; font-weight: bold; }
-        .gantt-row { display: flex; align-items: center; border-bottom: 1px solid #f5f5f5; height: 50px; position: relative; }
-        .gantt-label { width: 180px; font-weight: bold; font-size: 0.9rem; flex-shrink: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; padding-left: 10px; background: white; position: sticky; left: 0; z-index: 20; border-right: 2px solid #ddd; box-shadow: 2px 0 5px rgba(0,0,0,0.05); }
-        .gantt-bar { height: 30px; border-radius: 4px; background: #3498db; color: white; font-size: 0.8rem; display: flex; align-items: center; padding-left: 10px; box-shadow: 0 2px 4px rgba(0,0,0,0.2); position: absolute; top: 10px; white-space: nowrap; overflow: visible; z-index: 10; }
-        .gantt-bar span { position: relative; z-index: 11; text-shadow: 0 0 2px rgba(0,0,0,0.5); }
-        .bulk-action-bar { position: fixed; bottom: -100px; left: 260px; right: 20px; background: #2c3e50; color: white; padding: 15px 30px; border-radius: 8px; box-shadow: 0 5px 20px rgba(0,0,0,0.3); display: flex; align-items: center; justify-content: space-between; transition: bottom 0.3s; z-index: 100; }
-        .bulk-action-bar.show { bottom: 20px; }
-        .bulk-info { font-weight: bold; display: flex; align-items: center; gap: 10px; }
-        .bulk-count { background: #e74c3c; color: white; padding: 2px 8px; border-radius: 10px; font-size: 0.9rem; }
-        .bulk-controls { display: flex; gap: 10px; }
-        .bulk-select { padding: 8px; border-radius: 4px; border: none; color:#333; }
-        .bulk-btn { background: #27ae60; color: white; border: none; padding: 8px 20px; border-radius: 4px; cursor: pointer; font-weight: bold; }
-        .bulk-btn:hover { background: #2ecc71; }
-        .overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 150; display: none; opacity: 0; transition: opacity 0.3s; }
-        .overlay.show { display: block; opacity: 1; }
-        .modal-box { position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 90%; max-width: 500px; background: white; padding: 24px; border-radius: 16px; z-index: 160; box-shadow: 0 10px 25px rgba(0,0,0,0.2); display: none; }
-        .modal-box.show { display: block; animation: popUp 0.3s; }
-        @keyframes popUp { from { transform: translate(-50%, -40%); opacity: 0; } to { transform: translate(-50%, -50%); opacity: 1; } }
-        .settings-menu h3 { margin-top: 0; text-align: center; border-bottom: 1px solid #eee; padding-bottom: 10px; margin-bottom: 15px; }
-        .settings-item { width: 100%; padding: 15px; margin-bottom: 10px; border: 1px solid #eee; background: #fcfcfc; border-radius: 8px; font-weight: bold; cursor: pointer; text-align: left; display: flex; align-items: center; gap: 10px; text-decoration: none; color: #333; box-sizing: border-box; }
-        .settings-item:hover { background: #f0f0f0; }
-        .settings-footer { display: flex; gap: 10px; margin-top: 20px; border-top: 1px solid #eee; padding-top: 15px; }
-        .btn-close { flex: 2; background-color: #95a5a6; color: white; padding: 12px; border: none; border-radius: 8px; font-weight: bold; cursor: pointer; }
-        .btn-delete-all { flex: 1; background-color: white; color: #e74c3c; border: 1px solid #e74c3c; padding: 12px; border-radius: 8px; font-weight: bold; cursor: pointer; font-size: 0.9rem; }
-        .toast-save { position: fixed; top: 20px; right: 20px; background: white; color: #27ae60; border: 1px solid #27ae60; padding: 10px 20px; border-radius: 30px; opacity: 0; pointer-events: none; transition: opacity 0.3s; z-index: 200; font-weight: bold; box-shadow: 0 5px 15px rgba(0,0,0,0.1); display: flex; align-items: center; gap: 5px; }
-        .toast-save.show { opacity: 1; top: 30px; }
-        .rain-list { max-height: 200px; overflow-y: auto; border: 1px solid #eee; margin: 15px 0; padding: 10px; background: #f9f9f9; border-radius: 4px; }
-        .rain-item { display: flex; align-items: center; padding: 5px 0; border-bottom: 1px dashed #ddd; }
-        .rain-item label { cursor: pointer; display: flex; align-items: center; gap: 10px; width: 100%; font-size: 0.9rem; }
-        .analysis-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-top: 20px; }
-        .card { background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 6px rgba(0,0,0,0.05); }
-        .card h3 { margin-top: 0; border-bottom: 2px solid #eee; padding-bottom: 10px; font-size: 1.1rem; color: #2c3e50; }
-        .stat-number { font-size: 3rem; font-weight: bold; color: #3498db; text-align: center; margin: 20px 0; }
-        .stat-label { text-align: center; color: #777; font-size: 0.9rem; }
-        .ranking-list { list-style: none; padding: 0; margin: 0; }
-        .ranking-item { display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid #eee; }
-        .ranking-badge { background: #e3f2fd; color: #1976d2; padding: 2px 8px; border-radius: 10px; font-weight: bold; }
+        body { 
+            font-family: sans-serif; 
+            background: #f0f2f5; 
+            margin: 0; 
+            padding-bottom: 50px; 
+        }
+        header { 
+            background: #2c3e50; 
+            color: white; 
+            padding: 10px 15px; 
+            position: sticky; 
+            top: 0; 
+            z-index: 100; 
+            display: flex; 
+            justify-content: space-between; 
+            align-items: center; 
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+        
+        /* ガントチャートのコンテナ */
+        .gantt-container { 
+            overflow-x: auto; 
+            background: white; 
+            margin-top: 10px; 
+            position: relative; 
+            /* スクロールバーを見やすく */
+            scrollbar-width: thin; 
+        }
+        
+        .gantt-header { 
+            display: flex; 
+            position: sticky; 
+            top: 0; 
+            background: #ecf0f1; 
+            z-index: 10; 
+            border-bottom: 1px solid #ddd; 
+        }
+        
+        .gantt-cell { 
+            min-width: 40px; 
+            height: 40px; 
+            border-right: 1px solid #eee; 
+            border-bottom: 1px solid #eee; 
+            text-align: center; 
+            line-height: 40px; 
+            font-size: 0.8rem; 
+            box-sizing: border-box; 
+            flex-shrink: 0;
+        }
+        
+        .day-header { 
+            font-weight: bold; 
+            font-size: 0.7rem; 
+            color: #555; 
+        }
+        
+        .is-sunday { background-color: #ffcdd2; color: #c62828; }
+        .is-today { background-color: #fff9c4; border-bottom: 3px solid #fbc02d; }
+        
+        .site-row { 
+            display: flex; 
+            position: relative; 
+            height: 50px; 
+            align-items: center; 
+            border-bottom: 1px solid #eee; 
+        }
+        
+        .site-name-col { 
+            position: sticky; 
+            left: 0; 
+            width: 120px; 
+            background: white; 
+            z-index: 5; 
+            font-size: 0.8rem; 
+            padding: 0 5px; 
+            border-right: 2px solid #ddd; 
+            display: flex; 
+            align-items: center; 
+            height: 100%; 
+            white-space: nowrap; 
+            overflow: hidden; 
+            text-overflow: ellipsis; 
+            box-shadow: 2px 0 5px rgba(0,0,0,0.05); 
+            flex-shrink: 0;
+        }
+        
+        .bar { 
+            position: absolute; 
+            height: 24px; 
+            top: 13px; 
+            border-radius: 12px; 
+            font-size: 0.7rem; 
+            color: white; 
+            display: flex; 
+            align-items: center; 
+            justify-content: center; 
+            overflow: hidden; 
+            white-space: nowrap; 
+            box-shadow: 0 2px 4px rgba(0,0,0,0.2); 
+            opacity: 0.9; 
+            cursor: pointer; 
+        }
+        .bar-plan { background: #f39c12; }
+        .bar-active { background: #2980b9; }
+        .bar-done { background: #7f8c8d; }
+        
+        /* 表示切替ボタンエリア */
+        .toggle-area { 
+            padding: 10px; 
+            text-align: right; 
+            background: #fff; 
+            border-bottom: 1px solid #eee; 
+        }
+        .btn-toggle { 
+            background: #fff; 
+            border: 1px solid #2980b9; 
+            color: #2980b9; 
+            padding: 5px 12px; 
+            border-radius: 20px; 
+            font-size: 0.85rem; 
+            cursor: pointer; 
+            transition: 0.2s;
+        }
+        .btn-toggle.active { 
+            background: #2980b9; 
+            color: white; 
+        }
+        
+        /* 上部ナビゲーション */
+        .nav-links { 
+            display: flex; 
+            gap: 10px; 
+            padding: 10px; 
+            justify-content: center; 
+            background: #fff; 
+            margin-bottom: 10px; 
+            box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+        }
+        .nav-btn { 
+            text-decoration: none; 
+            font-size: 0.85rem; 
+            padding: 8px 20px; 
+            border-radius: 20px; 
+            background: #f8f9fa; 
+            color: #555; 
+            border: 1px solid #ddd; 
+            font-weight: bold;
+        }
     </style>
 </head>
 <body>
 
-<div class="sidebar">
-    <h2>📊 工程表（全体スケジュール）<br><span style="font-size:0.8rem; opacity:0.7;">Manager</span></h2>
-    <div class="menu-item active" onclick="switchPage('schedule', this)">📅 運行スケジュール</div>
-    <div class="menu-item" onclick="switchPage('analysis', this)">📈 分析レポート</div>
-    <a href="index.html" target="_blank" class="menu-item">🔍 カタログ検索へ</a>
-    <a href="navi.html" target="_blank" class="menu-item">📱 現場ナビへ</a>
+<header>
+    <div style="font-weight:bold; font-size:1.1rem;">📊 工程管理</div>
+    <a href="navi.html" style="color:white; text-decoration:none; font-size:1.2rem;">✕</a>
+</header>
+
+<div class="nav-links">
+    <a href="navi.html" class="nav-btn">🏠 現場ナビ</a>
+    <a href="index.html" class="nav-btn">🔍 検索</a>
 </div>
 
-<div class="main">
-    <div id="page-schedule" class="page-section active">
-        <div class="main-header">
-            <div style="display:flex; align-items:center;">
-                <h1>工程管理ダッシュボード</h1>
-                <span class="settings-btn" onclick="openSettings()" title="データ管理">⚙️</span>
-            </div>
-            <div style="display:flex; align-items:center;">
-                <button class="rain-btn" onclick="openRainModal()">☔ 雨スライド</button>
-                <div style="font-size:0.8rem; color:#888; margin-left:10px;">✅ 自動保存</div>
-            </div>
-        </div>
-
-        <table class="data-table">
-            <thead>
-                <tr>
-                    <th class="check-col"><input type="checkbox" id="checkAll" onchange="toggleSelectAll(this)"></th>
-                    <th width="100">案件No</th>
-                    <th>現場名</th>
-                    <th width="120">ステータス</th>
-                    <th width="150">開始日</th>
-                    <th width="150">終了日</th>
-                    <th width="80">連携</th>
-                </tr>
-            </thead>
-            <tbody id="tableBody"></tbody>
-        </table>
-
-        <h2>🔍 今月の見える化</h2>
-        <div class="gantt-wrapper">
-            <div class="gantt-container">
-                <div class="gantt-header" id="ganttHeader"></div>
-                <div id="ganttBody"></div>
-            </div>
-        </div>
-    </div>
-
-    <div id="page-analysis" class="page-section">
-        <h1>📈 現場データ分析</h1>
-        <div class="analysis-grid">
-            <div class="card">
-                <h3>☔ 雨天中止の記録</h3>
-                <div class="stat-number" id="rainCount">0</div>
-                <div class="stat-label">回の雨スライドを実施しました</div>
-                <div style="margin-top:15px; height:100px; overflow-y:auto; border:1px solid #eee; padding:10px; font-size:0.9rem;" id="rainHistoryLog"></div>
-            </div>
-            <div class="card">
-                <h3>🚀 出動回数（ナビ使用） TOP5</h3>
-                <ul class="ranking-list" id="naviRanking"></ul>
-            </div>
-        </div>
-    </div>
+<div class="toggle-area">
+    <button class="btn-toggle" id="btnShowAll" onclick="toggleShowAll()">全ての現場を表示</button>
 </div>
 
-<div id="bulkActionBar" class="bulk-action-bar">
-    <div class="bulk-info"><span class="bulk-count" id="selectedCount">0</span> 件を選択中</div>
-    <div class="bulk-controls">
-        <select id="bulkStatus" class="bulk-select">
-            <option value="">ステータス変更...</option>
-            <option value="plan">📝 現調予定</option>
-            <option value="active">🏗️ 施工中</option>
-            <option value="done">✅ 完工</option>
-            <option value="handover">🏠 引き渡し</option>
-        </select>
-        <button class="bulk-btn" onclick="applyBulkAction()">適用する</button>
+<div id="ganttArea" class="gantt-container">
     </div>
-</div>
-
-<input type="file" id="jsonInput" accept=".json" style="display:none" onchange="importJSON(this)">
-<div class="overlay" id="overlay" onclick="closeAllModals()"></div>
-
-<div id="rainModal" class="modal-box">
-    <h3>☔ 雨天による工程スライド</h3>
-    <p style="font-size:0.9rem; margin-bottom:10px;">雨のため作業できない日を選択してください。</p>
-    <label>対象日（雨の日）</label>
-    <input type="date" id="rainDate" onchange="updateRainList()">
-    <div style="font-weight:bold; margin-top:15px;">影響を受ける現場：</div>
-    <div id="rainList" class="rain-list"></div>
-    <div class="settings-footer">
-        <button class="btn-delete-all" style="color:white; background:#34495e; border:none;" onclick="executeRainSlide()">実行する</button>
-        <button class="btn-close" onclick="closeAllModals()">閉じる</button>
-    </div>
-</div>
-
-<div id="settingsModal" class="modal-box settings-menu">
-    <h3>⚙️ データ管理（PC版）</h3>
-    <button class="settings-item" onclick="exportJSON()">📤 <strong>バックアップ作成</strong></button>
-    <button class="settings-item" onclick="document.getElementById('jsonInput').click()">📥 <strong>データ復元</strong></button>
-    <div class="settings-footer">
-        <button class="btn-delete-all" onclick="deleteAllData()">🗑️ 全削除</button>
-        <button class="btn-close" onclick="closeAllModals()">閉じる</button>
-    </div>
-</div>
-
-<div id="toastSave" class="toast-save">✅ 保存しました</div>
 
 <script>
     let sites = JSON.parse(localStorage.getItem('dx_sites')) || [];
-    let rainLog = JSON.parse(localStorage.getItem('dx_rain_log')) || [];
-    let selectedIndices = new Set();
+    let isShowAll = false; // 初期状態：完了現場は隠す
 
-    function switchPage(pageName, btn) {
-        document.querySelectorAll('.page-section').forEach(el => el.classList.remove('active'));
-        document.getElementById('page-' + pageName).classList.add('active');
-        document.querySelectorAll('.menu-item').forEach(el => el.classList.remove('active'));
-        btn.classList.add('active');
-        if(pageName === 'analysis') renderAnalysis();
-    }
-
-    function renderTable() {
-        const tbody = document.getElementById('tableBody');
-        tbody.innerHTML = '';
-        const today = new Date(); today.setHours(0, 0, 0, 0);
-
-        sites.forEach((site, index) => {
-            const start = site.start || ''; const end = site.end || '';
-            let gcalLink = '#'; let btnClass = 'gcal-btn disabled';
-            let isOverdue = false; let warningHtml = '';
-            
-            if(end) {
-                const endDate = new Date(end);
-                if((site.status === 'active' || site.status === 'plan') && endDate < today) {
-                    isOverdue = true; warningHtml = '<span class="warning-badge">⚠️ 遅れ</span>';
-                }
-            }
-            if(start && end) {
-                const sDate = start.replace(/-/g, ''); const eDate = end.replace(/-/g, ''); 
-                const text = encodeURIComponent(`【${getStatusLabel(site.status)}】${site.name}`);
-                const location = encodeURIComponent(site.address);
-                gcalLink = `https://www.google.com/calendar/render?action=TEMPLATE&text=${text}&location=${location}&dates=${sDate}/${eDate}`;
-                btnClass = 'gcal-btn';
-            }
-            const trClass = isOverdue ? 'overdue' : '';
-            const isChecked = selectedIndices.has(index) ? 'checked' : '';
-
-            const html = `
-                <tr class="${trClass}">
-                    <td class="check-col"><input type="checkbox" onchange="toggleSelect(${index}, this.checked)" ${isChecked}></td>
-                    <td><span style="background:#eee; padding:4px; border-radius:4px; font-size:0.8rem;">${site.id}</span></td>
-                    <td><strong>${site.name}</strong>${warningHtml}<br><span style="font-size:0.8rem; color:#777;">${site.address}</span></td>
-                    <td>
-                        <select onchange="updateStatus(${index}, this.value)">
-                            <option value="plan" ${site.status === 'plan' ? 'selected' : ''}>現調予定</option>
-                            <option value="active" ${site.status === 'active' ? 'selected' : ''}>施工中</option>
-                            <option value="done" ${site.status === 'done' ? 'selected' : ''}>完工</option>
-                            <option value="handover" ${site.status === 'handover' ? 'selected' : ''}>🏠 引き渡し</option>
-                        </select>
-                    </td>
-                    <td><input type="date" value="${start}" onchange="updateDate(${index}, 'start', this.value)"></td>
-                    <td><input type="date" value="${end}" onchange="updateDate(${index}, 'end', this.value)"></td>
-                    <td><a href="${gcalLink}" target="_blank" class="${btnClass}">📅 Gカレ</a></td>
-                </tr>
-            `;
-            tbody.insertAdjacentHTML('beforeend', html);
-        });
-        updateBulkBar();
-    }
-
-    // 分析
-    function renderAnalysis() {
-        document.getElementById('rainCount').textContent = rainLog.length;
-        const logEl = document.getElementById('rainHistoryLog');
-        logEl.innerHTML = rainLog.map(d => `<div>☔ ${d}</div>`).join('') || '<div style="color:#aaa">履歴なし</div>';
-        const rankingList = document.getElementById('naviRanking');
-        rankingList.innerHTML = '';
-        const sortedSites = [...sites].filter(s => s.naviCount > 0).sort((a, b) => b.naviCount - a.naviCount).slice(0, 5);
-        if(sortedSites.length === 0) {
-            rankingList.innerHTML = '<li style="padding:10px; color:#aaa;">まだデータがありません。<br>スマホで「ナビ」を使うとカウントされます。</li>';
+    // 表示モード切替
+    function toggleShowAll() {
+        isShowAll = !isShowAll;
+        const btn = document.getElementById('btnShowAll');
+        if(isShowAll) {
+            btn.classList.add('active');
+            btn.textContent = "完了現場を隠す";
         } else {
-            sortedSites.forEach(site => {
-                const html = `
-                    <li class="ranking-item">
-                        <span>${site.name}</span>
-                        <span class="ranking-badge">${site.naviCount} 回</span>
-                    </li>
-                `;
-                rankingList.insertAdjacentHTML('beforeend', html);
-            });
+            btn.classList.remove('active');
+            btn.textContent = "全ての現場を表示";
+        }
+        renderGantt();
+    }
+
+    // ★重要：日付文字列をDate型に変換（/区切りに置換してズレ防止）
+    function parseDate(str) {
+        if(!str) return null;
+        return new Date(str.replace(/-/g, '/'));
+    }
+
+    // 日付の差分（日数）を計算
+    function getDiffDays(date1, date2) {
+        const dt1 = new Date(date1.getFullYear(), date1.getMonth(), date1.getDate());
+        const dt2 = new Date(date2.getFullYear(), date2.getMonth(), date2.getDate());
+        return Math.floor((dt2 - dt1) / (1000 * 60 * 60 * 24));
+    }
+
+    function renderGantt() {
+        const container = document.getElementById('ganttArea');
+        container.innerHTML = '';
+
+        // 1. 表示範囲の決定（今月1日 〜 3ヶ月後末日）
+        const today = new Date();
+        const startDate = new Date(today.getFullYear(), today.getMonth(), 1); 
+        const endDate = new Date(today.getFullYear(), today.getMonth() + 3, 0);
+        const totalDays = getDiffDays(startDate, endDate) + 1;
+
+        // 2. ヘッダー行の生成
+        let headerHTML = '<div class="gantt-header"><div class="gantt-cell" style="min-width:120px; position:sticky; left:0; z-index:20; background:#ecf0f1; border-right:2px solid #ddd;">現場名</div>';
+        
+        let todayLeftPos = 0; // 今日の位置を記録
+
+        for (let i = 0; i < totalDays; i++) {
+            const d = new Date(startDate);
+            d.setDate(startDate.getDate() + i);
+            
+            const isSun = d.getDay() === 0;
+            const isToday = d.toDateString() === today.toDateString();
+            
+            if (isToday) todayLeftPos = i * 40;
+
+            let classNames = 'gantt-cell day-header';
+            if (isSun) classNames += ' is-sunday';
+            if (isToday) classNames += ' is-today';
+
+            headerHTML += `<div class="${classNames}">${d.getDate()}</div>`;
+        }
+        headerHTML += '</div>';
+        container.insertAdjacentHTML('beforeend', headerHTML);
+
+        // 3. 現場データの描画
+        // フィルタリング（isShowAllがfalseなら完了を除外）
+        const targetSites = isShowAll ? sites : sites.filter(s => s.status !== 'handover');
+
+        targetSites.forEach(site => {
+            if (!site.start || !site.end) return; // 日程未定はスキップ
+
+            const sDate = parseDate(site.start);
+            const eDate = parseDate(site.end);
+            
+            // 範囲外ならスキップ
+            if (eDate < startDate || sDate > endDate) return;
+
+            // バーの位置計算
+            const offsetDays = getDiffDays(startDate, sDate);
+            const durationDays = getDiffDays(sDate, eDate) + 1;
+
+            let left = offsetDays * 40;
+            let width = durationDays * 40;
+
+            // 左端補正（表示期間より前から始まっている場合）
+            if (left < 0) { 
+                width += left; 
+                left = 0; 
+            } 
+
+            // ステータス別の色分け
+            let barClass = 'bar-plan';
+            if (site.status === 'active') barClass = 'bar-active';
+            if (site.status === 'done' || site.status === 'handover') barClass = 'bar-done';
+
+            const rowHTML = `
+                <div class="site-row" style="width:${120 + (totalDays * 40)}px">
+                    <div class="site-name-col">${site.name}</div>
+                    <div class="bar ${barClass}" style="left:${120 + left}px; width:${width}px;">
+                        ${durationDays}日
+                    </div>
+                    ${Array.from({length: totalDays}).map((_, idx) => {
+                        const d = new Date(startDate); d.setDate(startDate.getDate() + idx);
+                        const isSun = d.getDay() === 0;
+                        const isToday = d.toDateString() === today.toDateString();
+                        let bg = isToday ? '#fff9c4' : (isSun ? '#fff0f0' : 'transparent');
+                        return `<div style="position:absolute; left:${120 + idx * 40}px; top:0; width:40px; height:100%; border-right:1px solid #eee; background:${bg}; z-index:-1;"></div>`
+                    }).join('')}
+                </div>
+            `;
+            container.insertAdjacentHTML('beforeend', rowHTML);
+        });
+
+        // ★今日へ自動スクロール (少し左に余裕を持たせる -100px)
+        if(todayLeftPos > 0) {
+            setTimeout(() => {
+                container.scrollTo({ left: todayLeftPos - 100, behavior: 'smooth' });
+            }, 100);
         }
     }
 
-    // 雨スライド
-    function openRainModal() {
-        document.getElementById('overlay').classList.add('show');
-        document.getElementById('rainModal').classList.add('show');
-        const tomorrow = new Date(); tomorrow.setDate(tomorrow.getDate() + 1);
-        const yyyy = tomorrow.getFullYear();
-        const mm = (tomorrow.getMonth()+1).toString().padStart(2, '0');
-        const dd = tomorrow.getDate().toString().padStart(2, '0');
-        document.getElementById('rainDate').value = `${yyyy}-${mm}-${dd}`;
-        updateRainList();
-    }
-    function updateRainList() {
-        const rainDateStr = document.getElementById('rainDate').value;
-        const listEl = document.getElementById('rainList');
-        listEl.innerHTML = '';
-        if(!rainDateStr) return;
-        const rainDate = new Date(rainDateStr);
-        let count = 0;
-        sites.forEach((site, index) => {
-            if(site.status === 'done' || site.status === 'handover' || !site.start || !site.end) return;
-            const start = new Date(site.start); const end = new Date(site.end);
-            if (start <= rainDate && rainDate <= end) {
-                const html = `<div class="rain-item"><label><input type="checkbox" class="rain-check" value="${index}" checked><span>${site.name} (${site.status==='active'?'施工中':'予定'})</span></label></div>`;
-                listEl.insertAdjacentHTML('beforeend', html);
-                count++;
-            }
-        });
-        if(count === 0) listEl.innerHTML = '<div style="color:#888; text-align:center;">影響を受ける現場はありません</div>';
-    }
-    function executeRainSlide() {
-        const rainDateStr = document.getElementById('rainDate').value;
-        const checkboxes = document.querySelectorAll('.rain-check:checked');
-        if(checkboxes.length === 0) { alert('対象がありません'); return; }
-        if(!confirm(`${checkboxes.length}件の工期をずらしますか？`)) return;
-        checkboxes.forEach(cb => {
-            const index = parseInt(cb.value);
-            const site = sites[index];
-            const end = new Date(site.end);
-            end.setDate(end.getDate() + 1);
-            site.end = formatDate(end);
-            site.updatedAt = Date.now();
-        });
-        rainLog.push(rainDateStr);
-        localStorage.setItem('dx_rain_log', JSON.stringify(rainLog));
-        autoSave(); renderTable(); renderGantt(); closeAllModals();
-        showToast('☔ 工期スライド＆記録完了');
-    }
-    function formatDate(d) { return `${d.getFullYear()}-${(d.getMonth()+1).toString().padStart(2,'0')}-${d.getDate().toString().padStart(2,'0')}`; }
-    function toggleSelect(index, isChecked) { if(isChecked) selectedIndices.add(index); else selectedIndices.delete(index); updateBulkBar(); }
-    function toggleSelectAll(checkbox) { document.querySelectorAll('#tableBody input[type="checkbox"]').forEach((cb, idx) => { cb.checked = checkbox.checked; if(checkbox.checked) selectedIndices.add(idx); else selectedIndices.delete(idx); }); updateBulkBar(); }
-    function updateBulkBar() { const count = selectedIndices.size; const bar = document.getElementById('bulkActionBar'); document.getElementById('selectedCount').textContent = count; if(count > 0) bar.classList.add('show'); else bar.classList.remove('show'); }
-    function applyBulkAction() {
-        const status = document.getElementById('bulkStatus').value;
-        if(!status) { alert('選択してください'); return; }
-        if(!confirm('変更しますか？')) return;
-        selectedIndices.forEach(index => { sites[index].status = status; sites[index].updatedAt = Date.now(); });
-        selectedIndices.clear(); document.getElementById('checkAll').checked = false; autoSave(); renderTable(); renderGantt(); showToast('🎉 変更しました');
-    }
-    function updateStatus(index, val) { sites[index].status = val; sites[index].updatedAt = Date.now(); autoSave(); renderTable(); renderGantt(); }
-    function updateDate(index, type, val) { sites[index][type] = val; sites[index].updatedAt = Date.now(); autoSave(); renderTable(); renderGantt(); }
-    function autoSave() { localStorage.setItem('dx_sites', JSON.stringify(sites)); showToast(); }
-    function showToast(msg = '✅ 保存しました') { const el = document.getElementById('toastSave'); el.textContent = msg; el.classList.add('show'); setTimeout(() => el.classList.remove('show'), 1500); }
-    function getStatusLabel(st) { if(st==='active') return '施工中'; if(st==='done') return '完工'; if(st==='handover') return '引き渡し'; return '現調予定'; }
-
-    // ★修正：ガントチャートフィルター
-    function renderGantt() {
-        const header = document.getElementById('ganttHeader'); const body = document.getElementById('ganttBody');
-        header.innerHTML = '<div style="width:180px; flex-shrink:0; padding-left:10px; background:white; position:sticky; left:0; z-index:40;">現場名</div>'; body.innerHTML = '';
-        const now = new Date(); const startDate = new Date(now.getFullYear(), now.getMonth(), 1); const daysToShow = 60; const dayWidth = 30;
-        
-        // ヘッダー生成
-        for(let i=0; i<daysToShow; i++) { const d = new Date(startDate); d.setDate(startDate.getDate() + i); const isToday = (d.toDateString() === new Date().toDateString()); header.innerHTML += `<div class="gantt-day ${isToday?'today':''}">${d.getMonth()+1}/${d.getDate()}</div>`; }
-        
-        // バー生成
-        const endDate = new Date(startDate); endDate.setDate(endDate.getDate() + daysToShow);
-
-        sites.forEach(site => {
-            // ★フィルター: 引き渡し済み かつ 表示期間外 なら表示しない
-            if(site.status === 'handover') {
-                const s = new Date(site.start); const e = new Date(site.end);
-                // 終了日が期間開始より前、または開始日が期間終了より後の場合はスキップ
-                if(e < startDate || s > endDate) return;
-            }
-
-            let rowHtml = `<div class="gantt-row"><div class="gantt-label">${site.name}</div>`;
-            if(site.start && site.end) {
-                const start = new Date(site.start); const end = new Date(site.end);
-                const diffStart = Math.ceil((start - startDate) / (86400000));
-                const duration = Math.ceil((end - start) / (86400000)) + 1;
-                if(diffStart + duration > 0 && diffStart < daysToShow) {
-                    let leftPos = 180 + (diffStart * dayWidth); let widthPx = duration * dayWidth;
-                    if(diffStart < 0) { widthPx += (diffStart * dayWidth); leftPos = 180; }
-                    let barColor = '#3498db'; if(site.status === 'active') barColor = '#00C853'; if(site.status === 'done') barColor = '#95a5a6'; if(site.status === 'handover') barColor = '#34495e';
-                    rowHtml += `<div class="gantt-bar" style="left:${leftPos}px; width:${widthPx}px; background:${barColor};"><span>${duration}日</span></div>`;
-                }
-            }
-            rowHtml += `</div>`; body.insertAdjacentHTML('beforeend', rowHtml);
-        });
-    }
-
-    function openSettings() { document.getElementById('overlay').classList.add('show'); document.getElementById('settingsModal').classList.add('show'); }
-    function closeAllModals() { document.getElementById('overlay').classList.remove('show'); document.getElementById('settingsModal').classList.remove('show'); document.getElementById('rainModal').classList.remove('show'); }
-    function getNowStr() { const d = new Date(); return `${d.getFullYear()}${(d.getMonth()+1).toString().padStart(2,'0')}${d.getDate().toString().padStart(2,'0')}_${d.getHours().toString().padStart(2,'0')}${d.getMinutes().toString().padStart(2,'0')}`; }
-    async function exportJSON() { showToast('📤 準備中...'); const jsonContent = JSON.stringify(sites, null, 2); const fileName = `【カーナビ手帳】backup_${getNowStr()}.json`; const file = new File([jsonContent], fileName, { type: "application/json" }); if (navigator.share && navigator.canShare && navigator.canShare({ files: [file] })) { try { await navigator.share({ files: [file] }); } catch (e) { forceDL(file); } } else { forceDL(file); } }
-    function forceDL(file) { const url = URL.createObjectURL(file); const link = document.createElement("a"); link.setAttribute("href", url); link.setAttribute("download", file.name); document.body.appendChild(link); link.click(); document.body.removeChild(link); showToast('📥 保存しました'); }
-    function importJSON(input) { const file = input.files[0]; if (!file) return; const reader = new FileReader(); reader.onload = function(e) { try { const importedSites = JSON.parse(e.target.result); if (!Array.isArray(importedSites)) { alert('エラー'); return; } let updated=0; let added=0; let ignored=0; importedSites.forEach(newSite => { const index = sites.findIndex(s => s.id === newSite.id); if (index !== -1) { const existingTime = sites[index].updatedAt || 0; const newTime = newSite.updatedAt || 0; if(newTime > existingTime) { sites[index] = newSite; updated++; } else { ignored++; } } else { sites.push(newSite); added++; } }); autoSave(); renderTable(); renderGantt(); closeAllModals(); showToast(`更新:${updated} 新規:${added}`); } catch (err) { alert('読み込み失敗'); } input.value = ''; }; reader.readAsText(file); }
-    function deleteAllData() { if(confirm('全削除しますか？')) { sites = []; autoSave(); renderTable(); renderGantt(); closeAllModals(); } }
-    function getStatusText(status) { switch (status) { case 'active': return '施工中'; case 'done': return '完工'; case 'handover': return '引き渡し'; case 'plan': return '現調予定'; default: return '現調予定'; } }
-
-    window.addEventListener('storage', function(e) { if(e.key === 'dx_sites') { sites = JSON.parse(e.newValue); renderTable(); renderGantt(); } });
-    renderTable(); renderGantt();
+    document.addEventListener('DOMContentLoaded', renderGantt);
 </script>
 </body>
 </html>

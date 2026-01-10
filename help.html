@@ -9,10 +9,30 @@
     <meta name="apple-mobile-web-app-capable" content="yes">
     <link rel="stylesheet" href="style.css">
     <style>
-        body { background-color: #f0f2f5; padding-bottom: 50px; color: #333; line-height: 1.6; }
-        .site-header { background: #34495e; color: white; padding: 20px; text-align: center; margin-bottom: 20px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); }
-        .site-title { margin: 0; font-size: 1.3rem; font-weight: bold; }
-        .container { max-width: 600px; margin: 0 auto; padding: 0 15px; }
+        body { 
+            background-color: #f0f2f5; 
+            padding-bottom: 50px; 
+            color: #333; 
+            line-height: 1.6; 
+        }
+        .site-header { 
+            background: #34495e; 
+            color: white; 
+            padding: 20px; 
+            text-align: center; 
+            margin-bottom: 20px; 
+            box-shadow: 0 4px 10px rgba(0,0,0,0.1); 
+        }
+        .site-title { 
+            margin: 0; 
+            font-size: 1.3rem; 
+            font-weight: bold; 
+        }
+        .container { 
+            max-width: 600px; 
+            margin: 0 auto; 
+            padding: 0 15px; 
+        }
 
         /* アコーディオン（開閉式）スタイル */
         details {
@@ -26,14 +46,14 @@
             padding: 15px;
             font-weight: bold;
             cursor: pointer;
-            list-style: none; /* 三角マークを消す */
+            list-style: none;
             display: flex;
             align-items: center;
             justify-content: space-between;
             background-color: #fff;
             transition: background 0.2s;
         }
-        summary::-webkit-details-marker { display: none; } /* Safari用 */
+        summary::-webkit-details-marker { display: none; }
         summary::after {
             content: '+'; 
             font-size: 1.5rem; 
@@ -48,22 +68,62 @@
 
         .content { padding: 20px; font-size: 0.95rem; }
         
-        /* 説明文の装飾 */
-        h3 { margin-top: 0; font-size: 1.1rem; color: #2c3e50; border-left: 4px solid #3498db; padding-left: 10px; }
-        .step { background: #f9f9f9; padding: 10px; border-radius: 6px; margin-bottom: 10px; border: 1px solid #eee; }
+        h3 { 
+            margin-top: 0; 
+            font-size: 1.1rem; 
+            color: #2c3e50; 
+            border-left: 4px solid #3498db; 
+            padding-left: 10px; 
+        }
+        .step { 
+            background: #f9f9f9; 
+            padding: 10px; 
+            border-radius: 6px; 
+            margin-bottom: 10px; 
+            border: 1px solid #eee; 
+        }
         .step strong { color: #e67e22; }
-        .note { font-size: 0.85rem; color: #666; background: #fff3e0; padding: 10px; border-radius: 6px; margin-top: 10px; }
-        
-        /* ★追加：注意書き用スタイル */
-        .alert-box { font-size: 0.85rem; color: #c0392b; background: #fff5f5; padding: 10px; border-radius: 6px; margin-top: 5px; border: 1px solid #ffcdd2; }
+        .note { 
+            font-size: 0.85rem; 
+            color: #666; 
+            background: #fff3e0; 
+            padding: 10px; 
+            border-radius: 6px; 
+            margin-top: 10px; 
+        }
+        /* JSON共有時の注意書き用 */
+        .alert-box { 
+            font-size: 0.85rem; 
+            color: #c0392b; 
+            background: #fff5f5; 
+            padding: 10px; 
+            border-radius: 6px; 
+            margin-top: 5px; 
+            border: 1px solid #ffcdd2; 
+        }
 
-        .tag { display: inline-block; padding: 2px 6px; border-radius: 4px; font-size: 0.8rem; font-weight: bold; color: white; margin-right: 5px; }
+        .tag { 
+            display: inline-block; 
+            padding: 2px 6px; 
+            border-radius: 4px; 
+            font-size: 0.8rem; 
+            font-weight: bold; 
+            color: white; 
+            margin-right: 5px; 
+        }
         .tag.blue { background: #3498db; }
         .tag.green { background: #27ae60; }
-        .tag.orange { background: #f39c12; }
         .tag.purple { background: #9b59b6; }
 
-        .back-link { display: block; text-align: center; margin-top: 30px; color: #007bff; text-decoration: none; padding: 15px; font-weight: bold; }
+        .back-link { 
+            display: block; 
+            text-align: center; 
+            margin-top: 30px; 
+            color: #007bff; 
+            text-decoration: none; 
+            padding: 15px; 
+            font-weight: bold; 
+        }
     </style>
 </head>
 <body>
@@ -76,20 +136,20 @@
 <div class="container">
 
     <details>
-        <summary>🔰 初めに：データの保存場所について</summary>
+        <summary>🔰 初めに：データの保存場所</summary>
         <div class="content">
             <h3>データは「あなたのスマホ」にあります</h3>
-            <p>このアプリは、入力したデータを<strong>あなたのスマホ（またはPC）のブラウザの中</strong>に保存しています。</p>
+            <p>このアプリは、入力したデータを<strong>ブラウザの中</strong>に保存しています。</p>
             <div class="note">
                 <strong>⚠️ 注意点：</strong><br>
-                ・アプリを削除したり、ブラウザの「履歴・データを消去」を行うと、データは全て消えます。<br>
-                ・こまめに「バックアップ」を取ることを強くおすすめします。
+                アプリを削除したり、ブラウザの「履歴・データを消去」を行うと、データは全て消えます。<br>
+                こまめに「バックアップ」を取ることを強くおすすめします。
             </div>
         </div>
     </details>
 
     <details>
-        <summary>📨 日報の送信方法（LINE / メール / GAS）</summary>
+        <summary>📨 日報の送信方法</summary>
         <div class="content">
             <h3>3つの送信方法</h3>
             
@@ -115,16 +175,15 @@
     </details>
 
     <details>
-        <summary>📲 スマホ ⇔ 💻 PC のデータ連携</summary>
+        <summary>📲 データ移行・バックアップ</summary>
         <div class="content">
-            <h3>スマホのデータをPC（司令塔）に移す</h3>
+            <h3>スマホ ⇔ PC のデータ移動</h3>
             <p>スマホで登録した現場データを、PCの大画面で管理したい場合の手順です。</p>
 
             <div class="step">
                 <strong>① スマホで書き出し（バックアップ）</strong><br>
                 1. ナビ画面右下の「📤 共有・バックアップ」ボタンを押す<br>
                 2. LINEやメールを選んで、自分（PC）宛にファイルを送る<br>
-                (ファイル名：<code>backup_スマホ_...json</code>)
                 
                 <div class="alert-box">
                     <strong>⚠️ 「共有メニュー」が出ない場合</strong><br>
@@ -140,21 +199,14 @@
                 3. 「📥 データを復元（取込）」ボタンを押す<br>
                 4. 保存したファイルを選択すると、データが同期されます
             </div>
-
-            <div class="note">
-                <strong>💡 逆も可能です</strong><br>
-                PCで整理したデータをスマホに戻す場合も、同じ手順（PCで書き出し→スマホで取込）で行えます。<br>
-                ※取込を行うと、その端末の古いデータは上書きされるので注意してください。
-            </div>
         </div>
     </details>
 
     <details>
-        <summary>⚙️ 【管理者用】GAS連携の設定手順</summary>
+        <summary>⚙️ 【管理者用】GAS連携の設定</summary>
         <div class="content">
             <h3>Googleスプレッドシート連携の準備</h3>
-            <p>日報や現場データをクラウドに集めるための設定です。</p>
-
+            
             <div class="step">
                 <strong>1. シートの準備</strong><br>
                 新しいスプレッドシートを作成し、以下の2つのシートを用意します。<br>
@@ -182,36 +234,14 @@
         </div>
     </details>
 
-    <details>
-        <summary>🔗 既存管理システムとの連携</summary>
-        <div class="content">
-            <h3>案件Noを使った連携</h3>
-            <p>職人ギアのデータを、社内の基幹システム等と紐付ける方法です。</p>
-            
-            <div class="step">
-                <strong>親案件Noの登録</strong><br>
-                現場情報の編集画面に「親案件No」という項目があります。<br>
-                ここに既存システムのID（例: K-12345）を入力しておきます。
-            </div>
-
-            <div class="step">
-                <strong>CSV出力 / クラウド同期</strong><br>
-                データを出力すると、「親案件No」の列が含まれています。<br>
-                これをキーにして、ExcelやAccessなどで既存データと突き合わせることで、<br>
-                「現場名は違うけど同じ現場」としてデータを統合・集計できます。
-            </div>
-        </div>
-    </details>
-
     <a href="navi.html" class="back-link">↩️ アクションギアに戻る</a>
 
 </div>
 
 <script>
-    // シンプルなアコーディオン制御（詳細はCSSで完結していますが念のため）
     document.querySelectorAll('summary').forEach(el => {
         el.addEventListener('click', () => {
-            // 他を閉じる動きを入れたい場合はここに記述
+            // アコーディオン動作
         });
     });
 </script>
