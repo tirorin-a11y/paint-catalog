@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>アクションギア - 職人ギア</title>
+    <title>現場ナビ - 職人ギア</title>
     <link rel="manifest" href="manifest.json">
     <link rel="apple-touch-icon" href="icon-192x192.png">
     <meta name="apple-mobile-web-app-capable" content="yes">
@@ -214,11 +214,55 @@
     let isSortMode = false;
     let pressTimer = null; 
 
+    // 初期データ（初回起動時のみ）
     if (sites.length === 0) {
         sites = [
             { id: '2025-001', name: '【サンプル】鈴木様邸', address: '東京都墨田区押上1-1-2', status: 'contract', updatedAt: Date.now(), naviCount: 0 }
         ];
         localStorage.setItem('dx_sites', JSON.stringify(sites));
+    }
+
+    // ★アプリ起動時の処理（ここにまとめるのが正解！）
+    document.addEventListener('DOMContentLoaded', function() {
+        // 1. まずリストを表示
+        renderList();
+
+        // 2. 設定の読み込み
+        if(localStorage.getItem('dx_reporter_name')) document.getElementById('reporterName').value = localStorage.getItem('dx_reporter_name');
+        if(localStorage.getItem('dx_manager_email')) document.getElementById('managerEmail').value = localStorage.getItem('dx_manager_email');
+        if(localStorage.getItem('dx_gas_url')) document.getElementById('gasUrl').value = localStorage.getItem('dx_gas_url');
+        if(localStorage.getItem('dx_calendar_id')) document.getElementById('calendarId').value = localStorage.getItem('dx_calendar_id');
+
+        // 3. 自動失注チェックを実行（画面表示後なので安全）
+        checkAutoLost();
+    });
+
+    // ★追加：1年以上放置された「見積中」を「失注」にする機能
+    function checkAutoLost() {
+        const now = Date.now();
+        const oneYearMs = 365 * 24 * 60 * 60 * 1000; // 1年分のミリ秒
+        let hasChanged = false;
+        let count = 0;
+
+        sites.forEach(site => {
+            // 条件：ステータスが「見積中(estimate)」 かつ 最終更新から1年以上経過
+            if (site.status === 'estimate' && site.updatedAt) {
+                if ((now - site.updatedAt) > oneYearMs) {
+                    site.status = 'lost'; // 失注に変更
+                    site.updatedAt = now; // 更新日時を現在に
+                    hasChanged = true;
+                    count++;
+                }
+            }
+        });
+
+        if (hasChanged) {
+            localStorage.setItem('dx_sites', JSON.stringify(sites));
+            renderList(); // リスト再描画
+            setTimeout(() => {
+                showNotification(`🕒 長期未更新の ${count}件を「失注」に変更しました`);
+            }, 1000);
+        }
     }
 
     function saveSettings() {
@@ -228,14 +272,6 @@
         localStorage.setItem('dx_calendar_id', document.getElementById('calendarId').value);
         showNotification('⚙️ 設定を保存しました');
     }
-    
-    document.addEventListener('DOMContentLoaded', function() {
-        renderList();
-        if(localStorage.getItem('dx_reporter_name')) document.getElementById('reporterName').value = localStorage.getItem('dx_reporter_name');
-        if(localStorage.getItem('dx_manager_email')) document.getElementById('managerEmail').value = localStorage.getItem('dx_manager_email');
-        if(localStorage.getItem('dx_gas_url')) document.getElementById('gasUrl').value = localStorage.getItem('dx_gas_url');
-        if(localStorage.getItem('dx_calendar_id')) document.getElementById('calendarId').value = localStorage.getItem('dx_calendar_id');
-    });
 
     function handleTouchStart(btn, id, address) {
         if (btn.classList.contains('holding')) return;
@@ -286,10 +322,10 @@
 
     function getStatusText(status) {
         const map = {
-            'estimate': '見積中', 'plan': '見積中', // 旧planも見積中へ
-            'contract': '契約済み', 'active': '契約済み', // 旧activeも契約済みへ
+            'estimate': '見積中', 'plan': '見積中',
+            'contract': '契約済み', 'active': '契約済み',
             'billing': '請求',
-            'complete': '完了', 'done': '完了', 'handover': '完了', // 旧完了系も完了へ
+            'complete': '完了', 'done': '完了', 'handover': '完了',
             'lost': '失注'
         };
         return map[status] || '見積中';
@@ -303,7 +339,7 @@
         sites.forEach((site, index) => {
             if (keyword && !site.name.toLowerCase().includes(keyword) && !site.address.toLowerCase().includes(keyword) && !site.id.includes(keyword)) { return; }
 
-            // ★ステータス表示ロジック
+            // ステータス表示ロジック
             let stLabel = '見積中', stClass = 'st-estimate';
             if(site.status === 'contract' || site.status === 'active') { stLabel = '契約済み'; stClass = 'st-contract'; }
             if(site.status === 'billing') { stLabel = '請求'; stClass = 'st-billing'; }
@@ -453,7 +489,7 @@
             document.getElementById('inputNum').value = getNextNum(todayYear);
             document.getElementById('siteName').value = '';
             document.getElementById('address').value = '';
-            document.getElementById('status').value = 'estimate'; // 初期値は見積中
+            document.getElementById('status').value = 'estimate'; 
             document.getElementById('editNaviCount').value = 0;
             document.getElementById('parentCaseNo').value = '';
             document.getElementById('startDate').value = ''; 
@@ -576,7 +612,7 @@
                     } else { sites.push(newSite); countAdded++; } 
                 });
                 
-                // ID順（降順）にソート
+                // ID順（降順＝新しい順）にソート
                 sites.sort((a, b) => {
                     if (a.id > b.id) return -1;
                     if (a.id < b.id) return 1;
@@ -599,7 +635,6 @@
         } 
     }
     
-    // ★重要：クラウド同期時にステータスを日本語化して送る
     function syncAllDataToCloud() {
         const gasUrl = localStorage.getItem('dx_gas_url');
         if(!gasUrl) { alert("設定から「GAS URL」を登録してください"); return; }
@@ -607,12 +642,8 @@
 
         showNotification('☁️ 同期中...');
         
-        // ステータスを日本語に変換したデータを作成
         const exportData = sites.map(s => {
-            return {
-                ...s,
-                status: getStatusText(s.status) // 日本語に変換
-            };
+            return { ...s, status: getStatusText(s.status) };
         });
 
         const data = { type: "sync", data: exportData };
@@ -659,8 +690,6 @@
         el.classList.add('show'); 
         setTimeout(() => el.classList.remove('show'), 2000); 
     }
-    
-    document.addEventListener('DOMContentLoaded', renderList);
 </script>
 </body>
 </html>
