@@ -1,6 +1,6 @@
 // ★設定：ここにGASのURLを貼れば全ページに適用されます！
 const CONFIG = {
-    GAS_API_URL: "https://script.google.com/macros/s/AKfycbxxDC7Ak1PVF1sWYmDJlnLDokqndsNugtp1koaZgWZg51ihzksYe9hKJ4y_sTqVjUfp/exec", // ←ここにURLを入れる
+    GAS_API_URL: "https://script.google.com/macros/s/AKfycbwE4ieLz61RmtMwDprMPZXaK23PD3_MVsukoEPo76kEq7tFijTPNFIoRBQYYoO8sJAkgA/exec", // ←ここにURLを入れる
     BACKUP_WARN_DAYS: 3 // 何日バックアップしなかったら警告するか
 };
 
