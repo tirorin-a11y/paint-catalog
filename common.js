@@ -6,7 +6,6 @@ const CONFIG = {
 
 // --- 共通ユーティリティ ---
 
-// 通知を表示
 function showNotification(msg) {
     let el = document.getElementById('notification');
     if (!el) {
@@ -20,7 +19,6 @@ function showNotification(msg) {
     setTimeout(() => el.classList.remove('show'), 2500);
 }
 
-// モーダル操作と「戻るボタン」対策
 function toggleModal(modalId, show) {
     const modal = document.getElementById(modalId);
     const overlay = document.getElementById('overlay');
@@ -29,21 +27,17 @@ function toggleModal(modalId, show) {
     if (show) {
         modal.classList.add('show');
         overlay.classList.add('show');
-        // ブラウザ履歴に追加（戻るボタンで閉じれるようにする）
         history.pushState({ modalId: modalId }, null, "");
     } else {
         modal.classList.remove('show');
         overlay.classList.remove('show');
-        // 履歴があれば戻る（二重に戻らないようチェックが必要だが簡易的に）
         if (history.state && history.state.modalId === modalId) {
             history.back();
         }
     }
 }
 
-// 戻るボタンが押された時の処理
 window.onpopstate = function(event) {
-    // 開いているモーダルがあれば閉じる
     document.querySelectorAll('.modal-box.show').forEach(el => {
         el.classList.remove('show');
     });
@@ -51,11 +45,9 @@ window.onpopstate = function(event) {
     if(overlay) overlay.classList.remove('show');
 };
 
-// バックアップ警告（データ保存時に日時を記録し、起動時にチェック）
 function checkBackupStatus() {
     const lastBackup = localStorage.getItem('dx_last_backup');
-    if (!lastBackup) return; // 初回はスルー
-
+    if (!lastBackup) return; 
     const days = (Date.now() - parseInt(lastBackup)) / (1000 * 60 * 60 * 24);
     if (days > CONFIG.BACKUP_WARN_DAYS) {
         setTimeout(() => {
@@ -64,21 +56,48 @@ function checkBackupStatus() {
     }
 }
 
-// データを保存した時に呼ぶ関数
 function touchBackupTime() {
     localStorage.setItem('dx_last_backup', Date.now());
 }
 
-// GASへのデータ同期（安全版：取得して比較はせず、まずは上書き防止の警告付き送信）
-// ※本当はサーバーと比較すべきだが、まずは「送る」機能の共通化
+// ★ここが重要：安全装置付きアップロード機能
 async function uploadDataToCloud(data, type = "sync") {
     if(!CONFIG.GAS_API_URL || CONFIG.GAS_API_URL.includes("xxxx")) {
         alert("設定からGAS URLを登録してください");
         return false;
     }
     
+    // データ同期の場合のみ、競合チェックを行う
+    if (type === "sync") {
+        showNotification("☁️ クラウドの最新状況を確認中...");
+        try {
+            // 1. まずクラウドのデータをこっそり見る
+            const checkRes = await fetch(CONFIG.GAS_API_URL + "?type=getAll");
+            const cloudData = await checkRes.json();
+            
+            // 2. 日付を比較（空データの場合は0扱い）
+            const localMax = data.length > 0 ? Math.max(...data.map(s => s.updatedAt || 0)) : 0;
+            const cloudMax = Array.isArray(cloudData) && cloudData.length > 0 ? Math.max(...cloudData.map(s => s.updatedAt || 0)) : 0;
+
+            // 3. クラウドの方が新しければ警告！
+            if (cloudMax > localMax) {
+                const cloudDate = new Date(cloudMax).toLocaleString();
+                // 警告音（バイブレーション）
+                if (navigator.vibrate) navigator.vibrate(200);
+                
+                if (!confirm(`⚠️ 危険！上書き注意 ⚠️\n\nクラウド上に、あなたより新しいデータがあります。\n（最終更新: ${cloudDate}）\n\nこのまま送信すると、他人の変更を消してしまう可能性があります。\n\n「キャンセル」して「クラウドから復元」することをお勧めします。\n\nそれでも上書きしますか？`)) {
+                    showNotification("送信を中断しました");
+                    return false;
+                }
+            }
+        } catch(e) {
+            console.warn("競合チェック失敗（初回送信時などは無視）", e);
+        }
+    }
+    
+    // 送信処理
     try {
-        showNotification("☁️ クラウドに送信中...");
+        showNotification("☁️ 送信中...");
         const res = await fetch(CONFIG.GAS_API_URL, {
             method: 'POST',
             mode: 'no-cors',
@@ -86,7 +105,7 @@ async function uploadDataToCloud(data, type = "sync") {
             body: JSON.stringify({ type: type, data: data, reporter: localStorage.getItem('dx_reporter_name') || "職人" })
         });
         showNotification("✅ 送信完了");
-        touchBackupTime(); // バックアップ時刻更新
+        touchBackupTime();
         return true;
     } catch(e) {
         alert("送信エラー: " + e);
