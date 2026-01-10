@@ -8,7 +8,7 @@
     <link rel="apple-touch-icon" href="icon-192x192.png">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <style>
-        /* --- 元のデザイン定義 --- */
+        /* --- デザイン定義 (UI復元版) --- */
         body { font-family: -apple-system, BlinkMacSystemFont, "Helvetica Neue", "Yu Gothic", sans-serif; background-color: #f0f2f5; margin: 0; padding: 0; color: #333; -webkit-font-smoothing: antialiased; }
         header { background-color: #2c3e50; color: white; padding: 10px 15px; position: sticky; top: 0; z-index: 100; box-shadow: 0 2px 5px rgba(0,0,0,0.2); display: flex; justify-content: space-between; align-items: center; }
         .header-title-area { display: flex; align-items: baseline; gap: 8px; }
@@ -191,8 +191,7 @@
         if(localStorage.getItem('dx_gas_url')) document.getElementById('gasUrl').value = localStorage.getItem('dx_gas_url');
         if(localStorage.getItem('dx_calendar_id')) document.getElementById('calendarId').value = localStorage.getItem('dx_calendar_id');
         checkAutoLost();
-        // ★ここに追加：起動時に最新データをチェック！
-        checkForCloudUpdates();
+        checkForCloudUpdates(); // 起動時チェック
     });
 
     function checkAutoLost() {
@@ -350,44 +349,64 @@
     function unlockCaseNo() { tapCount++; if(tapCount>=5){ const el=document.getElementById('inputNum'); el.readOnly=false; el.className='input-num unlocked'; showNotification('🔓 ロック解除'); tapCount=0; } }
     function getNowStr() { const d=new Date(); return `${d.getFullYear()}${('0'+(d.getMonth()+1)).slice(-2)}${('0'+d.getDate()).slice(-2)}`; }
     
-    // ★修正：チェック無しで強制送信するバージョン
-    async function syncAllDataToCloud() {
-        const gasUrl = localStorage.getItem('dx_gas_url');
-        if(!gasUrl) { alert("GAS URLを設定してください"); return; }
-        
-        // 念のため確認だけはする
-        if(!confirm("【強制送信】\n現在PCにあるデータで、クラウドを上書きしますか？")) return;
-        
-        showNotification('☁️ 強制送信中...');
+    // --- クラウド同期機能 (安全・修正版) ---
 
+    // 1. バックアップボタンで呼ばれる
+    function syncAllDataToCloud() {
+        if(!confirm("現在スマホにあるデータで、クラウドを上書き更新しますか？")) return;
+        uploadDataToCloud(sites, "sync");
+    }
+
+    // 2. 実通信処理
+    async function uploadDataToCloud(data, type = "sync") {
+        const targetUrl = localStorage.getItem('dx_gas_url');
+        if(!targetUrl || targetUrl.includes("script.google.com") === false) {
+            alert("【エラー】\n設定画面からGAS URLを登録してください。"); return false;
+        }
+        
+        if (type === "sync") {
+            showNotification("☁️ クラウド確認中...");
+            try {
+                const checkRes = await fetch(targetUrl + "?type=getAll");
+                if (checkRes.ok) {
+                    const cloudData = await checkRes.json();
+                    const localMax = data.length > 0 ? Math.max(...data.map(s => s.updatedAt || 0)) : 0;
+                    const cloudMax = Array.isArray(cloudData) && cloudData.length > 0 ? Math.max(...cloudData.map(s => s.updatedAt || 0)) : 0;
+                    if (cloudMax > localMax) {
+                        const cloudDate = new Date(cloudMax).toLocaleString();
+                        if (navigator.vibrate) navigator.vibrate(200);
+                        if (!confirm(`⚠️ 上書き注意！\nクラウドに新しいデータがあります（${cloudDate}）。\n強制的に上書きしますか？`)) {
+                            showNotification("送信を中断しました"); return false;
+                        }
+                    }
+                }
+            } catch(e) { console.warn("チェック失敗:", e); }
+        }
+        
         try {
-            // ステータス日本語化
-            const exportData = sites.map(s => ({ ...s, status: getStatusText(s.status) })); 
+            showNotification("☁️ 送信中...");
+            const exportData = (type === "sync") ? data.map(s => ({ ...s, status: getStatusText(s.status) })) : data;
             
-            // データ作成
-            const data = { 
-                type: "sync", 
-                data: exportData, 
-                reporter: localStorage.getItem('dx_reporter_name') || "PC管理者" 
-            };
-            
-            // 送信実行（チェック処理は削除しました）
-            await fetch(gasUrl, { 
-                method: 'POST', 
-                mode: 'no-cors', 
-                headers: { 'Content-Type': 'application/json' }, 
-                body: JSON.stringify(data) 
+            // ★通信方式修正: text/plain で送る
+            const response = await fetch(targetUrl, {
+                method: 'POST',
+                headers: { 'Content-Type': 'text/plain' },
+                body: JSON.stringify({ type: type, data: exportData, reporter: localStorage.getItem('dx_reporter_name') || "職人" })
             });
 
-            showNotification('✅ 送信完了');
-            alert("クラウドに強制的に上書き保存しました！");
+            if (!response.ok) throw new Error(`サーバーエラー: ${response.status}`);
+            const resJson = await response.json();
+            if (resJson.result !== "success") throw new Error("GAS処理エラー");
 
+            showNotification("✅ 送信完了");
+            if(type==="sync") alert("クラウドに保存しました！");
+            return true;
         } catch(e) {
-            alert("通信エラー: " + e);
+            alert("送信失敗: " + e.message); return false;
         }
     }
 
-    // ★追加：クラウドからの復元
+    // 3. 復元ボタン
     async function downloadFromCloud() {
         const gasUrl = localStorage.getItem('dx_gas_url');
         if(!gasUrl) { alert("GAS URLを設定してください"); return; }
@@ -399,17 +418,34 @@
             const data = await res.json();
             if(Array.isArray(data) && data.length > 0) {
                 sites = data;
-                // ID順にソート
                 sites.sort((a, b) => (a.id > b.id ? -1 : 1));
                 localStorage.setItem('dx_sites', JSON.stringify(sites));
                 renderList(); closeAllModals();
                 showNotification(`✅ 復元完了 (${sites.length}件)`);
-            } else {
-                alert("データが見つかりませんでした");
+            } else { alert("データが見つかりませんでした"); }
+        } catch(e) { alert("取得エラー: " + e); }
+    }
+
+    // 4. 起動時チェック
+    async function checkForCloudUpdates() {
+        const targetUrl = localStorage.getItem('dx_gas_url');
+        if(!targetUrl) return;
+        try {
+            const res = await fetch(targetUrl + "?type=getAll");
+            const cloudData = await res.json();
+            if (Array.isArray(cloudData) && cloudData.length > 0) {
+                const localMax = sites.length > 0 ? Math.max(...sites.map(s => s.updatedAt || 0)) : 0;
+                const cloudMax = Math.max(...cloudData.map(s => s.updatedAt || 0));
+                if (cloudMax > localMax) {
+                    if (confirm(`🔄 新しいデータがあります！\n同期して最新にしますか？`)) {
+                        cloudData.sort((a, b) => (a.id > b.id ? -1 : 1));
+                        localStorage.setItem('dx_sites', JSON.stringify(cloudData));
+                        alert("✅ 最新データを取り込みました！");
+                        location.reload();
+                    }
+                }
             }
-        } catch(e) {
-            alert("取得エラー: " + e);
-        }
+        } catch (e) { console.log("更新チェック失敗:", e); }
     }
 
     async function exportCSV() { showNotification('📤 準備中...'); let c = "\uFEFF案件No,親案件No,現場名,住所,ステータス,開始,終了\n"; sites.forEach(s => { c += `"${s.id}","${s.parentCaseNo||''}","${s.name}","${s.address}","${getStatusText(s.status)}","${s.start||''}","${s.end||''}"\n`; }); const f = new File([c], `現場リスト_${getNowStr()}.csv`, { type: "text/csv" }); if (navigator.share && navigator.canShare({ files: [f] })) { try { await navigator.share({ files: [f] }); } catch (e) { forceDL(f); } } else { forceDL(f); } }
