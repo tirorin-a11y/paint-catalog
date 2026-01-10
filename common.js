@@ -1,7 +1,7 @@
-// ★設定：ここにGASのURLを貼れば全ページに適用されます！
+// ★修正：URLはここは空っぽにしておく（設定画面の入力を優先させるため）
 const CONFIG = {
-    GAS_API_URL: "https://script.google.com/macros/s/AKfycbwE4ieLz61RmtMwDprMPZXaK23PD3_MVsukoEPo76kEq7tFijTPNFIoRBQYYoO8sJAkgA/exec", // ←ここにURLを入れる
-    BACKUP_WARN_DAYS: 3 // 何日バックアップしなかったら警告するか
+    GAS_API_URL: "", // ←ここは空欄でOK！
+    BACKUP_WARN_DAYS: 3
 };
 
 // --- 共通ユーティリティ ---
@@ -19,11 +19,11 @@ function showNotification(msg) {
     setTimeout(() => el.classList.remove('show'), 2500);
 }
 
+// (toggleModal, window.onpopstate, checkBackupStatus, touchBackupTime はそのまま)
 function toggleModal(modalId, show) {
     const modal = document.getElementById(modalId);
     const overlay = document.getElementById('overlay');
     if (!modal || !overlay) return;
-
     if (show) {
         modal.classList.add('show');
         overlay.classList.add('show');
@@ -31,16 +31,12 @@ function toggleModal(modalId, show) {
     } else {
         modal.classList.remove('show');
         overlay.classList.remove('show');
-        if (history.state && history.state.modalId === modalId) {
-            history.back();
-        }
+        if (history.state && history.state.modalId === modalId) { history.back(); }
     }
 }
 
 window.onpopstate = function(event) {
-    document.querySelectorAll('.modal-box.show').forEach(el => {
-        el.classList.remove('show');
-    });
+    document.querySelectorAll('.modal-box.show').forEach(el => el.classList.remove('show'));
     const overlay = document.getElementById('overlay');
     if(overlay) overlay.classList.remove('show');
 };
@@ -50,55 +46,51 @@ function checkBackupStatus() {
     if (!lastBackup) return; 
     const days = (Date.now() - parseInt(lastBackup)) / (1000 * 60 * 60 * 24);
     if (days > CONFIG.BACKUP_WARN_DAYS) {
-        setTimeout(() => {
-            showNotification(`⚠️ バックアップから${Math.floor(days)}日経過しています`);
-        }, 2000);
+        setTimeout(() => showNotification(`⚠️ バックアップから${Math.floor(days)}日経過`), 2000);
     }
 }
 
-function touchBackupTime() {
-    localStorage.setItem('dx_last_backup', Date.now());
-}
+function touchBackupTime() { localStorage.setItem('dx_last_backup', Date.now()); }
 
-// ★ここが重要：安全装置付きアップロード機能
+// ★★★ ここを修正：設定画面のURLを必ず使うように変更 ★★★
 async function uploadDataToCloud(data, type = "sync") {
-    if(!CONFIG.GAS_API_URL || CONFIG.GAS_API_URL.includes("xxxx")) {
-        alert("設定からGAS URLを登録してください");
+    // 毎回、その瞬間に設定画面（localStorage）に入っているURLを取りに行く
+    const targetUrl = localStorage.getItem('dx_gas_url');
+
+    if(!targetUrl || targetUrl.includes("script.google.com") === false) {
+        alert("【エラー】\n設定画面（⚙️）から、正しいGAS URLを登録してください。");
         return false;
     }
     
-    // データ同期の場合のみ、競合チェックを行う
+    // データ同期の場合のみ、競合チェック
     if (type === "sync") {
-        showNotification("☁️ クラウドの最新状況を確認中...");
+        showNotification("☁️ クラウド確認中...");
         try {
-            // 1. まずクラウドのデータをこっそり見る
-            const checkRes = await fetch(CONFIG.GAS_API_URL + "?type=getAll");
+            const checkRes = await fetch(targetUrl + "?type=getAll");
             const cloudData = await checkRes.json();
             
-            // 2. 日付を比較（空データの場合は0扱い）
             const localMax = data.length > 0 ? Math.max(...data.map(s => s.updatedAt || 0)) : 0;
             const cloudMax = Array.isArray(cloudData) && cloudData.length > 0 ? Math.max(...cloudData.map(s => s.updatedAt || 0)) : 0;
 
-            // 3. クラウドの方が新しければ警告！
             if (cloudMax > localMax) {
                 const cloudDate = new Date(cloudMax).toLocaleString();
-                // 警告音（バイブレーション）
                 if (navigator.vibrate) navigator.vibrate(200);
                 
-                if (!confirm(`⚠️ 危険！上書き注意 ⚠️\n\nクラウド上に、あなたより新しいデータがあります。\n（最終更新: ${cloudDate}）\n\nこのまま送信すると、他人の変更を消してしまう可能性があります。\n\n「キャンセル」して「クラウドから復元」することをお勧めします。\n\nそれでも上書きしますか？`)) {
+                if (!confirm(`⚠️ 上書き注意！\nクラウドに新しいデータがあります（${cloudDate}）。\n\n強制的に上書きしますか？\n（キャンセルすると中止します）`)) {
                     showNotification("送信を中断しました");
                     return false;
                 }
             }
         } catch(e) {
-            console.warn("競合チェック失敗（初回送信時などは無視）", e);
+            console.warn("競合チェック失敗:", e);
         }
     }
     
     // 送信処理
     try {
         showNotification("☁️ 送信中...");
-        const res = await fetch(CONFIG.GAS_API_URL, {
+        // ここでも targetUrl を使う
+        await fetch(targetUrl, {
             method: 'POST',
             mode: 'no-cors',
             headers: { 'Content-Type': 'application/json' },
@@ -113,41 +105,29 @@ async function uploadDataToCloud(data, type = "sync") {
     }
 }
 
-
-// ★追加：起動時にクラウドの更新があるかチェックする
+// ★追加：起動時のチェック用も修正
 async function checkForCloudUpdates() {
-    if(!CONFIG.GAS_API_URL || CONFIG.GAS_API_URL.includes("xxxx")) return;
+    const targetUrl = localStorage.getItem('dx_gas_url');
+    if(!targetUrl) return;
 
-    // ローカルデータの最終更新日時を取得
     const sites = JSON.parse(localStorage.getItem('dx_sites')) || [];
     const localMax = sites.length > 0 ? Math.max(...sites.map(s => s.updatedAt || 0)) : 0;
 
     try {
-        // 裏でそっとクラウドのデータを見に行く
-        const res = await fetch(CONFIG.GAS_API_URL + "?type=getAll");
+        const res = await fetch(targetUrl + "?type=getAll");
         const cloudData = await res.json();
-
         if (Array.isArray(cloudData) && cloudData.length > 0) {
             const cloudMax = Math.max(...cloudData.map(s => s.updatedAt || 0));
-
-            // クラウドの方が新しければ、ユーザーに提案する
             if (cloudMax > localMax) {
-                const dateStr = new Date(cloudMax).toLocaleString();
-                if (navigator.vibrate) navigator.vibrate([100, 50, 100]); // ブブッ！と通知
-
-                // ここで確認！勝手には上書きしない
-                if (confirm(`🔄 新しいデータがあります！\n(最終更新: ${dateStr})\n\n最新の状態に同期しますか？\n\n※「OK」を押すと、現在の端末データはクラウドの内容で上書きされます。`)) {
-                    // データ適用
-                    // ID順にソートして保存
+                if (confirm(`🔄 新しいデータがあります！\n同期して最新にしますか？`)) {
                     cloudData.sort((a, b) => (a.id > b.id ? -1 : 1));
                     localStorage.setItem('dx_sites', JSON.stringify(cloudData));
-                    
                     alert("✅ 最新データを取り込みました！");
-                    location.reload(); // 画面をリフレッシュ
+                    location.reload();
                 }
             }
         }
     } catch (e) {
-        console.log("更新チェックスキップ(オフライン等):", e);
+        console.log("更新チェック失敗:", e);
     }
 }
