@@ -7,17 +7,87 @@
     <link rel="manifest" href="manifest.json">
     <link rel="apple-touch-icon" href="icon-192x192.png">
     <meta name="apple-mobile-web-app-capable" content="yes">
-    <link rel="stylesheet" href="style.css">
     <style>
-        /* このページ特有のCSSだけ残す */
-        .site-name { font-size: 1.25rem; font-weight: bold; margin-bottom: 6px; }
-        .site-address { font-size: 0.9rem; color: #555; margin-bottom: 15px; }
-        .card-actions { display: flex; gap: 8px; align-items: flex-end; }
-        .action-btn { flex: 1; height: 50px; border-radius: 8px; border: 1px solid #ddd; background: #fff; display: flex; flex-direction: column; align-items: center; justify-content: center; font-size: 0.75rem; color: #555; text-decoration: none; }
-        .btn-navi-main { background: #e8f5e9; color: #2e7d32; border-color: #a5d6a7; flex: 1.5; font-weight: bold; }
+        /* --- 元のデザイン定義 --- */
+        body { font-family: -apple-system, BlinkMacSystemFont, "Helvetica Neue", "Yu Gothic", sans-serif; background-color: #f0f2f5; margin: 0; padding: 0; color: #333; -webkit-font-smoothing: antialiased; }
+        header { background-color: #2c3e50; color: white; padding: 10px 15px; position: sticky; top: 0; z-index: 100; box-shadow: 0 2px 5px rgba(0,0,0,0.2); display: flex; justify-content: space-between; align-items: center; }
+        .header-title-area { display: flex; align-items: baseline; gap: 8px; }
+        h1 { margin: 0; font-size: 1.1rem; letter-spacing: 0.05em; font-weight: bold; }
+        .link-control { font-size: 0.75rem; color: #95a5a6; text-decoration: none; border: 1px solid #555; padding: 2px 6px; border-radius: 4px; transition: 0.2s; }
+        .link-control:hover { color: white; border-color: white; }
+        .header-btn-group { display: flex; align-items: center; gap: 15px; }
+        .icon-btn { font-size: 1.4rem; cursor: pointer; text-decoration: none; color: white; display: flex; align-items: center; }
+        
+        .search-area { background: #34495e; padding: 10px 15px; position: sticky; top: 50px; z-index: 99; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
+        .search-input { width: 100%; padding: 10px; border-radius: 6px; border: none; font-size: 1rem; box-sizing: border-box; outline: none; }
+        .container { max-width: 600px; margin: 0 auto; padding: 15px; padding-top: 20px; padding-bottom: 100px; }
+        
+        /* カードデザイン */
+        .site-card { background: white; border-radius: 12px; padding: 16px; margin-bottom: 16px; box-shadow: 0 2px 6px rgba(0,0,0,0.06); position: relative; transition: transform 0.2s; }
+        .card-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
+        .case-no { font-size: 0.8rem; color: #666; background: #eee; padding: 3px 8px; border-radius: 4px; font-family: monospace; font-weight: bold; }
+        
+        .status-badge { font-size: 0.75rem; padding: 4px 10px; border-radius: 20px; font-weight: bold; }
+        .st-estimate { background-color: #fff3e0; color: #f57c00; border: 1px solid #ffe0b2; }
+        .st-contract { background-color: #e3f2fd; color: #1976d2; border: 1px solid #bbdefb; }
+        .st-billing { background-color: #f3e5f5; color: #8e24aa; border: 1px solid #e1bee7; }
+        .st-complete { background-color: #f5f5f5; color: #757575; border: 1px solid #e0e0e0; }
+        .st-lost { background-color: #333; color: #fff; border: 1px solid #000; }
+
+        .site-name { font-size: 1.25rem; font-weight: bold; margin-bottom: 6px; line-height: 1.4; }
+        .site-address { font-size: 0.9rem; color: #555; margin-bottom: 16px; display: flex; align-items: center; gap: 4px; }
+        
+        .card-actions { margin-top: 15px; display: flex; gap: 8px; align-items: flex-end; }
+        .action-btn { border-radius: 6px; font-weight: bold; text-decoration: none; display: flex; flex-direction: column; align-items: center; justify-content: center; border: none; cursor: pointer; box-shadow: 0 2px 4px rgba(0,0,0,0.1); transition: opacity 0.1s; line-height: 1; height: 60px; width: 100%; position: relative; overflow: hidden; user-select: none; }
+        .action-btn:active { transform: translateY(2px); box-shadow: none; }
+        .btn-navi-side { flex: 1.5; background-color: #00C853; color: white; font-size: 0.9rem; }
+        .btn-center { flex: 1; background-color: #fdf2e9; border: 1px solid #f5c6cb; color: #d35400; font-size: 0.8rem; }
+        .navi-wrapper { flex: 1.5; display: flex; flex-direction: column; align-items: center; gap: 2px; }
+        .navi-count-label { font-size: 0.7rem; color: #888; font-family: monospace; font-weight: bold; }
+        .hold-bar { position: absolute; top: 0; left: 0; height: 6px; background-color: #e74c3c; opacity: 0.8; width: 100%; transition: width 0s; }
+        .holding .hold-bar { width: 0%; transition: width 2.0s linear; }
+
+        .sort-actions { display: none; width: 100%; gap: 8px; height: 60px; }
+        body.sort-mode .card-actions { display: none; }
+        body.sort-mode .sort-actions { display: flex; }
+        .btn-up, .btn-down { flex: 1; background-color: #f39c12; color: white; font-size: 1.5rem; border-radius: 6px; border: none; cursor: pointer; }
+
+        /* モーダル */
+        .overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 150; display: none; opacity: 0; }
+        .overlay.show { display: block; opacity: 1; }
+        .modal-box { position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 90%; max-width: 500px; background: white; padding: 24px; border-radius: 16px; z-index: 160; box-shadow: 0 10px 25px rgba(0,0,0,0.2); display: none; max-height: 90vh; overflow-y: auto; }
+        .modal-box.show { display: block; }
+        
+        label { display: block; margin-top: 12px; font-size: 0.85rem; font-weight: bold; color: #444; }
+        input, select { width: 100%; padding: 12px; margin-top: 6px; border: 1px solid #ddd; border-radius: 8px; box-sizing: border-box; font-size: 1rem; appearance: none; }
         .date-group { display: flex; gap: 10px; align-items: center; }
-        .input-year { width: 30%; text-align: center; background: #f0f0f0; }
-        .input-num { width: 60%; text-align: center; font-family: monospace; letter-spacing: 2px; font-weight: bold; }
+        .date-input { flex: 1; text-align: center; }
+        .id-input-group { display: flex; align-items: center; gap: 10px; margin-top: 5px; }
+        .input-year { width: 30%; text-align: center; background: #f0f0f0; color: #555; border: 1px solid #ccc; font-weight: bold; }
+        .input-year:not([readonly]) { background: #fff; color: #d35400; border: 2px solid #e67e22; }
+        .input-num { width: 60%; text-align: center; font-family: monospace; letter-spacing: 2px; font-weight: bold; transition: 0.3s; }
+        .input-num.locked { background: #f9f9f9; color: #999; border: 1px solid #eee; cursor: not-allowed; }
+        .input-num.unlocked { background: #fff; color: #d35400; border: 2px solid #e67e22; }
+
+        .edit-footer { display: flex; gap: 10px; margin-top: 20px; flex-wrap: wrap;}
+        .btn-del-single { width: 50px; background-color: #fff5f5; border: 1px solid #e74c3c; color: #e74c3c; border-radius: 8px; font-size: 1.2rem; cursor: pointer; display: flex; align-items: center; justify-content: center; }
+        .btn-copy { width: 50px; background-color: #e8f6f3; border: 1px solid #1abc9c; color: #16a085; border-radius: 8px; font-size: 1.2rem; cursor: pointer; display: flex; align-items: center; justify-content: center; }
+        .save-btn { flex: 2; background-color: #2980b9; color: white; padding: 14px; border: none; border-radius: 8px; font-weight: bold; font-size: 1rem; cursor: pointer; }
+        .cancel-btn { flex: 1; background-color: #e0e0e0; color: #333; padding: 14px; border: none; border-radius: 8px; font-weight: bold; cursor: pointer; }
+
+        .settings-item { width: 100%; padding: 15px; margin-bottom: 10px; border: 1px solid #eee; background: #fcfcfc; border-radius: 8px; font-weight: bold; cursor: pointer; text-align: left; display: flex; align-items: center; gap: 10px; text-decoration: none; color: #333; box-sizing: border-box; }
+        .settings-footer { display: flex; gap: 10px; margin-top: 20px; border-top: 1px solid #eee; padding-top: 15px; }
+        .btn-close { flex: 2; background-color: #95a5a6; color: white; padding: 12px; border: none; border-radius: 8px; font-weight: bold; cursor: pointer; }
+        .btn-delete-all { flex: 1; background-color: white; color: #e74c3c; border: 1px solid #e74c3c; padding: 12px; border-radius: 8px; font-weight: bold; cursor: pointer; font-size: 0.9rem; }
+
+        .fab-container { position: fixed; bottom: 24px; right: 20px; display: flex; flex-direction: column; gap: 12px; align-items: flex-end; z-index: 90; }
+        .fab-btn { width: 56px; height: 56px; border-radius: 28px; border: none; color: white; font-size: 24px; box-shadow: 0 4px 10px rgba(0,0,0,0.3); cursor: pointer; display: flex; justify-content: center; align-items: center; transition: transform 0.1s; }
+        .add-fab { background-color: #2980b9; font-size: 30px; }
+        .share-fab { background-color: #f39c12; font-size: 22px; }
+        .fab-label { font-size: 10px; background: rgba(0,0,0,0.7); color: white; padding: 2px 6px; border-radius: 4px; margin-right: 8px; position: absolute; right: 60px; pointer-events: none; white-space: nowrap; }
+        
+        .notification { position: fixed; top: 80px; left: 50%; transform: translateX(-50%); background: rgba(44, 62, 80, 0.95); color: #fff; padding: 12px 24px; border-radius: 30px; opacity: 0; pointer-events: none; transition: opacity 0.3s; z-index: 200; font-weight: bold; box-shadow: 0 5px 15px rgba(0,0,0,0.2); width: max-content; max-width: 80%; text-align: center; }
+        .notification.show { opacity: 1; top: 90px; }
     </style>
 </head>
 <body>
@@ -28,8 +98,8 @@
         <a href="manager.html" class="link-control">📊 工程管理</a>
     </div>
     <div class="header-btn-group">
-        <span class="icon-btn" onclick="toggleSortMode()">⇅</span>
-        <span class="icon-btn" onclick="openSettings()">⚙️</span>
+        <span class="icon-btn" onclick="toggleSortMode()" title="並び替え">⇅</span>
+        <span class="icon-btn" onclick="openSettings()" title="設定">⚙️</span>
     </div>
 </header>
 
@@ -39,20 +109,25 @@
 
 <div class="container" id="siteList"></div>
 
+<input type="file" id="jsonInput" accept=".json" style="display:none" onchange="importJSON(this)">
 <div class="overlay" id="overlay" onclick="closeAllModals()"></div>
 
 <div id="inputForm" class="modal-box">
     <h3 style="margin-top:0; text-align:center;">現場情報の編集</h3>
     <label>案件No</label>
-    <div style="display:flex; gap:10px;">
-        <input type="number" id="inputYear" class="input-year" readonly>
-        <input type="number" id="inputNum" class="input-num" readonly ondblclick="this.readOnly=false">
+    <div class="id-input-group">
+        <input type="number" id="inputYear" class="input-year" readonly oninput="checkExistingSite()">
+        <span style="color:#888; font-weight:bold;">-</span>
+        <input type="number" id="inputNum" class="input-num locked" readonly onclick="unlockCaseNo()" oninput="checkExistingSite()">
     </div>
-    <label>現場名</label><input type="text" id="siteName">
-    <label>住所</label><input type="text" id="address">
+    <label>親案件No</label><input type="text" id="parentCaseNo" placeholder="例：K-12345" style="background:#f9f9f9;">
+    <label>現場名</label><input type="text" id="siteName" placeholder="例：鈴木様邸">
+    <label>住所</label><input type="text" id="address" placeholder="例：東京都千代田区...">
     <label>工期</label>
     <div class="date-group">
-        <input type="date" id="startDate"><span style="color:#888;">〜</span><input type="date" id="endDate">
+        <input type="date" id="startDate" class="date-input">
+        <span style="color:#888;">〜</span>
+        <input type="date" id="endDate" class="date-input">
     </div>
     <label>状況</label>
     <select id="status">
@@ -62,57 +137,118 @@
         <option value="complete">✅ 完了</option>
         <option value="lost">❌ 失注</option>
     </select>
-    <button class="save-btn" onclick="saveSite()">保 存</button>
-    <button class="btn-close" onclick="closeAllModals()" style="background:#eee; color:#333;">閉じる</button>
-    <button onclick="deleteCurrentSite()" style="width:100%; margin-top:10px; color:#e74c3c; border:none; background:none;">この現場を削除</button>
+    <div id="naviCountArea" style="display:none;"><label>ナビ回数</label><input type="number" id="editNaviCount" value="0"></div>
+    <div class="edit-footer">
+        <button class="btn-del-single" id="btnDeleteSingle" onclick="deleteCurrentSite()">🗑️</button>
+        <button class="btn-copy" id="btnDuplicate" onclick="duplicateSite()">©️</button>
+        <button class="cancel-btn" onclick="closeAllModals()">中止</button>
+        <button class="save-btn" onclick="saveSite()">保 存</button>
+    </div>
 </div>
 
-<div id="settingsModal" class="modal-box">
-    <h3>⚙️ 設定・データ</h3>
-    <label>報告者名</label><input type="text" id="reporterName" onchange="saveConfig()">
-    <label>GAS URL</label><input type="text" id="gasUrl" onchange="saveConfig()">
-    <hr style="margin:20px 0; border:0; border-top:1px solid #eee;">
-    <button class="save-btn" onclick="syncData()" style="background:#27ae60;">☁️ クラウドへバックアップ</button>
-    <button class="save-btn" onclick="downloadFromCloud()" style="background:#e67e22; margin-top:10px;">📥 クラウドから復元(上書き)</button>
-    <button class="btn-close" onclick="closeAllModals()">閉じる</button>
+<div id="settingsModal" class="modal-box settings-menu">
+    <h3>⚙️ 設定・データ管理</h3>
+    <div style="margin-bottom:15px;"><label>👤 報告者名</label><input type="text" id="reporterName" placeholder="例：山岡" onchange="saveSettings()" style="background:#f9f9f9;"></div>
+    <div style="margin-bottom:15px;"><label>📩 日報送信先</label><input type="email" id="managerEmail" placeholder="example@gmail.com" onchange="saveSettings()" style="background:#f9f9f9;"></div>
+    <div style="margin-bottom:15px;"><label>☁️ GAS URL</label><input type="text" id="gasUrl" placeholder="https://script.google.com/..." onchange="saveSettings()" style="background:#f9f9f9;"></div>
+    <div style="margin-bottom:15px;"><label>📅 カレンダーID</label><input type="text" id="calendarId" onchange="saveSettings()" style="background:#f9f9f9;"></div>
+    
+    <a href="index.html" class="settings-item">🔍 カタログ検索へ</a>
+    
+    <button class="settings-item" onclick="syncAllDataToCloud()" style="background:#e8f5e9; border-color:#a5d6a7; color:#2e7d32;">☁️ クラウドへバックアップ</button>
+    <button class="settings-item" onclick="downloadFromCloud()" style="background:#fff3e0; border-color:#ffe0b2; color:#e65100;">📥 クラウドから復元 (上書き)</button>
+
+    <button class="settings-item" onclick="copyToClipboard()">📋 スプレッドシート用コピー</button>
+    <button class="settings-item" onclick="exportCSV()">💾 CSV出力</button>
+    <hr style="border:0; border-top:1px solid #eee;">
+    <button class="settings-item" onclick="document.getElementById('jsonInput').click()">📥 ファイルから復元</button>
+    <a href="help.html" class="settings-item">📖 使い方ガイド</a>
+    <div class="settings-footer">
+        <button class="btn-delete-all" onclick="deleteAllData()">🗑️ 全削除</button>
+        <button class="btn-close" onclick="closeAllModals()">閉じる</button>
+    </div>
 </div>
 
 <div class="fab-container">
-    <button class="fab-btn add-fab" onclick="openForm('new')">＋</button>
+    <div style="display:flex; align-items:center;"><span class="fab-label">共有・バックアップ</span><button class="fab-btn share-fab" onclick="exportJSON()">📤</button></div>
+    <div style="display:flex; align-items:center;"><button class="fab-btn add-fab" onclick="openForm('new')">＋</button></div>
 </div>
+<div id="notification" class="notification"></div>
 
-<script src="common.js"></script>
 <script>
     let sites = JSON.parse(localStorage.getItem('dx_sites')) || [];
-    let isEditing = false, editingId = null, isSortMode = false;
+    let isEditing = false, tapCount = 0, editingId = null, isSortMode = false, pressTimer = null; 
 
-    document.addEventListener('DOMContentLoaded', () => {
+    if (sites.length === 0) {
+        sites = [{ id: '2025-001', name: '【サンプル】鈴木様邸', address: '東京都墨田区押上1-1-2', status: 'contract', updatedAt: Date.now(), naviCount: 0 }];
+        localStorage.setItem('dx_sites', JSON.stringify(sites));
+    }
+
+    document.addEventListener('DOMContentLoaded', function() {
         renderList();
-        loadConfig();
-        checkBackupStatus(); // common.jsの関数
-        checkAutoLost();     // 自動失注チェック
-    });
-
-    function loadConfig() {
         if(localStorage.getItem('dx_reporter_name')) document.getElementById('reporterName').value = localStorage.getItem('dx_reporter_name');
+        if(localStorage.getItem('dx_manager_email')) document.getElementById('managerEmail').value = localStorage.getItem('dx_manager_email');
         if(localStorage.getItem('dx_gas_url')) document.getElementById('gasUrl').value = localStorage.getItem('dx_gas_url');
-    }
-    function saveConfig() {
-        localStorage.setItem('dx_reporter_name', document.getElementById('reporterName').value);
-        localStorage.setItem('dx_gas_url', document.getElementById('gasUrl').value);
-        // common.jsのCONFIGも更新しておく（リロードなしで反映するため）
-        CONFIG.GAS_API_URL = document.getElementById('gasUrl').value;
-    }
+        if(localStorage.getItem('dx_calendar_id')) document.getElementById('calendarId').value = localStorage.getItem('dx_calendar_id');
+        checkAutoLost();
+    });
 
     function checkAutoLost() {
         const now = Date.now();
-        let changed = false;
-        sites.forEach(s => {
-            if(s.status === 'estimate' && s.updatedAt && (now - s.updatedAt > 31536000000)) { // 1年
-                s.status = 'lost'; s.updatedAt = now; changed = true;
+        const oneYearMs = 31536000000; 
+        let hasChanged = false; let count = 0;
+        sites.forEach(site => {
+            if (site.status === 'estimate' && site.updatedAt) {
+                if ((now - site.updatedAt) > oneYearMs) {
+                    site.status = 'lost'; site.updatedAt = now; hasChanged = true; count++;
+                }
             }
         });
-        if(changed) { localStorage.setItem('dx_sites', JSON.stringify(sites)); renderList(); showNotification("長期未更新の案件を失注にしました"); }
+        if (hasChanged) {
+            localStorage.setItem('dx_sites', JSON.stringify(sites));
+            renderList();
+            setTimeout(() => showNotification(`🕒 長期未更新の ${count}件を「失注」に変更しました`), 1000);
+        }
+    }
+
+    function saveSettings() {
+        localStorage.setItem('dx_reporter_name', document.getElementById('reporterName').value);
+        localStorage.setItem('dx_manager_email', document.getElementById('managerEmail').value);
+        localStorage.setItem('dx_gas_url', document.getElementById('gasUrl').value);
+        localStorage.setItem('dx_calendar_id', document.getElementById('calendarId').value);
+        showNotification('⚙️ 設定を保存しました');
+    }
+
+    function handleTouchStart(btn, id, address) {
+        if (btn.classList.contains('holding')) return;
+        btn.classList.add('holding'); 
+        pressTimer = setTimeout(() => {
+            if (navigator.vibrate) navigator.vibrate(100); 
+            btn.classList.remove('holding'); updateNaviCount(id, -1); 
+            showNotification('修正しました：カウント -1'); pressTimer = null; 
+        }, 2000);
+    }
+    function handleTouchEnd(btn, id, address) {
+        if (pressTimer) {
+            clearTimeout(pressTimer); pressTimer = null; btn.classList.remove('holding');
+            updateNaviCount(id, 1);
+            window.open(`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(address)}`, '_blank');
+        }
+    }
+    function updateNaviCount(id, delta) {
+        const idx = sites.findIndex(s => s.id === id);
+        if (idx !== -1) {
+            sites[idx].naviCount = Math.max(0, (sites[idx].naviCount || 0) + delta);
+            sites[idx].updatedAt = Date.now();
+            localStorage.setItem('dx_sites', JSON.stringify(sites));
+            renderList();
+        }
+    }
+    function toggleSortMode() { isSortMode = !isSortMode; document.body.classList.toggle('sort-mode', isSortMode); showNotification(isSortMode ? '⇅ 並び替えモード：ON' : '並び替え終了'); renderList(); }
+
+    function getStatusText(status) {
+        const map = { 'estimate':'見積中', 'contract':'契約済み', 'billing':'請求', 'complete':'完了', 'lost':'失注' };
+        return map[status] || '見積中';
     }
 
     function renderList() {
@@ -120,129 +256,166 @@
         const kw = document.getElementById('searchInput').value.toLowerCase();
         listEl.innerHTML = '';
         
-        // ソート：新しい順
-        sites.sort((a,b) => (a.id < b.id ? 1 : -1));
-
-        sites.forEach(site => {
-            if(kw && !site.name.includes(kw) && !site.address.includes(kw)) return;
-            
+        sites.forEach((site, index) => {
+            if (kw && !site.name.toLowerCase().includes(kw) && !site.address.toLowerCase().includes(kw) && !site.id.includes(kw)) return;
             let stLabel = '見積中', stClass = 'st-estimate';
-            if(site.status==='contract'||site.status==='active') { stLabel='契約済'; stClass='st-contract'; }
-            if(site.status==='billing') { stLabel='請求'; stClass='st-billing'; }
-            if(site.status==='complete'||site.status==='done') { stLabel='完了'; stClass='st-complete'; }
-            if(site.status==='lost') { stLabel='失注'; stClass='st-lost'; }
-
+            if(site.status === 'contract' || site.status === 'active') { stLabel = '契約済み'; stClass = 'st-contract'; }
+            if(site.status === 'billing') { stLabel = '請求'; stClass = 'st-billing'; }
+            if(site.status === 'complete' || site.status === 'done') { stLabel = '完了'; stClass = 'st-complete'; }
+            if(site.status === 'lost') { stLabel = '失注'; stClass = 'st-lost'; }
+            
             const html = `
                 <div class="site-card">
-                    <div style="display:flex; justify-content:space-between; margin-bottom:5px;">
-                        <span style="background:#eee; padding:2px 6px; border-radius:4px; font-size:0.8rem;">${site.id}</span>
-                        <span class="status-badge ${stClass}">${stLabel}</span>
-                    </div>
+                    <div class="card-header"><span class="case-no">${site.id}</span><span class="status-badge ${stClass}">${stLabel}</span></div>
                     <div class="site-name">${site.name}</div>
                     <div class="site-address">📍 ${site.address}</div>
                     <div class="card-actions">
-                        <a href="tools.html?id=${site.id}" class="action-btn">🧰 ツール</a>
-                        <div class="action-btn" onclick="openForm('edit', '${site.id}')">✏️ 編集</div>
-                        <a href="https://maps.google.com/?q=${encodeURIComponent(site.address)}" target="_blank" class="action-btn btn-navi-main">🚀 ナビ</a>
+                        <div class="action-btn btn-navi-side" onmousedown="handleTouchStart(this,'${site.id}','${site.address}')" onmouseup="handleTouchEnd(this,'${site.id}','${site.address}')" ontouchstart="handleTouchStart(this,'${site.id}','${site.address}')" ontouchend="handleTouchEnd(this,'${site.id}','${site.address}')" oncontextmenu="return false;">🚀<br><span style="font-size:0.7rem">ナビ</span><div class="hold-bar"></div></div>
+                        <a href="tools.html?id=${site.id}" class="action-btn btn-center">🧰<br><span style="font-size:0.7rem">ツール</span></a>
+                        <div class="navi-wrapper"><span class="navi-count-label">${site.naviCount||0}回</span><a href="https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(site.address)}" target="_blank" class="action-btn btn-navi-side" onclick="updateNaviCount('${site.id}',1)">🚀<br><span style="font-size:0.7rem">ナビ</span></a></div>
                     </div>
+                    <div class="sort-actions"><button class="btn-up" onclick="moveItem(${index},-1)">⬆️</button><button class="btn-down" onclick="moveItem(${index},1)">⬇️</button></div>
                 </div>`;
             listEl.insertAdjacentHTML('beforeend', html);
         });
     }
-
-    function openForm(mode, id) {
-        toggleModal('inputForm', true); // common.jsの関数（戻るボタン対応）
-        const y = new Date().getFullYear();
-        if(mode==='new'){
-            isEditing=false; editingId=null;
-            document.getElementById('inputYear').value=y;
-            document.getElementById('inputNum').value="001"; // 簡易
-            document.getElementById('siteName').value="";
-            document.getElementById('address').value="";
-        } else {
-            isEditing=true; editingId=id;
-            const s = sites.find(x=>x.id===id);
-            if(s) {
-                const parts = s.id.split('-');
-                document.getElementById('inputYear').value=parts[0];
-                document.getElementById('inputNum').value=parts[1];
-                document.getElementById('siteName').value=s.name;
-                document.getElementById('address').value=s.address;
-                document.getElementById('status').value=s.status;
-                document.getElementById('startDate').value=s.start||"";
-                document.getElementById('endDate').value=s.end||"";
-            }
+    function moveItem(index, direction) {
+        if ((direction === -1 && index > 0) || (direction === 1 && index < sites.length - 1)) {
+            [sites[index], sites[index + direction]] = [sites[index + direction], sites[index]];
+            localStorage.setItem('dx_sites', JSON.stringify(sites)); renderList();
         }
     }
-    
-    function closeAllModals() { toggleModal('inputForm', false); toggleModal('settingsModal', false); }
-    function openSettings() { toggleModal('settingsModal', true); }
-
+    function duplicateSite() {
+        const name = document.getElementById('siteName').value;
+        if(!name) { showNotification('⚠️ 現場名が必要です'); return; }
+        if(!confirm('コピーして新規作成しますか？')) return;
+        const y = new Date().getFullYear(), num = getNextNum(y), id = `${y}-${num}`;
+        sites.unshift({ id, name: name+' (コピー)', address: document.getElementById('address').value, status: 'estimate', parentCaseNo: document.getElementById('parentCaseNo').value, updatedAt: Date.now(), naviCount: 0, start:'', end:'' });
+        localStorage.setItem('dx_sites', JSON.stringify(sites)); closeAllModals(); renderList(); showNotification('🎉 複製しました'); setTimeout(()=>openForm('edit',id),500);
+    }
     function saveSite() {
         const id = `${document.getElementById('inputYear').value}-${document.getElementById('inputNum').value}`;
         const name = document.getElementById('siteName').value;
-        if(!name) return alert("現場名は必須です");
-        
-        const newData = {
-            id, name, 
-            address: document.getElementById('address').value,
-            status: document.getElementById('status').value,
-            start: document.getElementById('startDate').value,
-            end: document.getElementById('endDate').value,
-            updatedAt: Date.now()
+        if(!name) { showNotification('⚠️ 現場名が必要です'); return; }
+        const data = {
+            id, name, address: document.getElementById('address').value, status: document.getElementById('status').value,
+            naviCount: parseInt(document.getElementById('editNaviCount').value)||0,
+            parentCaseNo: document.getElementById('parentCaseNo').value,
+            start: document.getElementById('startDate').value, end: document.getElementById('endDate').value, updatedAt: Date.now()
         };
-
-        if(isEditing && editingId) {
-            const idx = sites.findIndex(s=>s.id===editingId);
-            if(idx!==-1) sites[idx] = newData;
+        if(isEditing) {
+            const idx = sites.findIndex(s => s.id === editingId);
+            if(idx !== -1) sites[idx] = data; else sites.unshift(data);
         } else {
-            sites.push(newData);
+            if(sites.some(s=>s.id===id)){ if(!confirm('上書きしますか？'))return; const idx=sites.findIndex(s=>s.id===id); sites[idx]=data; }
+            else sites.unshift(data);
         }
-        localStorage.setItem('dx_sites', JSON.stringify(sites));
-        closeAllModals();
-        renderList();
-        showNotification("保存しました");
+        localStorage.setItem('dx_sites', JSON.stringify(sites)); closeAllModals(); renderList(); showNotification('🎉 保存しました');
     }
-
-    function deleteCurrentSite() {
-        if(confirm("削除しますか？")) {
-            sites = sites.filter(s=>s.id!==editingId);
-            localStorage.setItem('dx_sites', JSON.stringify(sites));
-            closeAllModals();
-            renderList();
+    function deleteCurrentSite() { if(editingId && confirm('削除しますか？')) { sites = sites.filter(s=>s.id!==editingId); localStorage.setItem('dx_sites', JSON.stringify(sites)); closeAllModals(); renderList(); showNotification('🗑️ 削除しました'); } }
+    function openForm(mode, id=null) {
+        document.getElementById('inputForm').classList.add('show'); document.getElementById('overlay').classList.add('show');
+        const yearInput = document.getElementById('inputYear'); yearInput.readOnly = false;
+        const numInput = document.getElementById('inputNum'); numInput.readOnly = true; numInput.className = 'input-num locked'; tapCount = 0;
+        if(mode==='new') {
+            isEditing=false; editingId=null;
+            document.getElementById('btnDeleteSingle').style.display='none'; document.getElementById('btnDuplicate').style.display='none'; document.getElementById('naviCountArea').style.display='none';
+            const y = new Date().getFullYear(); document.getElementById('inputYear').value=y; document.getElementById('inputNum').value=getNextNum(y);
+            document.getElementById('siteName').value=''; document.getElementById('address').value=''; document.getElementById('status').value='estimate'; document.getElementById('parentCaseNo').value=''; document.getElementById('startDate').value=''; document.getElementById('endDate').value='';
+        } else {
+            isEditing=true; editingId=id;
+            document.getElementById('btnDeleteSingle').style.display='flex'; document.getElementById('btnDuplicate').style.display='flex'; document.getElementById('naviCountArea').style.display='block';
+            const s = sites.find(x=>x.id===id);
+            if(s) {
+                const p = s.id.split('-'); document.getElementById('inputYear').value=p[0]; document.getElementById('inputNum').value=p[1];
+                document.getElementById('siteName').value=s.name; document.getElementById('address').value=s.address; document.getElementById('status').value=s.status; document.getElementById('editNaviCount').value=s.naviCount||0; document.getElementById('parentCaseNo').value=s.parentCaseNo||''; document.getElementById('startDate').value=s.start||''; document.getElementById('endDate').value=s.end||'';
+            }
         }
     }
-
-    // ★重要：クラウド同期（送信）
-    function syncData() {
-        if(confirm("全データをクラウドに送信（上書き）しますか？")) {
-            uploadDataToCloud(sites, "sync");
+    function checkExistingSite() {
+        const id = `${document.getElementById('inputYear').value}-${document.getElementById('inputNum').value}`;
+        const s = sites.find(x=>x.id===id);
+        if(s) {
+            document.getElementById('siteName').value=s.name; document.getElementById('address').value=s.address; document.getElementById('status').value=s.status; document.getElementById('parentCaseNo').value=s.parentCaseNo||''; document.getElementById('editNaviCount').value=s.naviCount||0; document.getElementById('startDate').value=s.start||''; document.getElementById('endDate').value=s.end||'';
+            isEditing=true; editingId=id; document.getElementById('btnDeleteSingle').style.display='flex'; document.getElementById('btnDuplicate').style.display='flex'; document.getElementById('naviCountArea').style.display='block';
+        } else {
+            isEditing=false; editingId=null; document.getElementById('btnDeleteSingle').style.display='none'; document.getElementById('btnDuplicate').style.display='none'; document.getElementById('naviCountArea').style.display='none';
         }
     }
-
-    // ★追加：クラウドからダウンロード（受信）
-    async function downloadFromCloud() {
-        if(!CONFIG.GAS_API_URL) return alert("URL未設定");
-        if(!confirm("クラウドのデータでスマホを上書きしますか？\n（現在のスマホのデータは消えます）")) return;
+    function getNextNum(y) { let max=0; sites.filter(s=>s.id.startsWith(y)).forEach(s=>{ const n=parseInt(s.id.split('-')[1]); if(n>max)max=n; }); return (max+1).toString().padStart(3,'0'); }
+    function openSettings() { document.getElementById('overlay').classList.add('show'); document.getElementById('settingsModal').classList.add('show'); }
+    function closeAllModals() { document.querySelectorAll('.modal-box').forEach(el=>el.classList.remove('show')); document.getElementById('overlay').classList.remove('show'); }
+    function unlockCaseNo() { tapCount++; if(tapCount>=5){ const el=document.getElementById('inputNum'); el.readOnly=false; el.className='input-num unlocked'; showNotification('🔓 ロック解除'); tapCount=0; } }
+    function getNowStr() { const d=new Date(); return `${d.getFullYear()}${('0'+(d.getMonth()+1)).slice(-2)}${('0'+d.getDate()).slice(-2)}`; }
+    
+    // ★重要：安全装置付きクラウド同期
+    async function syncAllDataToCloud() {
+        const gasUrl = localStorage.getItem('dx_gas_url');
+        if(!gasUrl) { alert("GAS URLを設定してください"); return; }
         
-        showNotification("📥 データ取得中...");
+        showNotification('☁️ クラウド確認中...');
         try {
-            // doGetを叩く
-            const res = await fetch(CONFIG.GAS_API_URL + "?type=getAll");
+            // 1. 最新状態チェック (doGet)
+            const checkRes = await fetch(gasUrl + "?type=getAll");
+            const cloudData = await checkRes.json();
+            
+            const localMax = sites.length > 0 ? Math.max(...sites.map(s => s.updatedAt || 0)) : 0;
+            const cloudMax = Array.isArray(cloudData) && cloudData.length > 0 ? Math.max(...cloudData.map(s => s.updatedAt || 0)) : 0;
+
+            if (cloudMax > localMax) {
+                const cloudDate = new Date(cloudMax).toLocaleString();
+                if(navigator.vibrate) navigator.vibrate(200);
+                if(!confirm(`⚠️【警告】クラウド上に新しいデータがあります！\n(最終更新: ${cloudDate})\n\n上書きすると他人の変更が消える可能性があります。\n「キャンセル」して「復元」することをお勧めします。\n\nそれでも強制的に上書きしますか？`)) {
+                    showNotification('送信を中断しました'); return;
+                }
+            }
+
+            // 2. 送信
+            showNotification('☁️ 送信中...');
+            const exportData = sites.map(s => ({ ...s, status: getStatusText(s.status) })); // 日本語化
+            const data = { type: "sync", data: exportData, reporter: localStorage.getItem('dx_reporter_name')||"職人" };
+            
+            await fetch(gasUrl, { method: 'POST', mode: 'no-cors', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(data) });
+            showNotification('✅ 同期完了');
+            alert("クラウドに保存しました！");
+
+        } catch(e) {
+            alert("通信エラー: " + e);
+        }
+    }
+
+    // ★追加：クラウドからの復元
+    async function downloadFromCloud() {
+        const gasUrl = localStorage.getItem('dx_gas_url');
+        if(!gasUrl) { alert("GAS URLを設定してください"); return; }
+        if(!confirm("クラウドのデータで上書き復元しますか？\n（現在の端末データは消えます）")) return;
+
+        showNotification('📥 取得中...');
+        try {
+            const res = await fetch(gasUrl + "?type=getAll");
             const data = await res.json();
             if(Array.isArray(data) && data.length > 0) {
                 sites = data;
+                // ID順にソート
+                sites.sort((a, b) => (a.id > b.id ? -1 : 1));
                 localStorage.setItem('dx_sites', JSON.stringify(sites));
-                renderList();
-                showNotification("✅ 復元完了");
-                closeAllModals();
+                renderList(); closeAllModals();
+                showNotification(`✅ 復元完了 (${sites.length}件)`);
             } else {
                 alert("データが見つかりませんでした");
             }
         } catch(e) {
-            alert("受信エラー: " + e);
+            alert("取得エラー: " + e);
         }
     }
+
+    async function exportCSV() { showNotification('📤 準備中...'); let c = "\uFEFF案件No,親案件No,現場名,住所,ステータス,開始,終了\n"; sites.forEach(s => { c += `"${s.id}","${s.parentCaseNo||''}","${s.name}","${s.address}","${getStatusText(s.status)}","${s.start||''}","${s.end||''}"\n`; }); const f = new File([c], `現場リスト_${getNowStr()}.csv`, { type: "text/csv" }); if (navigator.share && navigator.canShare({ files: [f] })) { try { await navigator.share({ files: [f] }); } catch (e) { forceDL(f); } } else { forceDL(f); } }
+    function forceDL(f) { const u = URL.createObjectURL(f); const a = document.createElement("a"); a.href=u; a.download=f.name; document.body.appendChild(a); a.click(); document.body.removeChild(a); showNotification('📥 保存しました'); }
+    function copyToClipboard() { let t = ""; sites.forEach(s => { t += `${s.id}\t${s.parentCaseNo||''}\t${s.name}\t${s.address}\t${getStatusText(s.status)}\t${s.start||''}\t${s.end||''}\n`; }); navigator.clipboard.writeText(t).then(()=>showNotification('📋 コピーしました')); }
+    async function exportJSON() { const f = new File([JSON.stringify(sites,null,2)], `backup_${getNowStr()}.json`, {type:"application/json"}); if(navigator.share&&navigator.canShare({files:[f]})) { try{await navigator.share({files:[f]});}catch(e){forceDL(f);} } else { forceDL(f); } }
+    function importJSON(input) { const f=input.files[0]; if(!f)return; const r=new FileReader(); r.onload=function(e){ try{ const d=JSON.parse(e.target.result); if(!Array.isArray(d)){alert('エラー');return;} let add=0,upd=0; d.forEach(n=>{ const i=sites.findIndex(s=>s.id===n.id); if(i!==-1){ if((n.updatedAt||0)>(sites[i].updatedAt||0)){sites[i]=n;upd++;} }else{sites.push(n);add++;} }); sites.sort((a,b)=>(a.id>b.id?-1:1)); localStorage.setItem('dx_sites',JSON.stringify(sites)); renderList(); closeAllModals(); showNotification(`復元: ${upd}件更新, ${add}件追加`); }catch(e){alert('読込失敗');} input.value=''; }; r.readAsText(f); }
+    function deleteAllData() { if(confirm('本当に全削除しますか？')) { sites=[]; localStorage.setItem('dx_sites',JSON.stringify(sites)); renderList(); closeAllModals(); showNotification('🗑️ 全削除完了'); } }
+    function showNotification(msg) { const el = document.getElementById('notification'); el.textContent = msg; el.classList.add('show'); setTimeout(() => el.classList.remove('show'), 2000); }
 </script>
 </body>
 </html>
