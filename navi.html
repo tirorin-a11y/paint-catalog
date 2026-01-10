@@ -52,12 +52,15 @@
         label { display: block; margin-top: 12px; font-size: 0.85rem; font-weight: bold; color: #444; }
         input, select { width: 100%; padding: 12px; margin-top: 6px; border: 1px solid #ddd; border-radius: 8px; box-sizing: border-box; font-size: 1rem; appearance: none; }
         
-        /* ★追加：工期入力用の横並びスタイル */
         .date-group { display: flex; gap: 10px; align-items: center; }
         .date-input { flex: 1; text-align: center; }
 
         .id-input-group { display: flex; align-items: center; gap: 10px; margin-top: 5px; }
-        .input-year { width: 30%; text-align: center; background: #f0f0f0; color: #555; border: 1px solid #ccc; }
+        .input-year { width: 30%; text-align: center; background: #f0f0f0; color: #555; border: 1px solid #ccc; font-weight: bold; }
+        
+        /* ★修正：readonlyじゃない時は白背景で編集可能に見せる */
+        .input-year:not([readonly]) { background: #fff; color: #d35400; border: 2px solid #e67e22; }
+
         .input-num { width: 60%; text-align: center; font-family: monospace; letter-spacing: 2px; font-weight: bold; transition: 0.3s; }
         .input-num.locked { background: #f9f9f9; color: #999; border: 1px solid #eee; cursor: not-allowed; }
         .input-num.unlocked { background: #fff; color: #d35400; border: 2px solid #e67e22; }
@@ -357,7 +360,7 @@
         sites.unshift({
             id: newId, name: name + ' (コピー)', address: address, status: 'plan', 
             parentCaseNo: parentNo, updatedAt: now, naviCount: 0,
-            start: '', end: '' // 複製時は日付はクリア
+            start: '', end: ''
         });
         localStorage.setItem('dx_sites', JSON.stringify(sites));
         closeAllModals(); renderList(); showNotification('🎉 複製しました');
@@ -373,19 +376,17 @@
         const status = document.getElementById('status').value;
         const naviCountVal = parseInt(document.getElementById('editNaviCount').value) || 0;
         const parentNo = document.getElementById('parentCaseNo').value;
-        // ★修正：日付取得
         const startDate = document.getElementById('startDate').value;
         const endDate = document.getElementById('endDate').value;
 
         if(!name || !address) { showNotification('⚠️ 現場名と住所は必須です'); return; }
         
-        // 保存するデータオブジェクト
         const siteData = {
             id, name, address, status, 
             naviCount: naviCountVal, 
             parentCaseNo: parentNo, 
-            start: startDate, // ★追加
-            end: endDate,     // ★追加
+            start: startDate, 
+            end: endDate, 
             updatedAt: Date.now()
         };
 
@@ -420,6 +421,11 @@
         document.getElementById('inputForm').classList.add('show'); 
         document.getElementById('overlay').classList.add('show');
         const numInput = document.getElementById('inputNum');
+        const yearInput = document.getElementById('inputYear');
+        
+        // ★修正：年は常に編集可能にする (編集モードでも変えたい場合があるため)
+        yearInput.readOnly = false;
+
         numInput.readOnly = true; numInput.classList.remove('unlocked'); numInput.classList.add('locked'); tapCount = 0;
         const todayYear = new Date().getFullYear();
 
@@ -436,8 +442,8 @@
             document.getElementById('status').value = 'plan';
             document.getElementById('editNaviCount').value = 0;
             document.getElementById('parentCaseNo').value = '';
-            document.getElementById('startDate').value = ''; // ★追加
-            document.getElementById('endDate').value = '';   // ★追加
+            document.getElementById('startDate').value = ''; 
+            document.getElementById('endDate').value = '';   
         } else {
             isEditing = true; editingId = id;
             document.getElementById('btnDeleteSingle').style.display = 'flex';
@@ -454,7 +460,6 @@
                 document.getElementById('status').value = targetSite.status;
                 document.getElementById('editNaviCount').value = targetSite.naviCount || 0;
                 document.getElementById('parentCaseNo').value = targetSite.parentCaseNo || '';
-                // ★追加：日付の読み込み
                 document.getElementById('startDate').value = targetSite.start || '';
                 document.getElementById('endDate').value = targetSite.end || '';
             }
@@ -475,7 +480,6 @@
             document.getElementById('status').value = found.status;
             document.getElementById('parentCaseNo').value = found.parentCaseNo || '';
             document.getElementById('editNaviCount').value = found.naviCount || 0;
-            // ★追加：日付の読み込み
             document.getElementById('startDate').value = found.start || '';
             document.getElementById('endDate').value = found.end || '';
 
