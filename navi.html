@@ -191,6 +191,8 @@
         if(localStorage.getItem('dx_gas_url')) document.getElementById('gasUrl').value = localStorage.getItem('dx_gas_url');
         if(localStorage.getItem('dx_calendar_id')) document.getElementById('calendarId').value = localStorage.getItem('dx_calendar_id');
         checkAutoLost();
+        // ★ここに追加：起動時に最新データをチェック！
+        checkForCloudUpdates();
     });
 
     function checkAutoLost() {

@@ -112,3 +112,42 @@ async function uploadDataToCloud(data, type = "sync") {
         return false;
     }
 }
+
+
+// ★追加：起動時にクラウドの更新があるかチェックする
+async function checkForCloudUpdates() {
+    if(!CONFIG.GAS_API_URL || CONFIG.GAS_API_URL.includes("xxxx")) return;
+
+    // ローカルデータの最終更新日時を取得
+    const sites = JSON.parse(localStorage.getItem('dx_sites')) || [];
+    const localMax = sites.length > 0 ? Math.max(...sites.map(s => s.updatedAt || 0)) : 0;
+
+    try {
+        // 裏でそっとクラウドのデータを見に行く
+        const res = await fetch(CONFIG.GAS_API_URL + "?type=getAll");
+        const cloudData = await res.json();
+
+        if (Array.isArray(cloudData) && cloudData.length > 0) {
+            const cloudMax = Math.max(...cloudData.map(s => s.updatedAt || 0));
+
+            // クラウドの方が新しければ、ユーザーに提案する
+            if (cloudMax > localMax) {
+                const dateStr = new Date(cloudMax).toLocaleString();
+                if (navigator.vibrate) navigator.vibrate([100, 50, 100]); // ブブッ！と通知
+
+                // ここで確認！勝手には上書きしない
+                if (confirm(`🔄 新しいデータがあります！\n(最終更新: ${dateStr})\n\n最新の状態に同期しますか？\n\n※「OK」を押すと、現在の端末データはクラウドの内容で上書きされます。`)) {
+                    // データ適用
+                    // ID順にソートして保存
+                    cloudData.sort((a, b) => (a.id > b.id ? -1 : 1));
+                    localStorage.setItem('dx_sites', JSON.stringify(cloudData));
+                    
+                    alert("✅ 最新データを取り込みました！");
+                    location.reload(); // 画面をリフレッシュ
+                }
+            }
+        }
+    } catch (e) {
+        console.log("更新チェックスキップ(オフライン等):", e);
+    }
+}
