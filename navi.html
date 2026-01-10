@@ -350,36 +350,37 @@
     function unlockCaseNo() { tapCount++; if(tapCount>=5){ const el=document.getElementById('inputNum'); el.readOnly=false; el.className='input-num unlocked'; showNotification('🔓 ロック解除'); tapCount=0; } }
     function getNowStr() { const d=new Date(); return `${d.getFullYear()}${('0'+(d.getMonth()+1)).slice(-2)}${('0'+d.getDate()).slice(-2)}`; }
     
-    // ★重要：安全装置付きクラウド同期
+    // ★修正：チェック無しで強制送信するバージョン
     async function syncAllDataToCloud() {
         const gasUrl = localStorage.getItem('dx_gas_url');
         if(!gasUrl) { alert("GAS URLを設定してください"); return; }
         
-        showNotification('☁️ クラウド確認中...');
+        // 念のため確認だけはする
+        if(!confirm("【強制送信】\n現在PCにあるデータで、クラウドを上書きしますか？")) return;
+        
+        showNotification('☁️ 強制送信中...');
+
         try {
-            // 1. 最新状態チェック (doGet)
-            const checkRes = await fetch(gasUrl + "?type=getAll");
-            const cloudData = await checkRes.json();
+            // ステータス日本語化
+            const exportData = sites.map(s => ({ ...s, status: getStatusText(s.status) })); 
             
-            const localMax = sites.length > 0 ? Math.max(...sites.map(s => s.updatedAt || 0)) : 0;
-            const cloudMax = Array.isArray(cloudData) && cloudData.length > 0 ? Math.max(...cloudData.map(s => s.updatedAt || 0)) : 0;
-
-            if (cloudMax > localMax) {
-                const cloudDate = new Date(cloudMax).toLocaleString();
-                if(navigator.vibrate) navigator.vibrate(200);
-                if(!confirm(`⚠️【警告】クラウド上に新しいデータがあります！\n(最終更新: ${cloudDate})\n\n上書きすると他人の変更が消える可能性があります。\n「キャンセル」して「復元」することをお勧めします。\n\nそれでも強制的に上書きしますか？`)) {
-                    showNotification('送信を中断しました'); return;
-                }
-            }
-
-            // 2. 送信
-            showNotification('☁️ 送信中...');
-            const exportData = sites.map(s => ({ ...s, status: getStatusText(s.status) })); // 日本語化
-            const data = { type: "sync", data: exportData, reporter: localStorage.getItem('dx_reporter_name')||"職人" };
+            // データ作成
+            const data = { 
+                type: "sync", 
+                data: exportData, 
+                reporter: localStorage.getItem('dx_reporter_name') || "PC管理者" 
+            };
             
-            await fetch(gasUrl, { method: 'POST', mode: 'no-cors', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(data) });
-            showNotification('✅ 同期完了');
-            alert("クラウドに保存しました！");
+            // 送信実行（チェック処理は削除しました）
+            await fetch(gasUrl, { 
+                method: 'POST', 
+                mode: 'no-cors', 
+                headers: { 'Content-Type': 'application/json' }, 
+                body: JSON.stringify(data) 
+            });
+
+            showNotification('✅ 送信完了');
+            alert("クラウドに強制的に上書き保存しました！");
 
         } catch(e) {
             alert("通信エラー: " + e);
