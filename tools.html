@@ -9,7 +9,7 @@
     <meta name="apple-mobile-web-app-capable" content="yes">
     <link rel="stylesheet" href="style.css">
     <style>
-        /* (既存CSS省略...) */
+        /* (既存スタイル省略) */
         body { background-color: #f0f2f5; padding-bottom: 80px; scroll-behavior: smooth; }
         .site-header { background: #2c3e50; color: white; padding: 20px; text-align: center; border-radius: 0 0 20px 20px; margin-bottom: 15px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); position: sticky; top: 0; z-index: 100; }
         .site-title { margin: 0; font-size: 1.4rem; font-weight: bold; }
@@ -74,10 +74,6 @@
         .history-list { margin-top: 15px; max-height: 150px; overflow-y: auto; border-top: 1px solid #eee; padding-top: 10px; }
         .history-item { background: #fff; padding: 8px; margin-bottom: 5px; border-radius: 4px; font-size: 0.85rem; border: 1px solid #eee; }
         .history-date { font-weight: bold; color: #2980b9; font-size: 0.75rem; }
-
-        /* ★追加：工期入力用スタイル（横並び） */
-        .date-group { display: flex; gap: 10px; align-items: center; margin-top: 5px; }
-        .date-input { flex: 1; padding: 10px; border: 1px solid #ccc; border-radius: 6px; text-align: center; font-size: 1rem; background: #f9f9f9; }
     </style>
 </head>
 <body>
@@ -112,7 +108,7 @@
     <div class="tool-grid sup">
         <div class="tool-btn" onclick="searchSupply()">
             <div class="btn-icon">🛒</div>
-            <div class="btn-text"><h3>資材SOSマップ</h3><p>近くの建材屋を検索</p></div>
+            <div class="btn-text"><h3>資材SOSマップ</h3><p>近くのホームセンターを検索</p></div>
             <span style="font-size:1.5rem; color:#ffcc80;">＞</span>
         </div>
         <div class="tool-btn" onclick="handleCalendarAction()" style="cursor:pointer;">
@@ -126,7 +122,7 @@
     <div class="tool-grid man">
         <div class="tool-btn" onclick="openForm()">
             <div class="btn-icon">✏️</div>
-            <div class="btn-text"><h3>情報の編集・削除</h3><p>現場名、住所、<strong>工期</strong>の修正</p></div>
+            <div class="btn-text"><h3>情報の編集・削除</h3><p>現場名や住所の修正</p></div>
             <span style="font-size:1.5rem; color:#90caf9;">＞</span>
         </div>
     </div>
@@ -224,27 +220,16 @@
 
 <div id="inputForm" class="modal-box">
     <h3 style="margin-top:0; text-align:center;">情報の編集・削除</h3>
-    <label>現場名</label>
-    <input type="text" id="siteName">
-    
-    <label>住所</label>
-    <input type="text" id="address">
-    
-    <label>工期（開始 - 終了）</label>
-    <div class="date-group">
-        <input type="date" id="startDate" class="date-input">
-        <span style="color:#888;">〜</span>
-        <input type="date" id="endDate" class="date-input">
-    </div>
-
+    <label>現場名</label><input type="text" id="siteName">
+    <label>住所</label><input type="text" id="address">
     <label>状況</label>
     <select id="status">
-        <option value="plan">📝 現調予定</option>
-        <option value="active">🏗️ 施工中</option>
-        <option value="done">✅ 完工</option>
-        <option value="handover">🏠 引き渡し</option>
+        <option value="estimate">📄 見積中</option>
+        <option value="contract">🤝 契約済み</option>
+        <option value="billing">💰 請求</option>
+        <option value="complete">✅ 完了</option>
+        <option value="lost">❌ 失注</option>
     </select>
-    
     <div class="edit-footer">
         <button class="btn-del-single" onclick="deleteSite()">🗑️</button>
         <button class="cancel-btn" onclick="closeAllModals()">中止</button>
@@ -260,20 +245,16 @@
     let currentProcess = '施工前';
     let customLabels = JSON.parse(localStorage.getItem('dx_custom_btns')) || ["ケレン", "洗浄", "養生", "シーリング", "足場"];
     
-    // データ読み込み（型チェック）
     let reportHistory;
     try { reportHistory = JSON.parse(localStorage.getItem('dx_reports')); } catch(e) { reportHistory = {}; }
     if (!reportHistory || Array.isArray(reportHistory) || typeof reportHistory !== 'object') { reportHistory = {}; }
 
-    // サイト情報の表示
     if (siteId) {
         currentSite = sites.find(s => s.id === siteId);
         if (currentSite) {
             document.getElementById('displaySiteName').textContent = currentSite.name;
             document.getElementById('displaySiteId').textContent = `No. ${currentSite.id}`;
-        } else {
-            document.getElementById('displaySiteName').textContent = "現場が見つかりません";
-        }
+        } else { document.getElementById('displaySiteName').textContent = "現場が見つかりません"; }
     } else {
         document.getElementById('displaySiteName').textContent = "現場未選択 (プレビュー)";
         document.getElementById('displaySiteId').textContent = "---";
@@ -285,75 +266,42 @@
         if(siteId) renderReportHistory();
     };
 
-    // --- 編集フォームの処理 ---
-    function openForm() {
-        document.getElementById('overlay').classList.add('show');
-        document.getElementById('inputForm').classList.add('show');
-        
-        // 既存データのセット
-        document.getElementById('siteName').value = currentSite ? currentSite.name : '';
-        document.getElementById('address').value = currentSite ? currentSite.address : '';
-        document.getElementById('status').value = currentSite ? currentSite.status : 'plan';
-        // ★日付のセット
-        document.getElementById('startDate').value = (currentSite && currentSite.start) ? currentSite.start : '';
-        document.getElementById('endDate').value = (currentSite && currentSite.end) ? currentSite.end : '';
-    }
-
-    function saveEdit() {
-        const name = document.getElementById('siteName').value;
-        const address = document.getElementById('address').value;
-        const status = document.getElementById('status').value;
-        // ★日付の取得
-        const start = document.getElementById('startDate').value;
-        const end = document.getElementById('endDate').value;
-
-        if(!name) { alert("現場名は必須です"); return; }
-        
-        if (siteId) {
-            const index = sites.findIndex(s => s.id === siteId);
-            if(index !== -1) {
-                // データの更新
-                sites[index].name = name;
-                sites[index].address = address;
-                sites[index].status = status;
-                sites[index].start = start; // ★日付保存
-                sites[index].end = end;     // ★日付保存
-                sites[index].updatedAt = Date.now();
-                
-                localStorage.setItem('dx_sites', JSON.stringify(sites));
-                location.reload(); // 更新反映のためリロード
-            }
-        } else {
-            alert("現場IDがありません");
-        }
-    }
-
-    function deleteSite() {
-        if(confirm('削除しますか？')) {
-            const newSites = sites.filter(s => s.id !== siteId);
-            localStorage.setItem('dx_sites', JSON.stringify(newSites));
-            window.location.href = 'navi.html';
-        }
-    }
-
-    // --- (以下、既存のカレンダー・カメラ・日報等の関数。変更なし) ---
-    
     function handleCalendarAction() {
         const calId = localStorage.getItem('dx_calendar_id');
         if (calId && calId.trim() !== "") openModal('calSelect'); else openPersonalCalendar();
     }
     function openPersonalCalendar() {
-        let stLabel = currentSite.status === 'active' ? '施工中' : '現調予定';
-        const url = `https://www.google.com/calendar/render?action=TEMPLATE&text=${encodeURIComponent(`【${stLabel}】${currentSite.name}`)}&location=${encodeURIComponent(currentSite.address)}`;
+        // ★修正：ステータス表示
+        let stLabel = '現調予定';
+        if(currentSite.status === 'contract' || currentSite.status === 'active') stLabel = '施工中';
+        
+        const text = encodeURIComponent(`【${stLabel}】${currentSite.name}`);
+        const location = encodeURIComponent(currentSite.address);
+        const url = `https://www.google.com/calendar/render?action=TEMPLATE&text=${text}&location=${location}`;
         window.open(url, '_blank');
         closeAllModals();
     }
     function registerSharedCalendar() {
-        if(!confirm("共有カレンダーに登録しますか？")) return;
-        const calId = localStorage.getItem('dx_calendar_id'), gasUrl = localStorage.getItem('dx_gas_url');
-        if(!gasUrl) { alert("GAS URL未設定"); return; }
-        fetch(gasUrl, { method: 'POST', mode: 'no-cors', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ type: "calendar", calendarId: calId, id: currentSite.id, title: `【${currentSite.status === 'active'?'施工中':'予定'}】${currentSite.name}`, address: currentSite.address, status: currentSite.status }) })
-        .then(() => { alert("✅ 登録しました"); closeAllModals(); }).catch(err => alert("送信エラー"));
+        if(!confirm("共有カレンダーに、本日の予定として登録しますか？")) return;
+        const calId = localStorage.getItem('dx_calendar_id');
+        const gasUrl = localStorage.getItem('dx_gas_url');
+        if(!gasUrl) { alert("GAS URL設定がありません"); return; }
+
+        const data = {
+            type: "calendar",
+            calendarId: calId,
+            id: currentSite.id,
+            title: `【${(currentSite.status === 'contract' || currentSite.status === 'active') ? '施工中' : '予定'}】${currentSite.name}`,
+            address: currentSite.address,
+            status: currentSite.status
+        };
+        
+        fetch(gasUrl, {
+            method: 'POST',
+            mode: 'no-cors',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(data)
+        }).then(() => { alert("✅ 共有カレンダーに登録しました！"); closeAllModals(); }).catch(err => alert("送信エラー"));
     }
 
     const canvas = document.getElementById('boardCanvas'), ctx = canvas ? canvas.getContext('2d') : null;
@@ -380,50 +328,74 @@
     overlayBoard.addEventListener('touchmove', (e) => { if (!isDragging) return; overlayBoard.style.left = `${initialLeft + e.touches[0].clientX - startX}px`; overlayBoard.style.top = `${initialTop + e.touches[0].clientY - startY}px`; e.preventDefault(); });
     overlayBoard.addEventListener('touchend', () => isDragging = false);
 
-    function renderCustomButtons() { const g = document.getElementById('customBtnGroup'); g.innerHTML = ''; customLabels.forEach(l => { const b = document.createElement('button'); b.className = 'proc-btn'; b.textContent = l; b.onclick = function() { setProcess(this, l); }; g.appendChild(b); }); }
-    function editCustomButtons() { for(let i=0; i<5; i++) { const n = prompt(`ボタン${i+1}の名前:`, customLabels[i]); if(n) customLabels[i] = n; } localStorage.setItem('dx_custom_btns', JSON.stringify(customLabels)); renderCustomButtons(); }
+    function renderCustomButtons() { const group = document.getElementById('customBtnGroup'); group.innerHTML = ''; customLabels.forEach((label, index) => { const btn = document.createElement('button'); btn.className = 'proc-btn'; btn.textContent = label; btn.onclick = function() { setProcess(this, label); }; group.appendChild(btn); }); }
+    function editCustomButtons() { for(let i=0; i<5; i++) { const newName = prompt(`ボタン${i+1}の名前を変更:`, customLabels[i]); if(newName) customLabels[i] = newName; } localStorage.setItem('dx_custom_btns', JSON.stringify(customLabels)); renderCustomButtons(); }
     
-    function openModal(t) { document.getElementById('overlay').classList.add('show'); if(t==='camera') openCameraModal(); if(t==='report') { document.getElementById('reportModal').classList.add('show'); renderReportHistory(); } if(t==='calSelect') document.getElementById('calSelectModal').classList.add('show'); }
+    function openModal(type) { 
+        document.getElementById('overlay').classList.add('show'); 
+        if(type === 'camera') openCameraModal(); 
+        if(type === 'report') { document.getElementById('reportModal').classList.add('show'); renderReportHistory(); } 
+        if(type === 'calSelect') { document.getElementById('calSelectModal').classList.add('show'); }
+    }
     function openCameraModal() { document.getElementById('overlay').classList.add('show'); document.getElementById('cameraModal').classList.add('show'); drawBoard(); }
+    function openForm() { document.getElementById('overlay').classList.add('show'); document.getElementById('inputForm').classList.add('show'); document.getElementById('siteName').value = currentSite ? currentSite.name : ''; document.getElementById('address').value = currentSite ? currentSite.address : ''; document.getElementById('status').value = currentSite ? currentSite.status : 'estimate'; }
     function closeAllModals() { document.querySelectorAll('.modal-box').forEach(el => el.classList.remove('show')); document.getElementById('overlay').classList.remove('show'); stopSpeech(); if(document.getElementById('photoPreviewArea').style.display==='flex') retakePhoto(); }
+    function saveEdit() { const name = document.getElementById('siteName').value; const address = document.getElementById('address').value; const status = document.getElementById('status').value; if(!name) return; if (siteId) { const index = sites.findIndex(s => s.id === siteId); if(index !== -1) { sites[index].name = name; sites[index].address = address; sites[index].status = status; sites[index].updatedAt = Date.now(); localStorage.setItem('dx_sites', JSON.stringify(sites)); location.reload(); } } else { alert("現場IDがありません"); } }
+    function deleteSite() { if(confirm('削除しますか？')) { const newSites = sites.filter(s => s.id !== siteId); localStorage.setItem('dx_sites', JSON.stringify(newSites)); window.location.href = 'navi.html'; } }
+    function searchSupply() { 
+        if (navigator.geolocation) { 
+            navigator.geolocation.getCurrentPosition(pos => { 
+                const url = `https://www.google.com/maps/search/ホームセンター/@${pos.coords.latitude},${pos.coords.longitude},14z`;
+                window.open(url, '_blank'); 
+            }, () => { alert("位置情報が取得できません"); }); 
+        } else { alert('位置情報が使えません'); } 
+    }
     
-    function searchSupply() { if (navigator.geolocation) { navigator.geolocation.getCurrentPosition(p => { window.open(`https://www.google.com/maps/search/建材屋/@${p.coords.latitude},${p.coords.longitude},13z`, '_blank'); }, () => alert("位置情報エラー")); } else alert('位置情報不可'); }
-    
-    let recognition, isRecognizing = false; if ('webkitSpeechRecognition' in window) { recognition = new webkitSpeechRecognition(); recognition.continuous = true; recognition.interimResults = true; recognition.lang = 'ja-JP'; recognition.onresult = function(e) { let t = ''; for (let i = e.resultIndex; i < e.results.length; ++i) { if (e.results[i].isFinal) t += e.results[i][0].transcript; } if (t) document.getElementById('reportText').value += (document.getElementById('reportText').value ? '\n' : '') + t; }; recognition.onend = function() { isRecognizing = false; document.getElementById('micBtn').classList.remove('mic-active'); }; }
-    function toggleSpeech() { if (!recognition) { alert('このブラウザは音声入力非対応です。\nキーボードのマイクボタンを使ってください。'); return; } if (isRecognizing) stopSpeech(); else { recognition.start(); isRecognizing = true; document.getElementById('micBtn').classList.add('mic-active'); } }
+    // 音声認識
+    let recognition; let isRecognizing = false; 
+    if ('webkitSpeechRecognition' in window) { 
+        recognition = new webkitSpeechRecognition(); recognition.continuous = true; recognition.interimResults = true; recognition.lang = 'ja-JP'; 
+        recognition.onresult = function(event) { let t = ''; for (let i = event.resultIndex; i < event.results.length; ++i) { if (event.results[i].isFinal) t += event.results[i][0].transcript; } if (t) document.getElementById('reportText').value += (document.getElementById('reportText').value ? '\n' : '') + t; }; 
+        recognition.onend = function() { isRecognizing = false; document.getElementById('micBtn').classList.remove('mic-active'); }; 
+    }
+    function toggleSpeech() { if (!recognition) { alert('このブラウザは音声入力非対応です。'); return; } if (isRecognizing) stopSpeech(); else { recognition.start(); isRecognizing = true; document.getElementById('micBtn').classList.add('mic-active'); } }
     function stopSpeech() { if(recognition) recognition.stop(); isRecognizing = false; document.getElementById('micBtn').classList.remove('mic-active'); }
+
+    function sendReport() { const text = document.getElementById('reportText').value; if(!text) return; const lineUrl = `https://line.me/R/msg/text/?【日報：${currentSite ? currentSite.name : '現場'}】%0A${encodeURIComponent(text)}`; window.open(lineUrl, '_blank'); }
+    function sendReportMail() { const text = document.getElementById('reportText').value; if(!text) return; const mailTo = localStorage.getItem('dx_manager_email'); if(!mailTo) { alert("【設定エラー】\nナビ画面の「設定(⚙️)」から、管理者のメールアドレスを登録してください。"); return; } saveReportLocal(); const subject = `【日報】${currentSite ? currentSite.name : '現場'} (${new Date().toLocaleDateString()})`; const body = `${currentSite ? currentSite.name : '現場'}\n\n${text}\n\n--\nSent from 職人ギア`; const mailUrl = `mailto:${mailTo}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`; window.location.href = mailUrl; }
     
-    function sendReport() { const t = document.getElementById('reportText').value; if(!t) return; window.open(`https://line.me/R/msg/text/?【日報：${currentSite.name}】%0A${encodeURIComponent(t)}`, '_blank'); }
-    function sendReportMail() { const t = document.getElementById('reportText').value; if(!t) return; const m = localStorage.getItem('dx_manager_email'); if(!m) { alert("メール設定が必要です"); return; } saveReportLocal(); location.href = `mailto:${m}?subject=${encodeURIComponent(`【日報】${currentSite.name}`)}&body=${encodeURIComponent(`${currentSite.name}\n\n${t}`)}`; }
     function saveReportLocal() { 
-        const t = document.getElementById('reportText').value; if(!t) { alert('内容が空です'); return; } const tid = siteId || 'preview';
-        if (!reportHistory[tid]) reportHistory[tid] = []; 
-        reportHistory[tid].unshift({ date: new Date().toLocaleString(), content: t }); 
+        const text = document.getElementById('reportText').value; if(!text) { alert('日報の内容が空です'); return; }
+        const targetId = siteId || 'preview';
+        if (!reportHistory[targetId]) { reportHistory[targetId] = []; } 
+        reportHistory[targetId].unshift({ date: new Date().toLocaleString(), content: text }); 
         localStorage.setItem('dx_reports', JSON.stringify(reportHistory)); 
         renderReportHistory(); document.getElementById('reportText').value = ''; alert('履歴に保存しました'); 
     }
+    
     function renderReportHistory() { 
-        const l = document.getElementById('reportHistoryList'); l.innerHTML = ''; const tid = siteId || 'preview';
-        if (!reportHistory[tid] || reportHistory[tid].length === 0) { l.innerHTML = '<div style="color:#777; font-size:0.8rem;">履歴はありません</div>'; return; } 
-        reportHistory[tid].forEach(i => { l.insertAdjacentHTML('beforeend', `<div class="history-item"><div class="history-date">${i.date||"不明"}</div><div>${i.content||i}</div></div>`); }); 
+        const listEl = document.getElementById('reportHistoryList'); listEl.innerHTML = ''; 
+        const targetId = siteId || 'preview';
+        if (!reportHistory[targetId] || reportHistory[targetId].length === 0) { listEl.innerHTML = '<div style="color:#777; font-size:0.8rem;">履歴はありません</div>'; return; } 
+        reportHistory[targetId].forEach(item => { listEl.insertAdjacentHTML('beforeend', `<div class="history-item"><div class="history-date">${item.date || "日時不明"}</div><div>${item.content || item}</div></div>`); }); 
     }
+
     function sendReportCloud() {
-        const t = document.getElementById('reportText').value; if(t) saveReportLocal();
-        const u = localStorage.getItem('dx_gas_url'); if(!u) { alert("GAS URL設定が必要です"); return; }
-        const today = new Date().toLocaleDateString(), tid = siteId || 'preview';
-        let reps = (reportHistory[tid] || []).filter(i => i.date.split(' ')[0] === today);
-        if(reps.length === 0) { alert("本日の日報データがありません。\nまずは「履歴に残す」を押してください。"); return; }
-        reps.reverse(); const combined = reps.map(i => `[${i.date.split(' ')[1]}] ${i.content}`).join('\n');
-        const btn = event.target, txt = btn.innerText; btn.innerText = "送信中..."; btn.disabled = true;
-        fetch(u, { method: 'POST', mode: 'no-cors', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ type: "report", siteName: currentSite?currentSite.name:"未定", content: combined, address: currentSite?currentSite.address:"", id: currentSite?currentSite.id:"" }) })
-        .then(() => { alert("☁️ 送信完了！"); btn.innerText = txt; btn.disabled = false; }).catch(err => { alert("送信エラー"); console.error(err); btn.innerText = txt; btn.disabled = false; });
-    }
-    function sendReportLine() {
         const text = document.getElementById('reportText').value;
-        if(!text) return;
-        // LINEスキームでテキストを送る
-        const url = `https://line.me/R/msg/text/?【日報：${currentSite.name}】%0A${encodeURIComponent(text)}`;
-        window.open(url, '_blank');
+        if(text) { saveReportLocal(); } 
+        const gasUrl = localStorage.getItem('dx_gas_url');
+        if(!gasUrl) { alert("【設定エラー】\nナビ画面の設定から「GAS URL」を登録してください。"); return; }
+        const reporterName = localStorage.getItem('dx_reporter_name') || "職人";
+        const today = new Date().toLocaleDateString();
+        let todayReports = [];
+        const targetId = siteId || 'preview';
+        if(reportHistory[targetId]) { todayReports = reportHistory[targetId].filter(item => item.date.split(' ')[0] === today); }
+        if(todayReports.length === 0) { alert("本日の日報データがありません。\nまずは「履歴に残す」を押してください。"); return; }
+        todayReports.reverse(); 
+        let combinedText = todayReports.map(item => `[${item.date.split(' ')[1]}] ${item.content}`).join('\n');
+        const data = { type: "report", siteName: currentSite ? currentSite.name : "未定", content: combinedText, address: currentSite ? currentSite.address : "", id: currentSite ? currentSite.id : "", reporter: reporterName };
+        const btn = event.target; const originalText = btn.innerText; btn.innerText = "送信中..."; btn.disabled = true;
+        fetch(gasUrl, { method: 'POST', mode: 'no-cors', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(data) }).then(() => { alert("☁️ クラウドに日報を送信しました！"); btn.innerText = originalText; btn.disabled = false; }).catch(err => { alert("送信エラー"); console.error(err); btn.innerText = originalText; btn.disabled = false; });
     }
 </script>
 </body>

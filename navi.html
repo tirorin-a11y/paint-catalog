@@ -25,11 +25,16 @@
         .site-card { background: white; border-radius: 12px; padding: 16px; margin-bottom: 16px; box-shadow: 0 2px 6px rgba(0,0,0,0.06); position: relative; transition: transform 0.2s; }
         .card-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
         .case-no { font-size: 0.8rem; color: #666; background: #eee; padding: 3px 8px; border-radius: 4px; font-family: monospace; font-weight: bold; }
+        
         .status-badge { font-size: 0.75rem; padding: 4px 10px; border-radius: 20px; font-weight: bold; }
-        .st-plan { background-color: #fff3e0; color: #f57c00; border: 1px solid #ffe0b2; }
-        .st-active { background-color: #e3f2fd; color: #1976d2; border: 1px solid #bbdefb; }
-        .st-done { background-color: #f5f5f5; color: #757575; border: 1px solid #e0e0e0; }
-        .st-handover { background-color: #34495e; color: #fff; border: 1px solid #2c3e50; }
+        
+        /* ★修正：新しいステータス用の色定義 */
+        .st-estimate { background-color: #fff3e0; color: #f57c00; border: 1px solid #ffe0b2; } /* 見積中 (オレンジ) */
+        .st-contract { background-color: #e3f2fd; color: #1976d2; border: 1px solid #bbdefb; } /* 契約済み (青) */
+        .st-billing { background-color: #f3e5f5; color: #8e24aa; border: 1px solid #e1bee7; } /* 請求 (紫) */
+        .st-complete { background-color: #f5f5f5; color: #757575; border: 1px solid #e0e0e0; } /* 完了 (グレー) */
+        .st-lost { background-color: #333; color: #fff; border: 1px solid #000; } /* 失注 (黒) */
+
         .site-name { font-size: 1.25rem; font-weight: bold; margin-bottom: 6px; line-height: 1.4; }
         .site-address { font-size: 0.9rem; color: #555; margin-bottom: 16px; display: flex; align-items: center; gap: 4px; }
         .card-actions { margin-top: 15px; display: flex; gap: 8px; align-items: flex-end; }
@@ -57,8 +62,6 @@
 
         .id-input-group { display: flex; align-items: center; gap: 10px; margin-top: 5px; }
         .input-year { width: 30%; text-align: center; background: #f0f0f0; color: #555; border: 1px solid #ccc; font-weight: bold; }
-        
-        /* ★修正：readonlyじゃない時は白背景で編集可能に見せる */
         .input-year:not([readonly]) { background: #fff; color: #d35400; border: 2px solid #e67e22; }
 
         .input-num { width: 60%; text-align: center; font-family: monospace; letter-spacing: 2px; font-weight: bold; transition: 0.3s; }
@@ -87,8 +90,8 @@
 
 <header>
     <div class="header-title-area">
-        <h1>🚗 アクションギア</h1>
-        <a href="manager.html" class="link-control">📊 管理へ</a>
+        <h1>🚗 現場ナビ</h1>
+        <a href="manager.html" class="link-control">📊 工程管理</a>
     </div>
     <div class="header-btn-group">
         <span class="icon-btn" onclick="toggleSortMode()" title="並び替え">⇅</span>
@@ -132,10 +135,11 @@
     
     <label>現在の状況</label>
     <select id="status">
-        <option value="plan">📝 現調予定</option>
-        <option value="active">🏗️ 施工中</option>
-        <option value="done">✅ 完工</option>
-        <option value="handover">🏠 引き渡し</option>
+        <option value="estimate">📄 見積中</option>
+        <option value="contract">🤝 契約済み</option>
+        <option value="billing">💰 請求</option>
+        <option value="complete">✅ 完了</option>
+        <option value="lost">❌ 失注</option>
     </select>
 
     <div id="naviCountArea" style="display:none;">
@@ -155,6 +159,11 @@
     <h3>⚙️ 設定・データ管理</h3>
     
     <div style="margin-bottom: 15px; padding-bottom: 15px; border-bottom: 1px solid #eee;">
+        <label style="margin-top:0;">👤 報告者名 (あなたの名前)</label>
+        <input type="text" id="reporterName" placeholder="例：山岡" onchange="saveSettings()" style="background:#f9f9f9;">
+    </div>
+
+    <div style="margin-bottom: 15px; padding-bottom: 15px; border-bottom: 1px solid #eee;">
         <label style="margin-top:0;">📩 日報の送信先（メールアドレス）</label>
         <input type="email" id="managerEmail" placeholder="example@gmail.com" onchange="saveSettings()" style="background:#f9f9f9;">
     </div>
@@ -162,13 +171,11 @@
     <div style="margin-bottom: 15px; padding-bottom: 15px; border-bottom: 1px solid #eee;">
         <label style="margin-top:0;">☁️ 日報・データの送信先（GAS URL）</label>
         <input type="text" id="gasUrl" placeholder="https://script.google.com/..." onchange="saveSettings()" style="background:#f9f9f9; font-size:0.8rem;">
-        <p style="font-size:0.7rem; color:#888; margin:5px 0 0;">※管理者が発行したURLを貼り付けてください</p>
     </div>
 
     <div style="margin-bottom: 15px; padding-bottom: 15px; border-bottom: 1px solid #eee;">
         <label style="margin-top:0;">📅 共有カレンダーID (任意)</label>
         <input type="text" id="calendarId" placeholder="example@group.calendar.google.com" onchange="saveSettings()" style="background:#f9f9f9; font-size:0.8rem;">
-        <p style="font-size:0.7rem; color:#888; margin:5px 0 0;">※入力すると、ツール画面のカレンダーボタンがこのカレンダーへの自動登録に切り替わります。</p>
     </div>
 
     <a href="index.html" class="settings-item">🔍 <strong>カタログ検索へ</strong></a>
@@ -209,29 +216,25 @@
 
     if (sites.length === 0) {
         sites = [
-            { id: '2025-001', name: '【サンプル】鈴木様邸', address: '東京都墨田区押上1-1-2', status: 'active', updatedAt: Date.now(), naviCount: 0 }
+            { id: '2025-001', name: '【サンプル】鈴木様邸', address: '東京都墨田区押上1-1-2', status: 'contract', updatedAt: Date.now(), naviCount: 0 }
         ];
         localStorage.setItem('dx_sites', JSON.stringify(sites));
     }
 
     function saveSettings() {
-        const email = document.getElementById('managerEmail').value;
-        const gas = document.getElementById('gasUrl').value;
-        const calId = document.getElementById('calendarId').value;
-        localStorage.setItem('dx_manager_email', email);
-        localStorage.setItem('dx_gas_url', gas);
-        localStorage.setItem('dx_calendar_id', calId);
+        localStorage.setItem('dx_reporter_name', document.getElementById('reporterName').value);
+        localStorage.setItem('dx_manager_email', document.getElementById('managerEmail').value);
+        localStorage.setItem('dx_gas_url', document.getElementById('gasUrl').value);
+        localStorage.setItem('dx_calendar_id', document.getElementById('calendarId').value);
         showNotification('⚙️ 設定を保存しました');
     }
     
     document.addEventListener('DOMContentLoaded', function() {
         renderList();
-        const savedEmail = localStorage.getItem('dx_manager_email');
-        if(savedEmail) document.getElementById('managerEmail').value = savedEmail;
-        const savedGas = localStorage.getItem('dx_gas_url');
-        if(savedGas) document.getElementById('gasUrl').value = savedGas;
-        const savedCal = localStorage.getItem('dx_calendar_id');
-        if(savedCal) document.getElementById('calendarId').value = savedCal;
+        if(localStorage.getItem('dx_reporter_name')) document.getElementById('reporterName').value = localStorage.getItem('dx_reporter_name');
+        if(localStorage.getItem('dx_manager_email')) document.getElementById('managerEmail').value = localStorage.getItem('dx_manager_email');
+        if(localStorage.getItem('dx_gas_url')) document.getElementById('gasUrl').value = localStorage.getItem('dx_gas_url');
+        if(localStorage.getItem('dx_calendar_id')) document.getElementById('calendarId').value = localStorage.getItem('dx_calendar_id');
     });
 
     function handleTouchStart(btn, id, address) {
@@ -281,6 +284,17 @@
         renderList();
     }
 
+    function getStatusText(status) {
+        const map = {
+            'estimate': '見積中', 'plan': '見積中', // 旧planも見積中へ
+            'contract': '契約済み', 'active': '契約済み', // 旧activeも契約済みへ
+            'billing': '請求',
+            'complete': '完了', 'done': '完了', 'handover': '完了', // 旧完了系も完了へ
+            'lost': '失注'
+        };
+        return map[status] || '見積中';
+    }
+
     function renderList() {
         const listEl = document.getElementById('siteList');
         const keyword = document.getElementById('searchInput').value.toLowerCase();
@@ -289,10 +303,12 @@
         sites.forEach((site, index) => {
             if (keyword && !site.name.toLowerCase().includes(keyword) && !site.address.toLowerCase().includes(keyword) && !site.id.includes(keyword)) { return; }
 
-            let stLabel = '現調予定', stClass = 'st-plan';
-            if(site.status === 'active') { stLabel = '施工中'; stClass = 'st-active'; }
-            if(site.status === 'done') { stLabel = '完工'; stClass = 'st-done'; }
-            if(site.status === 'handover') { stLabel = '引き渡し'; stClass = 'st-handover'; }
+            // ★ステータス表示ロジック
+            let stLabel = '見積中', stClass = 'st-estimate';
+            if(site.status === 'contract' || site.status === 'active') { stLabel = '契約済み'; stClass = 'st-contract'; }
+            if(site.status === 'billing') { stLabel = '請求'; stClass = 'st-billing'; }
+            if(site.status === 'complete' || site.status === 'done' || site.status === 'handover') { stLabel = '完了'; stClass = 'st-complete'; }
+            if(site.status === 'lost') { stLabel = '失注'; stClass = 'st-lost'; }
             
             const mapUrl = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(site.address)}`;
             const naviCount = site.naviCount || 0;
@@ -358,7 +374,7 @@
         const now = Date.now();
         
         sites.unshift({
-            id: newId, name: name + ' (コピー)', address: address, status: 'plan', 
+            id: newId, name: name + ' (コピー)', address: address, status: 'estimate', 
             parentCaseNo: parentNo, updatedAt: now, naviCount: 0,
             start: '', end: ''
         });
@@ -423,9 +439,7 @@
         const numInput = document.getElementById('inputNum');
         const yearInput = document.getElementById('inputYear');
         
-        // ★修正：年は常に編集可能にする (編集モードでも変えたい場合があるため)
         yearInput.readOnly = false;
-
         numInput.readOnly = true; numInput.classList.remove('unlocked'); numInput.classList.add('locked'); tapCount = 0;
         const todayYear = new Date().getFullYear();
 
@@ -439,7 +453,7 @@
             document.getElementById('inputNum').value = getNextNum(todayYear);
             document.getElementById('siteName').value = '';
             document.getElementById('address').value = '';
-            document.getElementById('status').value = 'plan';
+            document.getElementById('status').value = 'estimate'; // 初期値は見積中
             document.getElementById('editNaviCount').value = 0;
             document.getElementById('parentCaseNo').value = '';
             document.getElementById('startDate').value = ''; 
@@ -470,7 +484,6 @@
         const y = document.getElementById('inputYear').value;
         const n = document.getElementById('inputNum').value;
         if(!y || !n) return;
-        
         const checkId = `${y}-${n.toString().padStart(3, '0')}`;
         const found = sites.find(s => s.id === checkId);
         
@@ -482,15 +495,12 @@
             document.getElementById('editNaviCount').value = found.naviCount || 0;
             document.getElementById('startDate').value = found.start || '';
             document.getElementById('endDate').value = found.end || '';
-
-            isEditing = true;
-            editingId = checkId;
+            isEditing = true; editingId = checkId;
             document.getElementById('btnDeleteSingle').style.display = 'flex';
             document.getElementById('btnDuplicate').style.display = 'flex';
             document.getElementById('naviCountArea').style.display = 'block';
         } else {
-            isEditing = false;
-            editingId = null;
+            isEditing = false; editingId = null;
             document.getElementById('btnDeleteSingle').style.display = 'none';
             document.getElementById('btnDuplicate').style.display = 'none';
             document.getElementById('naviCountArea').style.display = 'none';
@@ -518,9 +528,7 @@
         if(!el.readOnly) return; 
         tapCount++; 
         if(tapCount >= 5) { 
-            el.readOnly = false; 
-            el.classList.remove('locked'); 
-            el.classList.add('unlocked'); 
+            el.readOnly = false; el.classList.remove('locked'); el.classList.add('unlocked'); 
             showNotification('🔓 ロック解除しました'); 
             tapCount = 0; 
         } 
@@ -541,19 +549,14 @@
         
         if (navigator.share && navigator.canShare && navigator.canShare({ files: [file] })) { 
             try { await navigator.share({ files: [file] }); } catch (e) { forceDL(file); } 
-        } else { 
-            forceDL(file); 
-        } 
+        } else { forceDL(file); } 
     }
     
     function forceDL(file) { 
         const url = URL.createObjectURL(file); 
         const link = document.createElement("a"); 
-        link.setAttribute("href", url); 
-        link.setAttribute("download", file.name); 
-        document.body.appendChild(link); 
-        link.click(); 
-        document.body.removeChild(link); 
+        link.setAttribute("href", url); link.setAttribute("download", file.name); 
+        document.body.appendChild(link); link.click(); document.body.removeChild(link); 
         showNotification('📥 保存しました'); 
     }
     
@@ -565,23 +568,23 @@
             try { 
                 const importedSites = JSON.parse(e.target.result); 
                 if (!Array.isArray(importedSites)) { alert('エラー'); return; } 
-                let countAdded = 0; 
-                let countUpdated = 0; 
+                let countAdded = 0; let countUpdated = 0; 
                 importedSites.forEach(newSite => { 
                     const index = sites.findIndex(s => s.id === newSite.id); 
                     if (index !== -1) { 
-                        if ((newSite.updatedAt || 0) > (sites[index].updatedAt || 0)) { 
-                            sites[index] = newSite; 
-                            countUpdated++; 
-                        } 
-                    } else { 
-                        sites.push(newSite); 
-                        countAdded++; 
-                    } 
-                }); 
+                        if ((newSite.updatedAt || 0) > (sites[index].updatedAt || 0)) { sites[index] = newSite; countUpdated++; } 
+                    } else { sites.push(newSite); countAdded++; } 
+                });
+                
+                // ID順（降順）にソート
+                sites.sort((a, b) => {
+                    if (a.id > b.id) return -1;
+                    if (a.id < b.id) return 1;
+                    return 0;
+                });
+
                 localStorage.setItem('dx_sites', JSON.stringify(sites)); 
-                renderList(); 
-                closeAllModals(); 
+                renderList(); closeAllModals(); 
                 showNotification(`復元: ${countUpdated}件更新, ${countAdded}件追加`); 
             } catch (err) { alert('読み込み失敗'); } 
             input.value = ''; 
@@ -591,31 +594,28 @@
     
     function deleteAllData() { 
         if(confirm('【警告】\n本当に全データを削除しますか？')) { 
-            sites = []; 
-            localStorage.setItem('dx_sites', JSON.stringify(sites)); 
-            renderList(); 
-            closeAllModals(); 
-            showNotification('🗑️ 全データを削除しました'); 
+            sites = []; localStorage.setItem('dx_sites', JSON.stringify(sites)); 
+            renderList(); closeAllModals(); showNotification('🗑️ 全データを削除しました'); 
         } 
     }
     
-    function getStatusText(status) { 
-        switch (status) { 
-            case 'active': return '施工中'; 
-            case 'done': return '完工'; 
-            case 'handover': return '引き渡し'; 
-            case 'plan': return '現調予定'; 
-            default: return '現調予定'; 
-        } 
-    }
-    
+    // ★重要：クラウド同期時にステータスを日本語化して送る
     function syncAllDataToCloud() {
         const gasUrl = localStorage.getItem('dx_gas_url');
         if(!gasUrl) { alert("設定から「GAS URL」を登録してください"); return; }
         if(!confirm("全現場データをクラウド（スプレッドシート）にバックアップしますか？\n※向こうのデータは上書きされます")) return;
 
         showNotification('☁️ 同期中...');
-        const data = { type: "sync", data: sites };
+        
+        // ステータスを日本語に変換したデータを作成
+        const exportData = sites.map(s => {
+            return {
+                ...s,
+                status: getStatusText(s.status) // 日本語に変換
+            };
+        });
+
+        const data = { type: "sync", data: exportData };
 
         fetch(gasUrl, {
             method: 'POST',
@@ -640,9 +640,7 @@
         const file = new File([csvContent], fileName, { type: "text/csv" }); 
         if (navigator.share && navigator.canShare && navigator.canShare({ files: [file] })) { 
             try { await navigator.share({ files: [file] }); } catch (e) { forceDL(file); } 
-        } else { 
-            forceDL(file); 
-        } 
+        } else { forceDL(file); } 
     }
     
     function copyToClipboard() { 

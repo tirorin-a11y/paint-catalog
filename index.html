@@ -8,6 +8,82 @@
     <link rel="apple-touch-icon" href="icon-192x192.png">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <link rel="stylesheet" href="style.css">
+    <style>
+        /* index.html 専用スタイル */
+        .nav-area {
+            display: flex;
+            flex-direction: column; /* 縦並び */
+            gap: 15px;
+            margin-bottom: 30px;
+        }
+        .nav-btn-large {
+            width: 100%;
+            padding: 20px;
+            font-size: 1.3rem;
+            font-weight: bold;
+            color: white;
+            border: none;
+            border-radius: 12px;
+            cursor: pointer;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            text-decoration: none;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            transition: transform 0.1s;
+            box-sizing: border-box;
+        }
+        .nav-btn-large:active {
+            transform: translateY(2px);
+            box-shadow: none;
+        }
+        .btn-navi { background-color: #00C853; } /* 緑 */
+        .btn-manager { background-color: #2c3e50; } /* 紺 */
+
+        /* 検索エリアのデザイン調整 */
+        .search-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+        .search-title {
+            font-weight: bold;
+            font-size: 1.2rem;
+            color: #0056b3;
+            margin: 0;
+            border: none;
+        }
+        .hint-btn {
+            font-size: 0.8rem;
+            background: #f0f8ff;
+            border: 1px solid #007bff;
+            color: #007bff;
+            border-radius: 15px;
+            padding: 4px 12px;
+            cursor: pointer;
+        }
+        .filter-section {
+            background-color: #f9f9f9;
+            padding: 15px;
+            border-radius: 8px;
+            border: 1px solid #eee;
+            margin-top: 15px;
+        }
+        .filter-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+            margin-top: 10px;
+        }
+        /* リストスタイル */
+        .item-main { display: flex; align-items: center; flex-wrap: wrap; gap: 5px; }
+        .result-link { font-weight: bold; text-decoration: none; color: #007bff; font-size: 1.1rem; }
+        .pdf-link { color: #d9534f; font-size: 0.9rem; font-weight: bold; text-decoration: none; }
+        .badge-stop { color: #d9534f; border: 1px solid #d9534f; font-size: 0.7rem; padding: 1px 3px; border-radius: 3px; }
+        .loading-msg { text-align: center; color: #666; padding: 20px; }
+    </style>
 </head>
 <body>
 
@@ -17,25 +93,14 @@
 
     <main>
         
-        <section class="tool-section">
-            <h2>📱 現場管理 DX手帳</h2>
-            <p style="font-size:14px; color:#666; margin-bottom:15px;">
-                現場の住所管理、ナビ一発起動、工程表の作成ができるツールです。<br>
-                データは端末内に保存されるため安全です。
-            </p>
-            <div style="display:flex; gap:15px; flex-wrap:wrap;">
-                <a href="navi.html" style="text-decoration:none;">
-                    <button style="background-color:#00C853; padding:15px 25px; font-size:1.1rem; font-weight:bold; box-shadow: 0 4px 6px rgba(0,0,0,0.1); color: white; border: none; border-radius: 8px; cursor: pointer;">
-                        🚗 アクションギア
-                    </button>
-                </a>
-                <a href="manager.html" style="text-decoration:none;">
-                    <button style="background-color:#2c3e50; padding:15px 25px; font-size:1.1rem; font-weight:bold; box-shadow: 0 4px 6px rgba(0,0,0,0.1); color: white; border: none; border-radius: 8px; cursor: pointer;">
-                        📊 コントロールギア
-                    </button>
-                </a>
-            </div>
-        </section>
+        <div class="nav-area">
+            <a href="navi.html" class="nav-btn-large btn-navi">
+                🚗 現場ナビ
+            </a>
+            <a href="manager.html" class="nav-btn-large btn-manager">
+                📊 工程管理
+            </a>
+        </div>
 
         <section class="tool-section">
             <h2>📢 更新情報</h2>
@@ -43,8 +108,6 @@
                 <ul>
                     <li><strong>2025.11.24</strong> : 検索結果に「一般名称」を表示するように改良！</li>
                     <li><strong>2025.11.16</strong> : 絞り込み機能を4大分類（大分類・用途・タイプ・樹脂）に再構築。</li>
-                    <li><strong>2025.11.15</strong> : 日本ペイントのデータを追加しました！</li>
-                    <li><strong>2025.11.14</strong> : サイト公開！エスケー化研に対応。</li>
                 </ul>
             </div>
         </section>
@@ -55,105 +118,51 @@
                 スマホで「アプリ化」しませんか？
             </h3>
             <p style="font-size: 13px; color: #333; line-height: 1.6; margin: 0;">
-                このサイトを「ホーム画面に追加」すると、アイコンから1タップで起動でき、アドレスバーなしの全画面で使えます。<br>
-                タブでカタログ比較もしやすくなります！
+                ホーム画面に追加すると、全画面で快適に使えます。
             </p>
         </section>
 
         <section class="tool-section">
-            <h2>職人仕様 塗料カタログ検索</h2>
-            
-            <div class="search-main-area" style="margin-bottom: 20px;">
-                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:5px;">
-                    <label for="catalogSearch" style="font-weight:bold; font-size:18px; color:#007bff; margin:0;">
-                        🔍 全メーカー横断検索
-                    </label>
-                    <button id="hintButton" style="font-size:12px; background:#f0f8ff; border:1px solid #007bff; color:#007bff; border-radius:15px; padding:2px 10px; cursor:pointer;">
-                        💡 キーワード候補
-                    </button>
-                </div>
-                
-                <p style="font-size:12px; color:#666; margin-bottom:10px;">
-                    品名、一般名称、キーワード（例：「バイオ」）などで一括検索できます。
-                </p>
-                <div style="display: flex; gap: 5px;">
-                    <input type="text" id="catalogSearch" placeholder="キーワード（例: シリコン 屋根）" 
-                           style="flex: 1; padding: 12px; font-size: 16px; border: 2px solid #007bff; border-radius: 4px;">
-                </div>
+            <div class="search-header">
+                <h2 class="search-title">🔍 塗料カタログ検索</h2>
+                <button id="hintButton" class="hint-btn">💡 キーワード候補</button>
             </div>
+            
+            <input type="text" id="catalogSearch" placeholder="品名、一般名称、キーワード (例: シリコン 屋根)" 
+                   style="width: 100%; padding: 12px; font-size: 1rem; border: 2px solid #007bff; border-radius: 6px; box-sizing: border-box;">
 
-            <div class="search-filter-area" style="background-color: #f9f9f9; padding: 15px; border-radius: 8px; border: 1px solid #eee;">
-                <p style="margin: 0 0 10px 0; font-size: 14px; font-weight:bold; color:#555;">
-                    ⚙️ メーカーで絞り込む <span style="font-weight:normal; font-size:12px; color:#888;">（指定しなくてもOK）</span>
-                </p>
-                <select id="maker1" style="width:100%; padding:8px; border:1px solid #ccc; border-radius:4px; background:white;">
+            <div class="filter-section">
+                <label style="font-weight:bold; font-size:0.9rem; color:#555;">⚙️ メーカーで絞り込み</label>
+                <select id="maker1" style="width:100%; padding:8px; margin-top:5px; border:1px solid #ccc; border-radius:4px; background:white;">
                     <option value="">指定なし（全社検索）</option>
                     <option disabled>読み込み中...</option>
                 </select>
-            </div>
 
-            <div class="search-filter-area" style="margin-top: 10px; background-color: #f1f8ff; border: 1px solid #c8e1ff; padding: 15px; border-radius: 8px;">
-                <p style="margin: 0 0 10px 0; font-size: 14px; font-weight:bold; color:#004a99;">
-                    ⚙️ さらに絞り込む
-                </p>
-                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
-                    <div>
-                        <label for="filter_j" style="font-size:12px; font-weight:bold;">大分類 (J列)</label>
-                        <select id="filter_j" style="width:100%; padding:8px; border:1px solid #ccc; border-radius:4px; background:white;"><option value="">指定なし</option></select>
-                    </div>
-                    <div>
-                        <label for="filter_k" style="font-size:12px; font-weight:bold;">用途・場所 (K列)</label>
-                        <select id="filter_k" style="width:100%; padding:8px; border:1px solid #ccc; border-radius:4px; background:white;"><option value="">指定なし</option></select>
-                    </div>
-                    <div>
-                        <label for="filter_l" style="font-size:12px; font-weight:bold;">タイプ (L列)</label>
-                        <select id="filter_l" style="width:100%; padding:8px; border:1px solid #ccc; border-radius:4px; background:white;"><option value="">指定なし</option></select>
-                    </div>
-                    <div>
-                        <label for="filter_m" style="font-size:12px; font-weight:bold;">樹脂・性状 (M列)</label>
-                        <select id="filter_m" style="width:100%; padding:8px; border:1px solid #ccc; border-radius:4px; background:white;"><option value="">指定なし</option></select>
+                <div style="margin-top: 15px; border-top:1px dashed #ccc; padding-top:10px;">
+                    <span style="font-size:0.8rem; color:#004a99; font-weight:bold;">詳細絞り込み</span>
+                    <div class="filter-grid">
+                        <div>
+                            <label style="font-size:12px; font-weight:bold;">大分類</label>
+                            <select id="filter_j" style="width:100%; padding:8px; border:1px solid #ccc; border-radius:4px;"><option value="">指定なし</option></select>
+                        </div>
+                        <div>
+                            <label style="font-size:12px; font-weight:bold;">用途・場所</label>
+                            <select id="filter_k" style="width:100%; padding:8px; border:1px solid #ccc; border-radius:4px;"><option value="">指定なし</option></select>
+                        </div>
+                        <div>
+                            <label style="font-size:12px; font-weight:bold;">タイプ</label>
+                            <select id="filter_l" style="width:100%; padding:8px; border:1px solid #ccc; border-radius:4px;"><option value="">指定なし</option></select>
+                        </div>
+                        <div>
+                            <label style="font-size:12px; font-weight:bold;">樹脂・性状</label>
+                            <select id="filter_m" style="width:100%; padding:8px; border:1px solid #ccc; border-radius:4px;"><option value="">指定なし</option></select>
+                        </div>
                     </div>
                 </div>
-                <p style="font-size: 11px; color: #d9534f; margin-top: 10px; text-align: center; background: #fff; padding: 5px; border-radius: 4px;">
-                    ※絞り込みデータは現在整備中のため、ヒットしない商品もあります。
-                </p>
             </div>
             
-            <div style="margin-top: 10px; text-align: right;">
-                <a href="https://tirorin-a11y.github.io/paint-catalog/" target="_blank" style="font-size: 12px; color: #0056b3; text-decoration: underline; background: #e6f7ff; padding: 5px 10px; border-radius: 5px;">
-                    ブラウザ（タブ）で比較する ↗
-                </a>
-            </div>
-
-            <p id="searchStatus" style="color:#d9534f; margin-top:15px; font-weight:bold; font-size:14px; text-align:center; min-height: 20px;"></p>
-            <ul id="catalogList"></ul>
-        </section>
-
-        <section class="tool-section" style="opacity: 0.6;">
-            <h2>カンタン見積もり <span style="font-size: 14px; color: #d9534f; border: 1px solid #d9534f; padding: 2px 5px; border-radius: 4px;">準備中</span></h2>
-            <div class="input-group">
-                <label for="area" disabled>延床面積 (m²):</label>
-                <input type="number" id="area" placeholder="例: 100" disabled>
-            </div>
-            <div class="input-group">
-                <label for="paintGrade" disabled>塗料グレード:</label>
-                <select id="paintGrade" disabled>
-                    <option value="silicone">シリコン</option>
-                </select>
-            </div>
-            <button id="calcButton" style="background-color: #999; cursor: default;">計算する</button>
-        </section>
-
-        <section style="text-align: center; margin-top: 30px; padding: 20px; background-color: #fff3cd; border-radius: 8px;">
-            <p style="font-size: 14px; font-weight: bold; color: #856404;">☕ 開発者のやる気スイッチ</p>
-            <button id="cheerButton" style="font-size: 20px; padding: 10px 20px; cursor: pointer; background: #ffc107; border: none; border-radius: 50px; box-shadow: 0 4px 0 #d39e00;">👍 応援する！</button>
-            <p id="cheerCount" style="margin-top: 10px; font-weight: bold; color: #333;">0 いいね！</p>
-            <p id="unlockMessage" style="font-size: 12px; color: #888;">※押すと数字が増えるだけです（笑）</p>
-            <div id="hiddenContactForm" style="display: none; margin-top: 20px; text-align: left; background: #f8f9fa; padding: 15px; border-radius: 5px; border: 1px solid #ddd;">
-                <h4 style="margin-top: 0; text-align: center;">🎉 お問い合わせフォーム解放！</h4>
-                <p style="font-size: 12px; text-align: center; color: #666; margin-bottom: 15px;">20回の応援ありがとうございます！<br>バグ報告や機能の要望はこちらからどうぞ。</p>
-                <a href="mailto:yamaokatosou@gmail.com" style="display: block; text-align: center; background: #28a745; color: white; padding: 10px; border-radius: 5px; text-decoration: none; font-weight: bold;">管理者にメールする</a>
-            </div>
+            <p id="searchStatus" class="loading-msg"></p>
+            <ul id="catalogList" style="list-style: none; padding: 0;"></ul>
         </section>
 
         <section style="margin-top: 30px; padding: 20px; background-color: #f9f9f9; font-size: 12px; color: #666; border-top: 1px solid #ddd;">
@@ -161,12 +170,12 @@
             <p style="margin-bottom: 10px;">当サイトは、塗装職人の業務効率化を目的として作成された<strong>非公式のリンク集</strong>です。<br>掲載している各塗料メーカー様とは一切関係ございません。</p>
             <p style="margin: 0;">万が一、掲載内容に問題がある場合や、メーカー様の方針にそぐわない場合は、直ちに該当リンクを削除いたします。</p>
         </section>
+
     </main>
 
     <div id="hintPopup" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.5); z-index:2000;">
         <div style="background:white; width:85%; max-width:400px; margin:100px auto; padding:20px; border-radius:8px; position:relative; max-height: 60vh; overflow-y: auto;">
             <h3 style="margin-top:0;">💡 キーワード候補</h3>
-            <p style="font-size:12px; color:#666;">タップすると検索できます（H列から自動取得）</p>
             <div id="hintTagContainer" style="display: flex; flex-wrap: wrap; gap: 8px; margin-top: 15px;">
                 <span style="font-size:12px; color:#999;">読み込み中...</span>
             </div>
@@ -174,7 +183,196 @@
         </div>
     </div>
 
-    <footer><p>&copy; 2025 ペイントハウス山岡（仮）</p></footer>
-    <script src="script.js"></script>
+    <footer><p>&copy; 2025 ペイントハウス山岡</p></footer>
+
+<script>
+    // ★★★ 重要：ここにカタログ検索用のGAS URLを貼り直してください ★★★
+    const GAS_API_URL = "https://script.google.com/macros/s/AKfycbxxDC7Ak1PVF1sWYmDJlnLDokqndsNugtp1koaZgWZg51ihzksYe9hKJ4y_sTqVjUfp/exec"; 
+
+    let allMakersList = [];
+    let loadingTimer = null;
+
+    document.addEventListener("DOMContentLoaded", function() {
+        fetchInitialData(); 
+        initializeHintPopup(); 
+    });
+
+    // イベントリスナー設定
+    document.getElementById("catalogSearch").addEventListener("change", function() { runUpdate(false); }); 
+    document.getElementById("catalogSearch").addEventListener("input", function() { runUpdate(false); }); 
+    document.getElementById("maker1").addEventListener("change", function() { runUpdate(false); }); 
+    ['filter_j', 'filter_k', 'filter_l', 'filter_m'].forEach(id => {
+        document.getElementById(id).addEventListener("change", function() { runUpdate(false); });
+    });
+
+    // 初期データ取得 (GAS連携)
+    function fetchInitialData() {
+        if(GAS_API_URL.includes("xxxx")) {
+            document.getElementById("searchStatus").innerHTML = "<span style='color:red;'>⚠️ URL未設定：コード内のGAS_API_URLを書き換えてください</span>";
+            return;
+        }
+
+        let url = GAS_API_URL + "?type=getInitialData";
+
+        fetch(url)
+            .then(response => response.json())
+            .then(data => {
+                allMakersList = data.makers; 
+                let initialFilters = data.filters;
+                initialFilters.makers = data.makers; 
+                updateAllDropdowns(initialFilters, true);
+                generateHintTags(data.keywords); 
+            })
+            .catch(error => {
+                console.error("初期データ取得エラー:", error);
+                document.getElementById("searchStatus").innerText = "⚠️ データの読み込みに失敗しました";
+            });
+    }
+
+    // 検索実行
+    function runUpdate(isInitialLoad = false) { 
+        let keyword = document.getElementById("catalogSearch").value;
+        let maker = document.getElementById("maker1").value; 
+        let filterJ = document.getElementById("filter_j").value, filterK = document.getElementById("filter_k").value, filterL = document.getElementById("filter_l").value, filterM = document.getElementById("filter_m").value;
+        let listElement = document.getElementById("catalogList");
+        let statusMsg = document.getElementById("searchStatus");
+
+        if (!keyword && !maker && !filterJ && !filterK && !filterL && !filterM) {
+            // 空の時はクリアして初期状態へ
+            listElement.innerHTML = ""; 
+            statusMsg.innerText = ""; 
+            if(isInitialLoad === false && allMakersList.length === 0) fetchInitialData(); 
+            return; 
+        }
+
+        if (loadingTimer) clearInterval(loadingTimer);
+        listElement.innerHTML = ""; 
+        
+        let isToggle = false;
+        statusMsg.innerText = "🔍 検索中...";
+        loadingTimer = setInterval(() => {
+            statusMsg.innerText = isToggle ? "🔍 検索中..." : "⏳ 通信中...";
+            isToggle = !isToggle;
+        }, 1000);
+        
+        let params = new URLSearchParams();
+        params.append("q", keyword);
+        params.append("maker", maker); 
+        params.append("j", filterJ); params.append("k", filterK); params.append("l", filterL); params.append("m", filterM);
+        let url = GAS_API_URL + "?" + params.toString();
+
+        fetch(url)
+            .then(response => response.json())
+            .then(data => {
+                clearInterval(loadingTimer);
+                statusMsg.innerText = ""; 
+                updateAllDropdowns(data.availableFilters, false); 
+                
+                if (data.results.length > 0) {
+                    data.results.forEach(function(item) {
+                        let li = document.createElement("li");
+                        li.style.cssText = "padding: 10px 5px; border-bottom: 1px solid #eee; background:white; margin-bottom:5px; border-radius:4px;";
+                        
+                        let statusBadge = item.status === "廃盤" ? `<span class="badge-stop">[廃盤]</span>` : '';
+                        let pdfLinkHTML = item.pdf_url ? `<a href="${item.pdf_url}" target="_blank" class="result-link pdf-link"> [PDF] </a>` : "";
+                        let mainLinkHTML = "";
+                        if (item.url) { mainLinkHTML = `<a href="${item.url}" target="_blank" class="result-link product-link">${item.name}</a>`; }
+                        else if (item.pdf_url) { mainLinkHTML = `<a href="${item.pdf_url}" target="_blank" class="result-link product-link">${item.name}</a>`; }
+                        else { mainLinkHTML = `<span class="result-link no-link">${item.name}</span>`; }
+
+                        let metaInfo = "";
+                        if (item.general) {
+                            metaInfo += `<div style="font-size:12px; color:#444; margin-top:4px;">📝 ${item.general}</div>`;
+                        } else {
+                            metaInfo += `<div style="font-size:12px; color:#888; margin-top:4px;">(下地: ${item.shitaji || "-"})</div>`;
+                        }
+                        
+                        li.innerHTML = `
+                            <div class="item-main">${mainLinkHTML}${pdfLinkHTML}${statusBadge}</div>
+                            ${metaInfo}
+                            <div class="item-meta" style="font-size:11px; color:#999; margin-top:2px; text-align:right;">
+                                メーカー: ${item.maker}
+                            </div>
+                        `;
+                        listElement.appendChild(li);
+                    });
+                } else {
+                    statusMsg.innerText = "該当なし";
+                }
+            })
+            .catch(error => {
+                clearInterval(loadingTimer);
+                console.error("Error:", error);
+                statusMsg.innerText = "検索エラー";
+            });
+    }
+
+    // ドロップダウン更新
+    function updateAllDropdowns(filters, isInitialLoad) {
+        if (!filters) return; 
+        let makerListSource = isInitialLoad ? filters.makers : allMakersList;
+        if (isInitialLoad && filters.makers) { allMakersList = filters.makers; }
+        
+        const ids = ["maker1", "filter_j", "filter_k", "filter_l", "filter_m"];
+        const values = ids.map(id => document.getElementById(id).value);
+        
+        updateSelect("maker1", makerListSource, "指定なし（全社検索）", values[0]);
+        updateSelect("filter_j", filters.j, "指定なし", values[1]);
+        updateSelect("filter_k", filters.k, "指定なし", values[2]);
+        updateSelect("filter_l", filters.l, "指定なし", values[3]);
+        updateSelect("filter_m", filters.m, "指定なし", values[4]);
+    }
+
+    function updateSelect(id, list, defaultOptionText, currentValue) {
+        let select = document.getElementById(id);
+        if (!select) return;
+        select.innerHTML = ''; 
+        let defaultOption = document.createElement("option");
+        defaultOption.value = "";
+        defaultOption.innerText = defaultOptionText;
+        select.appendChild(defaultOption);
+        if (list) { 
+          list.forEach(item => {
+              let option = document.createElement("option");
+              option.value = item;
+              option.innerText = item;
+              if (item === currentValue) { option.selected = true; }
+              select.appendChild(option);
+          });
+        }
+        if (currentValue && list && !list.includes(currentValue)) { select.value = ""; }
+    }
+
+    // ヒントタグ
+    function generateHintTags(keywords) {
+        const container = document.getElementById("hintTagContainer");
+        if (!container) return;
+        container.innerHTML = ""; 
+        if (!keywords) return;
+        keywords.forEach(word => {
+            let tag = document.createElement("button");
+            tag.innerText = word;
+            tag.style.cssText = "font-size:12px; padding:5px 10px; background:#f0f8ff; border:1px solid #add8e6; border-radius:15px; color:#007bff; cursor:pointer; margin-right:5px; margin-bottom:5px;";
+            tag.onclick = function() {
+                document.getElementById("catalogSearch").value = word; 
+                document.getElementById("hintPopup").style.display = "none"; 
+                runUpdate(false); 
+            };
+            container.appendChild(tag);
+        });
+    }
+
+    function initializeHintPopup() {
+        const hintBtn = document.getElementById("hintButton");
+        const hintPopup = document.getElementById("hintPopup");
+        const closeHint = document.getElementById("closeHint");
+        if(hintBtn && hintPopup) {
+            hintBtn.onclick = () => { hintPopup.style.display = "block"; };
+            closeHint.onclick = () => { hintPopup.style.display = "none"; };
+            hintPopup.onclick = (e) => { if(e.target === hintPopup) hintPopup.style.display = "none"; };
+        }
+    }
+</script>
+
 </body>
 </html>

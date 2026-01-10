@@ -28,13 +28,11 @@
             box-shadow: 0 2px 5px rgba(0,0,0,0.1);
         }
         
-        /* ガントチャートのコンテナ */
         .gantt-container { 
             overflow-x: auto; 
             background: white; 
             margin-top: 10px; 
             position: relative; 
-            /* スクロールバーを見やすく */
             scrollbar-width: thin; 
         }
         
@@ -59,12 +57,7 @@
             flex-shrink: 0;
         }
         
-        .day-header { 
-            font-weight: bold; 
-            font-size: 0.7rem; 
-            color: #555; 
-        }
-        
+        .day-header { font-weight: bold; font-size: 0.7rem; color: #555; }
         .is-sunday { background-color: #ffcdd2; color: #c62828; }
         .is-today { background-color: #fff9c4; border-bottom: 3px solid #fbc02d; }
         
@@ -93,7 +86,12 @@
             text-overflow: ellipsis; 
             box-shadow: 2px 0 5px rgba(0,0,0,0.05); 
             flex-shrink: 0;
+            cursor: pointer;
+            color: #2980b9;
+            font-weight: bold;
+            transition: background 0.2s;
         }
+        .site-name-col:active { background-color: #e3f2fd; }
         
         .bar { 
             position: absolute; 
@@ -115,48 +113,23 @@
         .bar-active { background: #2980b9; }
         .bar-done { background: #7f8c8d; }
         
-        /* 表示切替ボタンエリア */
-        .toggle-area { 
-            padding: 10px; 
-            text-align: right; 
-            background: #fff; 
-            border-bottom: 1px solid #eee; 
-        }
-        .btn-toggle { 
-            background: #fff; 
-            border: 1px solid #2980b9; 
-            color: #2980b9; 
-            padding: 5px 12px; 
-            border-radius: 20px; 
-            font-size: 0.85rem; 
-            cursor: pointer; 
-            transition: 0.2s;
-        }
-        .btn-toggle.active { 
-            background: #2980b9; 
-            color: white; 
-        }
+        .toggle-area { padding: 10px; text-align: right; background: #fff; border-bottom: 1px solid #eee; }
+        .btn-toggle { background: #fff; border: 1px solid #2980b9; color: #2980b9; padding: 5px 12px; border-radius: 20px; font-size: 0.85rem; cursor: pointer; transition: 0.2s; }
+        .btn-toggle.active { background: #2980b9; color: white; }
         
-        /* 上部ナビゲーション */
-        .nav-links { 
-            display: flex; 
-            gap: 10px; 
-            padding: 10px; 
-            justify-content: center; 
-            background: #fff; 
-            margin-bottom: 10px; 
-            box-shadow: 0 1px 3px rgba(0,0,0,0.05);
-        }
-        .nav-btn { 
-            text-decoration: none; 
-            font-size: 0.85rem; 
-            padding: 8px 20px; 
-            border-radius: 20px; 
-            background: #f8f9fa; 
-            color: #555; 
-            border: 1px solid #ddd; 
-            font-weight: bold;
-        }
+        .nav-links { display: flex; gap: 10px; padding: 10px; justify-content: center; background: #fff; margin-bottom: 10px; box-shadow: 0 1px 3px rgba(0,0,0,0.05); }
+        .nav-btn { text-decoration: none; font-size: 0.85rem; padding: 8px 20px; border-radius: 20px; background: #f8f9fa; color: #555; border: 1px solid #ddd; font-weight: bold; }
+
+        .overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 150; display: none; }
+        .overlay.show { display: block; }
+        .modal-box { position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 85%; max-width: 400px; background: white; padding: 20px; border-radius: 12px; z-index: 160; box-shadow: 0 10px 25px rgba(0,0,0,0.3); display: none; }
+        .modal-box.show { display: block; }
+        .modal-btn-area { display: flex; gap: 10px; margin-top: 20px; }
+        .modal-btn { flex: 1; padding: 12px; border: none; border-radius: 6px; font-weight: bold; cursor: pointer; }
+        .btn-save { background: #2980b9; color: white; }
+        .btn-cancel { background: #eee; color: #333; }
+        input[type="date"] { width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 6px; box-sizing: border-box; margin-top: 5px; font-size: 1rem; }
+        label { display: block; margin-top: 15px; font-size: 0.9rem; font-weight: bold; color: #555; }
     </style>
 </head>
 <body>
@@ -175,14 +148,30 @@
     <button class="btn-toggle" id="btnShowAll" onclick="toggleShowAll()">全ての現場を表示</button>
 </div>
 
-<div id="ganttArea" class="gantt-container">
+<div id="ganttArea" class="gantt-container"></div>
+
+<div class="overlay" id="overlay" onclick="closeModal()"></div>
+<div id="dateModal" class="modal-box">
+    <h3 style="margin-top:0; color:#2c3e50;">📅 日程の調整</h3>
+    <p id="editSiteName" style="font-weight:bold; color:#2980b9; border-bottom:1px solid #eee; padding-bottom:10px;"></p>
+    
+    <label>開始日</label>
+    <input type="date" id="editStart">
+    
+    <label>終了日</label>
+    <input type="date" id="editEnd">
+    
+    <div class="modal-btn-area">
+        <button class="modal-btn btn-cancel" onclick="closeModal()">キャンセル</button>
+        <button class="modal-btn btn-save" onclick="saveSchedule()">保 存</button>
     </div>
+</div>
 
 <script>
     let sites = JSON.parse(localStorage.getItem('dx_sites')) || [];
-    let isShowAll = false; // 初期状態：完了現場は隠す
+    let isShowAll = false;
+    let editingId = null;
 
-    // 表示モード切替
     function toggleShowAll() {
         isShowAll = !isShowAll;
         const btn = document.getElementById('btnShowAll');
@@ -196,86 +185,104 @@
         renderGantt();
     }
 
-    // ★重要：日付文字列をDate型に変換（/区切りに置換してズレ防止）
     function parseDate(str) {
         if(!str) return null;
         return new Date(str.replace(/-/g, '/'));
     }
 
-    // 日付の差分（日数）を計算
     function getDiffDays(date1, date2) {
         const dt1 = new Date(date1.getFullYear(), date1.getMonth(), date1.getDate());
         const dt2 = new Date(date2.getFullYear(), date2.getMonth(), date2.getDate());
         return Math.floor((dt2 - dt1) / (1000 * 60 * 60 * 24));
     }
 
+    function openEditModal(id) {
+        const site = sites.find(s => s.id === id);
+        if(!site) return;
+        editingId = id;
+        document.getElementById('editSiteName').textContent = site.name;
+        document.getElementById('editStart').value = site.start || '';
+        document.getElementById('editEnd').value = site.end || '';
+        document.getElementById('overlay').classList.add('show');
+        document.getElementById('dateModal').classList.add('show');
+    }
+
+    function closeModal() {
+        document.getElementById('overlay').classList.remove('show');
+        document.getElementById('dateModal').classList.remove('show');
+        editingId = null;
+    }
+
+    function saveSchedule() {
+        if(!editingId) return;
+        const index = sites.findIndex(s => s.id === editingId);
+        if(index !== -1) {
+            const newStart = document.getElementById('editStart').value;
+            const newEnd = document.getElementById('editEnd').value;
+            if(newStart && newEnd && newStart > newEnd) { alert("開始日が終了日より後になっています"); return; }
+            sites[index].start = newStart;
+            sites[index].end = newEnd;
+            sites[index].updatedAt = Date.now();
+            localStorage.setItem('dx_sites', JSON.stringify(sites));
+            renderGantt();
+            closeModal();
+        }
+    }
+
     function renderGantt() {
         const container = document.getElementById('ganttArea');
         container.innerHTML = '';
 
-        // 1. 表示範囲の決定（今月1日 〜 3ヶ月後末日）
         const today = new Date();
         const startDate = new Date(today.getFullYear(), today.getMonth(), 1); 
         const endDate = new Date(today.getFullYear(), today.getMonth() + 3, 0);
         const totalDays = getDiffDays(startDate, endDate) + 1;
 
-        // 2. ヘッダー行の生成
         let headerHTML = '<div class="gantt-header"><div class="gantt-cell" style="min-width:120px; position:sticky; left:0; z-index:20; background:#ecf0f1; border-right:2px solid #ddd;">現場名</div>';
-        
-        let todayLeftPos = 0; // 今日の位置を記録
+        let todayLeftPos = 0;
 
         for (let i = 0; i < totalDays; i++) {
             const d = new Date(startDate);
             d.setDate(startDate.getDate() + i);
-            
             const isSun = d.getDay() === 0;
             const isToday = d.toDateString() === today.toDateString();
-            
             if (isToday) todayLeftPos = i * 40;
-
-            let classNames = 'gantt-cell day-header';
-            if (isSun) classNames += ' is-sunday';
-            if (isToday) classNames += ' is-today';
-
-            headerHTML += `<div class="${classNames}">${d.getDate()}</div>`;
+            headerHTML += `<div class="gantt-cell day-header ${isSun?'is-sunday':''} ${isToday?'is-today':''}">${d.getDate()}</div>`;
         }
         headerHTML += '</div>';
         container.insertAdjacentHTML('beforeend', headerHTML);
 
-        // 3. 現場データの描画
-        // フィルタリング（isShowAllがfalseなら完了を除外）
-        const targetSites = isShowAll ? sites : sites.filter(s => s.status !== 'handover');
+        // ★修正：フィルタリングロジック（完了・失注を隠す）
+        const targetSites = isShowAll ? sites : sites.filter(s => s.status !== 'complete' && s.status !== 'lost' && s.status !== 'done' && s.status !== 'handover');
 
         targetSites.forEach(site => {
-            if (!site.start || !site.end) return; // 日程未定はスキップ
+            if (!site.start || !site.end) return;
 
             const sDate = parseDate(site.start);
             const eDate = parseDate(site.end);
-            
-            // 範囲外ならスキップ
             if (eDate < startDate || sDate > endDate) return;
 
-            // バーの位置計算
             const offsetDays = getDiffDays(startDate, sDate);
             const durationDays = getDiffDays(sDate, eDate) + 1;
 
             let left = offsetDays * 40;
             let width = durationDays * 40;
+            if (left < 0) { width += left; left = 0; } 
 
-            // 左端補正（表示期間より前から始まっている場合）
-            if (left < 0) { 
-                width += left; 
-                left = 0; 
-            } 
-
-            // ステータス別の色分け
-            let barClass = 'bar-plan';
-            if (site.status === 'active') barClass = 'bar-active';
-            if (site.status === 'done' || site.status === 'handover') barClass = 'bar-done';
+            // ★修正：バーの色分けロジック
+            let barClass = 'bar-plan'; // デフォルト（見積中）
+            if (site.status === 'contract' || site.status === 'active' || site.status === 'billing') {
+                barClass = 'bar-active'; // 稼働中（契約済み、請求）
+            }
+            if (site.status === 'complete' || site.status === 'lost' || site.status === 'done') {
+                barClass = 'bar-done'; // 完了系
+            }
 
             const rowHTML = `
                 <div class="site-row" style="width:${120 + (totalDays * 40)}px">
-                    <div class="site-name-col">${site.name}</div>
+                    <div class="site-name-col" onclick="openEditModal('${site.id}')" title="クリックして日程変更">
+                        ${site.name} <span style="font-size:0.6rem; color:#888; margin-left:2px;">✎</span>
+                    </div>
                     <div class="bar ${barClass}" style="left:${120 + left}px; width:${width}px;">
                         ${durationDays}日
                     </div>
@@ -291,7 +298,6 @@
             container.insertAdjacentHTML('beforeend', rowHTML);
         });
 
-        // ★今日へ自動スクロール (少し左に余裕を持たせる -100px)
         if(todayLeftPos > 0) {
             setTimeout(() => {
                 container.scrollTo({ left: todayLeftPos - 100, behavior: 'smooth' });
