@@ -14,7 +14,7 @@
             background: #f0f2f5; 
             margin: 0; 
             padding-bottom: 50px; 
-            overflow: hidden; /* 全体の縦スクロールを防止 */
+            overflow: hidden; 
         }
         header { 
             background: #2c3e50; 
@@ -73,26 +73,15 @@
             background: white; 
             position: relative; 
             height: calc(100vh - 150px); 
-            cursor: grab; /* マウスカーソルを「掴む手」に */
+            cursor: grab; 
         }
-        .gantt-container:active {
-            cursor: grabbing; /* 掴んでいる時は「握る手」に */
-        }
+        .gantt-container:active { cursor: grabbing; }
 
-        /* ★追加：PC用スクロールバーのカスタマイズ */
-        .gantt-container::-webkit-scrollbar {
-            height: 12px; /* 横スクロールバーを少し太く */
-        }
-        .gantt-container::-webkit-scrollbar-track {
-            background: #f1f1f1; 
-        }
-        .gantt-container::-webkit-scrollbar-thumb {
-            background: #bbb; /* つまみ部分の色 */
-            border-radius: 6px;
-        }
-        .gantt-container::-webkit-scrollbar-thumb:hover {
-            background: #999; /* ホバー時に濃く */
-        }
+        /* スクロールバー装飾 */
+        .gantt-container::-webkit-scrollbar { height: 12px; }
+        .gantt-container::-webkit-scrollbar-track { background: #f1f1f1; }
+        .gantt-container::-webkit-scrollbar-thumb { background: #bbb; border-radius: 6px; }
+        .gantt-container::-webkit-scrollbar-thumb:hover { background: #999; }
         
         .gantt-header { 
             display: flex; 
@@ -113,12 +102,18 @@
             font-size: 0.8rem; 
             box-sizing: border-box; 
             flex-shrink: 0;
-            user-select: none; /* 文字選択防止（ドラッグ移動のため） */
+            user-select: none; 
         }
         
         .day-header { font-weight: bold; font-size: 0.7rem; color: #555; }
-        .is-sunday { background-color: #ffcdd2; color: #c62828; }
-        .is-today { background-color: #fff9c4; border-bottom: 3px solid #fbc02d; }
+        
+        /* ★修正：色分けクラス */
+        .month-odd { background-color: #ffffff; } /* 奇数月：白 */
+        .month-even { background-color: #f0f8ff; } /* 偶数月：薄い青 */
+        
+        .is-past { background-color: #eeeeee !important; color: #999; } /* 過去：グレー */
+        .is-sunday { background-color: #ffcdd2 !important; color: #c62828; } /* 日曜：赤 */
+        .is-today { background-color: #fff9c4 !important; border-bottom: 3px solid #fbc02d; font-weight:bold; color:#000; } /* 今日：黄色 */
         
         .site-row { 
             display: flex; 
@@ -298,9 +293,14 @@
         container.innerHTML = '';
 
         const today = new Date();
-        const startDate = new Date(today.getFullYear(), today.getMonth(), 1); 
+        // 今日の0時0分0秒を取得（比較用）
+        const todayZero = new Date(today.getFullYear(), today.getMonth(), today.getDate());
+
+        // 表示開始日（前月1日くらいから見れるように調整）
+        const startDate = new Date(today.getFullYear(), today.getMonth() - 1, 1); 
         gStartDate = startDate; 
-        const endDate = new Date(today.getFullYear(), today.getMonth() + 3, 0);
+        // 終了日（4ヶ月後まで）
+        const endDate = new Date(today.getFullYear(), today.getMonth() + 4, 0);
         const totalDays = getDiffDays(startDate, endDate) + 1;
 
         let headerHTML = '<div class="gantt-header"><div class="gantt-cell" style="min-width:120px; position:sticky; left:0; z-index:20; background:#ecf0f1; border-right:2px solid #ddd;">現場名</div>';
@@ -309,10 +309,23 @@
         for (let i = 0; i < totalDays; i++) {
             const d = new Date(startDate);
             d.setDate(startDate.getDate() + i);
+            
             const isSun = d.getDay() === 0;
             const isToday = d.toDateString() === today.toDateString();
-            if (isToday) todayLeftPos = i * 40;
-            headerHTML += `<div class="gantt-cell day-header ${isSun?'is-sunday':''} ${isToday?'is-today':''}">${d.getDate()}</div>`;
+            const isPast = d < todayZero; // 今日より前か
+            
+            // ★月ごとの背景色クラス
+            const monthClass = (d.getMonth() + 1) % 2 === 0 ? 'month-even' : 'month-odd';
+            
+            let cellClass = `gantt-cell day-header ${monthClass}`;
+            if (isPast) cellClass += ' is-past';
+            if (isSun) cellClass += ' is-sunday';
+            if (isToday) {
+                cellClass += ' is-today';
+                todayLeftPos = i * 40;
+            }
+
+            headerHTML += `<div class="${cellClass}">${d.getDate()}</div>`;
         }
         headerHTML += '</div>';
         container.insertAdjacentHTML('beforeend', headerHTML);
@@ -340,12 +353,20 @@
                         ${site.name} <span style="font-size:0.6rem; color:#888; margin-left:2px;">✎</span>
                     </div>
                     <div class="bar ${barClass}" style="left:${120 + left}px; width:${width}px;">${durationDays}日</div>
+                    
                     ${Array.from({length: totalDays}).map((_, idx) => {
                         const d = new Date(startDate); d.setDate(startDate.getDate() + idx);
                         const isSun = d.getDay() === 0;
                         const isToday = d.toDateString() === today.toDateString();
-                        let bg = isToday ? '#fff9c4' : (isSun ? '#fff0f0' : 'transparent');
-                        return `<div style="position:absolute; left:${120 + idx * 40}px; top:0; width:40px; height:100%; border-right:1px solid #eee; background:${bg}; z-index:-1;"></div>`
+                        const isPast = d < todayZero;
+                        
+                        // ★月ごとの背景色決定
+                        let bgClass = (d.getMonth() + 1) % 2 === 0 ? 'month-even' : 'month-odd';
+                        if (isPast) bgClass = 'is-past'; // 過去優先
+                        if (isSun) bgClass = 'is-sunday'; // 日曜優先
+                        if (isToday) bgClass = 'is-today'; // 今日最優先
+
+                        return `<div class="${bgClass}" style="position:absolute; left:${120 + idx * 40}px; top:0; width:40px; height:100%; border-right:1px solid #eee; z-index:-1;"></div>`
                     }).join('')}
                 </div>
             `;
@@ -356,40 +377,19 @@
         updateMonthDisplay();
         if(todayLeftPos > 0) { setTimeout(() => { container.scrollTo({ left: todayLeftPos - 100, behavior: 'smooth' }); }, 100); }
         
-        setupPCScroll(container); // PC用操作セットアップ
+        setupPCScroll(container);
     }
 
-    // ★追加：PC操作用（キーボード・ドラッグ）
     function setupPCScroll(container) {
-        // キーボード操作 (←/→)
         document.addEventListener('keydown', (e) => {
-            if (e.key === 'ArrowRight') {
-                container.scrollBy({ left: 100, behavior: 'smooth' });
-            } else if (e.key === 'ArrowLeft') {
-                container.scrollBy({ left: -100, behavior: 'smooth' });
-            }
+            if (e.key === 'ArrowRight') { container.scrollBy({ left: 100, behavior: 'smooth' }); }
+            else if (e.key === 'ArrowLeft') { container.scrollBy({ left: -100, behavior: 'smooth' }); }
         });
-
-        // マウスドラッグ操作 (Grab & Drag)
-        let isDown = false;
-        let startX;
-        let scrollLeft;
-
-        container.addEventListener('mousedown', (e) => {
-            isDown = true;
-            container.classList.add('active');
-            startX = e.pageX - container.offsetLeft;
-            scrollLeft = container.scrollLeft;
-        });
+        let isDown = false; let startX; let scrollLeft;
+        container.addEventListener('mousedown', (e) => { isDown = true; container.classList.add('active'); startX = e.pageX - container.offsetLeft; scrollLeft = container.scrollLeft; });
         container.addEventListener('mouseleave', () => { isDown = false; });
         container.addEventListener('mouseup', () => { isDown = false; });
-        container.addEventListener('mousemove', (e) => {
-            if (!isDown) return;
-            e.preventDefault();
-            const x = e.pageX - container.offsetLeft;
-            const walk = (x - startX) * 2; // スクロール速度
-            container.scrollLeft = scrollLeft - walk;
-        });
+        container.addEventListener('mousemove', (e) => { if (!isDown) return; e.preventDefault(); const x = e.pageX - container.offsetLeft; const walk = (x - startX) * 2; container.scrollLeft = scrollLeft - walk; });
     }
 
     document.addEventListener('DOMContentLoaded', renderGantt);
