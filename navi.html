@@ -389,7 +389,7 @@
         // 送信処理
         try {
             showNotification("☁️ 送信中...");
-            const exportData = (type === "sync") ? data.map(s => ({ ...s, status: getStatusText(s.status) })) : data;
+            const exportData = data;
             
             const response = await fetch(targetUrl, {
                 method: 'POST',

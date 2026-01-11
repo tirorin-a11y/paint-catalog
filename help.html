@@ -3,252 +3,265 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>使い方ガイド - 職人ギア</title>
-    <link rel="manifest" href="manifest.json">
-    <link rel="apple-touch-icon" href="icon-192x192.png">
-    <meta name="apple-mobile-web-app-capable" content="yes">
-    <link rel="stylesheet" href="style.css">
+    <title>ヘルプ＆設定 - 職人ギア</title>
     <style>
-        body { 
-            background-color: #f0f2f5; 
-            padding-bottom: 50px; 
-            color: #333; 
-            line-height: 1.6; 
-        }
-        .site-header { 
-            background: #34495e; 
-            color: white; 
-            padding: 20px; 
-            text-align: center; 
-            margin-bottom: 20px; 
-            box-shadow: 0 4px 10px rgba(0,0,0,0.1); 
-        }
-        .site-title { 
-            margin: 0; 
-            font-size: 1.3rem; 
-            font-weight: bold; 
-        }
-        .container { 
-            max-width: 600px; 
-            margin: 0 auto; 
-            padding: 0 15px; 
-        }
+        body { font-family: -apple-system, BlinkMacSystemFont, "Helvetica Neue", "Yu Gothic", sans-serif; background: #f0f2f5; padding: 20px; color: #333; line-height: 1.6; }
+        .container { max-width: 800px; margin: 0 auto; padding-bottom: 50px; }
+        
+        h1 { text-align: center; color: #2c3e50; margin-bottom: 30px; font-size: 1.5rem; }
+        .back-link { display: block; margin-bottom: 20px; color: #2980b9; text-decoration: none; font-weight: bold; }
 
-        /* アコーディオン（開閉式）スタイル */
+        /* アコーディオンのデザイン */
         details {
             background: white;
-            border-radius: 8px;
             margin-bottom: 15px;
+            border-radius: 8px;
             box-shadow: 0 2px 5px rgba(0,0,0,0.05);
             overflow: hidden;
         }
         summary {
-            padding: 15px;
+            padding: 15px 20px;
             font-weight: bold;
             cursor: pointer;
+            background: #fff;
             list-style: none;
             display: flex;
-            align-items: center;
             justify-content: space-between;
-            background-color: #fff;
-            transition: background 0.2s;
+            align-items: center;
+            font-size: 1.1rem;
+            color: #2c3e50;
         }
         summary::-webkit-details-marker { display: none; }
-        summary::after {
-            content: '+'; 
-            font-size: 1.5rem; 
-            color: #999;
-            font-weight: normal;
-        }
-        details[open] summary {
-            background-color: #f8f9fa;
-            border-bottom: 1px solid #eee;
-        }
+        summary::after { content: '+'; font-size: 1.5rem; color: #aaa; }
+        details[open] summary { border-bottom: 1px solid #eee; background: #f9f9f9; }
         details[open] summary::after { content: '-'; }
-
-        .content { padding: 20px; font-size: 0.95rem; }
         
-        h3 { 
-            margin-top: 0; 
-            font-size: 1.1rem; 
-            color: #2c3e50; 
-            border-left: 4px solid #3498db; 
-            padding-left: 10px; 
-        }
-        .step { 
-            background: #f9f9f9; 
-            padding: 10px; 
-            border-radius: 6px; 
-            margin-bottom: 10px; 
-            border: 1px solid #eee; 
-        }
-        .step strong { color: #e67e22; }
-        .note { 
-            font-size: 0.85rem; 
-            color: #666; 
-            background: #fff3e0; 
-            padding: 10px; 
-            border-radius: 6px; 
-            margin-top: 10px; 
-        }
-        /* JSON共有時の注意書き用 */
-        .alert-box { 
-            font-size: 0.85rem; 
-            color: #c0392b; 
-            background: #fff5f5; 
-            padding: 10px; 
-            border-radius: 6px; 
-            margin-top: 5px; 
-            border: 1px solid #ffcdd2; 
+        .content { padding: 20px; }
+        
+        /* コード表示エリア */
+        .code-area {
+            width: 100%;
+            height: 200px;
+            font-family: monospace;
+            font-size: 13px;
+            background: #282c34;
+            color: #abb2bf;
+            padding: 15px;
+            border-radius: 6px;
+            border: 1px solid #ccc;
+            white-space: pre;
+            overflow: auto;
+            margin-bottom: 10px;
+            box-sizing: border-box;
         }
 
-        .tag { 
-            display: inline-block; 
-            padding: 2px 6px; 
-            border-radius: 4px; 
-            font-size: 0.8rem; 
-            font-weight: bold; 
-            color: white; 
-            margin-right: 5px; 
+        .btn-copy {
+            background-color: #2980b9;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-weight: bold;
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+            width: 100%;
+            justify-content: center;
         }
-        .tag.blue { background: #3498db; }
-        .tag.green { background: #27ae60; }
-        .tag.purple { background: #9b59b6; }
-
-        .back-link { 
-            display: block; 
-            text-align: center; 
-            margin-top: 30px; 
-            color: #007bff; 
-            text-decoration: none; 
-            padding: 15px; 
-            font-weight: bold; 
-        }
+        .btn-copy:active { transform: translateY(2px); }
+        
+        h3 { border-left: 4px solid #3498db; padding-left: 10px; margin-top: 25px; color: #34495e; }
+        h3:first-of-type { margin-top: 0; }
+        ul, ol { padding-left: 20px; }
+        li { margin-bottom: 8px; }
     </style>
 </head>
 <body>
 
-<div class="site-header">
-    <h2 class="site-title">📖 使い方ガイド</h2>
-    <div style="font-size:0.8rem; opacity:0.8;">困ったときの虎の巻</div>
-</div>
-
 <div class="container">
+    <a href="navi.html" class="back-link">← アプリに戻る</a>
+    <h1>📖 ヘルプ＆設定ガイド</h1>
 
-    <details>
-        <summary>🔰 初めに：データの保存場所</summary>
+    <details open>
+        <summary>📱 アプリの使い方・データ保存</summary>
         <div class="content">
-            <h3>データは「あなたのスマホ」にあります</h3>
-            <p>このアプリは、入力したデータを<strong>ブラウザの中</strong>に保存しています。</p>
-            <div class="note">
-                <strong>⚠️ 注意点：</strong><br>
-                アプリを削除したり、ブラウザの「履歴・データを消去」を行うと、データは全て消えます。<br>
-                こまめに「バックアップ」を取ることを強くおすすめします。
-            </div>
+            <h3>基本操作</h3>
+            <ul>
+                <li><strong>現場の登録:</strong> 右下の「＋」ボタンから新規登録できます。</li>
+                <li><strong>ナビ起動:</strong> リストの「🚀」ボタンを押すとGoogleマップが起動し、同時にナビ回数がカウントされます。</li>
+                <li><strong>ステータス変更:</strong> リスト左上のバッジ（見積中など）を見ることで状況を一目で確認できます。</li>
+            </ul>
+
+            <h3>☁️ クラウド同期（推奨）</h3>
+            <p>スプレッドシートを使って、PCや他のスマホとデータを自動同期します。</p>
+            <ul>
+                <li><strong>バックアップ:</strong> 設定画面の「☁️ クラウドへバックアップ」で保存します。</li>
+                <li><strong>復元:</strong> 「📥 クラウドから復元」で最新データを取り込みます。</li>
+                <li>※PCで編集した内容も「復元」ボタンで反映されます。</li>
+            </ul>
+
+            <h3>📂 ファイルでの保存・復元（メールなど）</h3>
+            <p>クラウド設定がなくても、ファイルを使ってデータのバックアップや共有ができます。</p>
+            <ul>
+                <li><strong>書き出し:</strong> 右下の「共有ボタン（オレンジ色）」を押し、「共有」を選ぶと、メールやLINEでデータファイル（.json）を送信・保存できます。</li>
+                <li><strong>取り込み:</strong> 設定画面（⚙️）の「📥 ファイルから復元」を押し、メール等で受け取ったファイルを選択すると復元されます。</li>
+            </ul>
         </div>
     </details>
 
     <details>
-        <summary>📨 日報の送信方法</summary>
+        <summary>📝 日報・ツール機能</summary>
         <div class="content">
-            <h3>3つの送信方法</h3>
+            <h3>日報の送信</h3>
+            <p>現場リストの「🧰 ツール」ボタンから日報画面へ移動できます。</p>
+            <ul>
+                <li><strong>日報作成:</strong> その日の作業内容を入力して保存します。履歴として端末に残ります。</li>
+                <li><strong>クラウド提出:</strong> 「📤 クラウドへ提出」ボタンを押すと、スプレッドシートの「日報」シートに送信されます。</li>
+                <li>※一度提出した日報も、履歴から再送可能です。</li>
+            </ul>
+        </div>
+    </details>
+
+    <details>
+        <summary>🛠️ 【初期設定】クラウド環境の構築</summary>
+        <div class="content">
+            <p>このアプリのデータを保存・共有するための「スプレッドシート」を作成する手順です。<br>
+            <strong>初めて使う方</strong>や、<strong>管理者の方</strong>のみ行ってください。</p>
+
+            <h3>STEP 1. スプレッドシート準備</h3>
+            <ol>
+                <li><a href="https://sheets.new" target="_blank">Googleスプレッドシート</a> を新規作成します。</li>
+                <li>ファイル名を「職人ギア_データ」等に変更します。</li>
+                <li>「拡張機能」→「Apps Script」を開きます。</li>
+            </ol>
+
+            <h3>STEP 2. スクリプト登録</h3>
+            <p>エディタの文字を全て消し、以下のコードを貼り付けてください。</p>
             
-            <div class="step">
-                <span class="tag green">LINE</span> <strong>手軽に報告</strong><br>
-                LINEアプリが起動し、文章が貼り付けられます。送信先を選んで送るだけです。<br>
-                ※あくまで「文字を送る」だけなので、自動集計はできません。
-            </div>
+            <textarea id="gasCode" class="code-area" readonly>
+function doPost(e) {
+  var json = JSON.parse(e.postData.contents);
+  var type = json.type;
+  var ss = SpreadsheetApp.getActiveSpreadsheet();
 
-            <div class="step">
-                <span class="tag blue">メール</span> <strong>記録に残す</strong><br>
-                管理者のメールアドレス宛に、件名（現場名）付きでメールを作成します。<br>
-                ※ナビ画面の「⚙️ 設定」で、送信先アドレスを登録しておく必要があります。
-            </div>
+  if (type === "report") {
+    var sheet = ss.getSheetByName("日報");
+    if (!sheet) { 
+      sheet = ss.insertSheet("日報"); 
+      sheet.appendRow(["日時", "案件No", "現場名", "住所", "報告者", "内容"]); 
+      sheet.setFrozenRows(1); 
+    }
+    var reporter = json.reporter || "職人";
+    var reportDate = json.timestamp ? new Date(json.timestamp) : new Date();
+    sheet.appendRow([reportDate, json.id, json.siteName, json.address, reporter, json.content]);
+    return ContentService.createTextOutput(JSON.stringify({ result: "success" })).setMimeType(ContentService.MimeType.TEXT);
+  }
 
-            <div class="step">
-                <span class="tag purple">クラウド</span> <strong>全自動集計 (推奨)</strong><br>
-                ボタン一つで、管理者のGoogleスプレッドシート（日報シート）にデータが追記されます。<br>
-                ※1日分の日報をまとめて送信します。<br>
-                ※ナビ画面の「⚙️ 設定」で、GAS URLの登録が必要です。
-            </div>
+  else if (type === "sync") {
+    var sheet = ss.getSheetByName("案件一覧");
+    if (!sheet) { sheet = ss.insertSheet("案件一覧"); }
+    sheet.clear();
+    var header = ["案件No", "親案件No", "現場名", "住所", "ステータス", "ナビ回数", "工期開始", "工期終了", "最終更新日時", "JSONデータ"];
+    sheet.appendRow(header);
+    
+    var sites = json.data;
+    var rows = [];
+    var stMap = { 'estimate':'見積中', 'contract':'契約済み', 'billing':'請求', 'complete':'完了', 'lost':'失注' };
+
+    for (var i = 0; i < sites.length; i++) {
+      var s = sites[i];
+      var stLabel = stMap[s.status] || s.status;
+      rows.push([
+        s.id, s.parentCaseNo||"", s.name, s.address, stLabel, 
+        s.naviCount||0, s.start||"", s.end||"", 
+        s.updatedAt ? new Date(s.updatedAt).toLocaleString() : "",
+        JSON.stringify(s)
+      ]);
+    }
+    if (rows.length > 0) { sheet.getRange(2, 1, rows.length, rows[0].length).setValues(rows); }
+    return ContentService.createTextOutput(JSON.stringify({ result: "success", msg: "保存完了" })).setMimeType(ContentService.MimeType.TEXT);
+  }
+
+  else if (type === "calendar") {
+    var cal = CalendarApp.getCalendarById(json.calendarId);
+    if(cal) cal.createAllDayEvent(json.title, new Date(), { location: json.address, description: "登録: 職人ギア" });
+    return ContentService.createTextOutput(JSON.stringify({ result: "success" })).setMimeType(ContentService.MimeType.TEXT);
+  }
+}
+
+function doGet(e) {
+  var type = e.parameter.type;
+  var ss = SpreadsheetApp.getActiveSpreadsheet();
+
+  if (type === "getAll") {
+    var sheet = ss.getSheetByName("案件一覧");
+    if (!sheet) return ContentService.createTextOutput(JSON.stringify([])).setMimeType(ContentService.MimeType.TEXT);
+    var rows = sheet.getDataRange().getValues();
+    var data = [];
+    var reverseStMap = { '見積中':'estimate', '契約済み':'contract', '請求':'billing', '完了':'complete', '失注':'lost' };
+
+    for (var i = 1; i < rows.length; i++) {
+      var row = rows[i];
+      var siteData = {
+        id: String(row[0]), parentCaseNo: String(row[1]), name: String(row[2]), address: String(row[3]),
+        status: reverseStMap[row[4]] || 'estimate', naviCount: Number(row[5]),
+        start: row[6] ? formatYMD(row[6]) : "", end: row[7] ? formatYMD(row[7]) : "",
+        updatedAt: row[8] ? new Date(row[8]).getTime() : 0
+      };
+      if(siteData.id) { data.push(siteData); }
+    }
+    return ContentService.createTextOutput(JSON.stringify(data)).setMimeType(ContentService.MimeType.TEXT);
+  }
+  return ContentService.createTextOutput(JSON.stringify({msg:"ready"})).setMimeType(ContentService.MimeType.TEXT);
+}
+
+function formatYMD(val) {
+  if (!val) return "";
+  var d = new Date(val);
+  if (isNaN(d.getTime())) return "";
+  var y = d.getFullYear();
+  var m = ("0" + (d.getMonth() + 1)).slice(-2);
+  var da = ("0" + d.getDate()).slice(-2);
+  return y + "-" + m + "-" + da;
+}
+
+function onEdit(e) {
+  var sheet = e.source.getActiveSheet();
+  if (sheet.getName() !== "案件一覧") return;
+  var row = e.range.getRow();
+  var col = e.range.getColumn();
+  if (row < 2 || col === 9) return;
+  sheet.getRange(row, 9).setValue(new Date());
+}
+            </textarea>
+            <button class="btn-copy" onclick="copyCode()">📋 コードをコピー</button>
+
+            <h3>STEP 3. デプロイ設定（重要）</h3>
+            <ul>
+                <li>右上の「デプロイ」→「新しいデプロイ」</li>
+                <li>種類：「ウェブアプリ」</li>
+                <li>アクセスできるユーザー：<span style="color:red; font-weight:bold;">全員 (Anyone)</span></li>
+            </ul>
+            <p>発行されたURLを、アプリの「設定」→「GAS URL」に登録してください。</p>
         </div>
     </details>
 
-    <details>
-        <summary>📲 データ移行・バックアップ</summary>
-        <div class="content">
-            <h3>スマホ ⇔ PC のデータ移動</h3>
-            <p>スマホで登録した現場データを、PCの大画面で管理したい場合の手順です。</p>
-
-            <div class="step">
-                <strong>① スマホで書き出し（バックアップ）</strong><br>
-                1. ナビ画面右下の「📤 共有・バックアップ」ボタンを押す<br>
-                2. LINEやメールを選んで、自分（PC）宛にファイルを送る<br>
-                
-                <div class="alert-box">
-                    <strong>⚠️ 「共有メニュー」が出ない場合</strong><br>
-                    機種によっては、ボタンを押すとすぐに「ダウンロード」が完了する場合があります。<br>
-                    その場合は、<strong>LINEやメールアプリを自分で開き、クリップマーク（📎）から「ファイル」を選んで</strong>、ダウンロードしたデータを送信してください。
-                </div>
-            </div>
-
-            <div class="step">
-                <strong>② PCで取り込み（復元）</strong><br>
-                1. PCで送られてきたファイルを保存する<br>
-                2. PC版職人ギアの「⚙️ 設定」を開く<br>
-                3. 「📥 データを復元（取込）」ボタンを押す<br>
-                4. 保存したファイルを選択すると、データが同期されます
-            </div>
-        </div>
-    </details>
-
-    <details>
-        <summary>⚙️ 【管理者用】GAS連携の設定</summary>
-        <div class="content">
-            <h3>Googleスプレッドシート連携の準備</h3>
-            
-            <div class="step">
-                <strong>1. シートの準備</strong><br>
-                新しいスプレッドシートを作成し、以下の2つのシートを用意します。<br>
-                ・シート名：<code>日報</code><br>
-                ・シート名：<code>案件一覧</code>
-            </div>
-
-            <div class="step">
-                <strong>2. スクリプト(GAS)の設置</strong><br>
-                「拡張機能」＞「Apps Script」を開き、配布されたコード（<code>doPost</code>）を貼り付けます。
-            </div>
-
-            <div class="step">
-                <strong>3. デプロイ（重要！）</strong><br>
-                右上の「デプロイ」＞「新しいデプロイ」を選択。<br>
-                ・種類：ウェブアプリ<br>
-                ・アクセスできるユーザー：<strong>「全員」</strong>（※ここを間違えると動きません）<br>
-                発行された <code>https://script.google...</code> というURLをコピーします。
-            </div>
-
-            <div class="step">
-                <strong>4. アプリに登録</strong><br>
-                職人ギアの「⚙️ 設定」＞「☁️ GAS URL」欄に貼り付けて保存します。
-            </div>
-        </div>
-    </details>
-
-    <a href="navi.html" class="back-link">↩️ 現場ナビに戻る</a>
-
-</div>
-<div style="margin-top:30px; text-align:center;">
-    <a href="mailto:yamaokatosou@gmail.com" class="back-link" style="background:#28a745; color:white; border:none;">
-        📩 開発者にお問い合わせ
-    </a>
+    <br>
+    <a href="navi.html" class="back-link" style="text-align:center;">アプリに戻る</a>
 </div>
 
 <script>
-    document.querySelectorAll('summary').forEach(el => {
-        el.addEventListener('click', () => {
-            // アコーディオン動作
+    function copyCode() {
+        var copyText = document.getElementById("gasCode");
+        copyText.select();
+        copyText.setSelectionRange(0, 99999);
+        navigator.clipboard.writeText(copyText.value).then(function() {
+            alert("✅ コピーしました！");
+        }, function() {
+            alert("コピーできませんでした。手動でコピーしてください。");
         });
-    });
+    }
 </script>
 
 </body>
