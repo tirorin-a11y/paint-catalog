@@ -358,29 +358,42 @@
         if (!gasUrl) { alert("【設定エラー】\nナビ画面の設定から「GAS URL」を登録してください。"); return; }
         const reporterName = localStorage.getItem('dx_reporter_name') || "職人";
 
-        
         const btn = event.target;
+        const originalText = btn.innerHTML;
         btn.innerHTML = "⏳ 送信中..."; btn.disabled = true;
 
+        // ★前回ここが抜けていました（送るデータの定義）
+        const sendData = { 
+            type: "report", 
+            id: currentSite ? currentSite.id : "", 
+            siteName: currentSite ? currentSite.name : "未定", 
+            address: currentSite ? currentSite.address : "", 
+            reporter: reporterName,
+            content: item.content,
+            timestamp: item.timestamp || new Date(item.date).getTime()
+        };
+
         try {
+            // text/plain で送信してCORS回避
             const response = await fetch(gasUrl, {
                 method: 'POST',
                 headers: { 'Content-Type': 'text/plain' },
-                body: JSON.stringify(data)
+                body: JSON.stringify(sendData) // ★定義した sendData を送る
             });
 
-            // ★ここを修正
-            const resText = await response.text(); 
+            // ★テキストとして受け取ってからJSONに戻す
+            const resText = await response.text();
             const resJson = JSON.parse(resText);
 
             if (resJson.result === "success") {
-                alert("✅ 提出完了！");
+                alert("✅ 提出完了！\n(保存した日時で記録されました)");
                 btn.innerHTML = "✅ 済";
                 btn.style.background = "#ccc";
+                btn.style.color = "#555";
             } else { throw new Error("サーバーエラー"); }
         } catch(e) {
             alert("送信失敗: " + e);
-            btn.innerHTML = "📤 クラウドへ提出";
+            btn.innerHTML = originalText;
             btn.disabled = false;
         }
     }
