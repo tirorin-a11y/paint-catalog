@@ -357,82 +357,90 @@
         uploadDataToCloud(sites, "sync");
     }
 
-    // 2. 実通信処理
+    // --- 通信関連 (テキストモード対応版) ---
+
+    // 1. アップロード・同期
     async function uploadDataToCloud(data, type = "sync") {
         const targetUrl = localStorage.getItem('dx_gas_url');
         if(!targetUrl || targetUrl.includes("script.google.com") === false) {
-            alert("【エラー】\n設定画面からGAS URLを登録してください。"); return false;
+            alert("GAS URLを設定してください"); return false;
         }
         
+        // 競合チェック
         if (type === "sync") {
             showNotification("☁️ クラウド確認中...");
             try {
                 const checkRes = await fetch(targetUrl + "?type=getAll");
-                if (checkRes.ok) {
-                    const cloudData = await checkRes.json();
-                    const localMax = data.length > 0 ? Math.max(...data.map(s => s.updatedAt || 0)) : 0;
-                    const cloudMax = Array.isArray(cloudData) && cloudData.length > 0 ? Math.max(...cloudData.map(s => s.updatedAt || 0)) : 0;
-                    if (cloudMax > localMax) {
-                        const cloudDate = new Date(cloudMax).toLocaleString();
-                        if (navigator.vibrate) navigator.vibrate(200);
-                        if (!confirm(`⚠️ 上書き注意！\nクラウドに新しいデータがあります（${cloudDate}）。\n強制的に上書きしますか？`)) {
-                            showNotification("送信を中断しました"); return false;
-                        }
+                const text = await checkRes.text();      // ★テキストで受ける
+                const cloudData = JSON.parse(text);      // ★自分でパース
+                
+                const localMax = data.length > 0 ? Math.max(...data.map(s => s.updatedAt || 0)) : 0;
+                const cloudMax = Array.isArray(cloudData) && cloudData.length > 0 ? Math.max(...cloudData.map(s => s.updatedAt || 0)) : 0;
+                
+                if (cloudMax > localMax) {
+                    const cloudDate = new Date(cloudMax).toLocaleString();
+                    if (!confirm(`⚠️ 上書き注意！\nクラウドに新しいデータがあります（${cloudDate}）。\n強制上書きしますか？`)) {
+                        showNotification("中断しました"); return false;
                     }
                 }
             } catch(e) { console.warn("チェック失敗:", e); }
         }
         
+        // 送信処理
         try {
             showNotification("☁️ 送信中...");
             const exportData = (type === "sync") ? data.map(s => ({ ...s, status: getStatusText(s.status) })) : data;
             
-            // ★通信方式修正: text/plain で送る
             const response = await fetch(targetUrl, {
                 method: 'POST',
-                headers: { 'Content-Type': 'text/plain' },
+                headers: { 'Content-Type': 'text/plain' }, // ★text/plain必須
                 body: JSON.stringify({ type: type, data: exportData, reporter: localStorage.getItem('dx_reporter_name') || "職人" })
             });
 
-            if (!response.ok) throw new Error(`サーバーエラー: ${response.status}`);
-            const resJson = await response.json();
-            if (resJson.result !== "success") throw new Error("GAS処理エラー");
+            const resText = await response.text(); // ★テキストで受ける
+            const resJson = JSON.parse(resText);   // ★自分でパース
 
-            showNotification("✅ 送信完了");
-            if(type==="sync") alert("クラウドに保存しました！");
-            return true;
+            if (resJson.result === "success") {
+                showNotification("✅ 送信完了");
+                if(type==="sync") alert("クラウドに保存しました！");
+                return true;
+            } else { throw new Error("GASエラー"); }
         } catch(e) {
-            alert("送信失敗: " + e.message); return false;
+            alert("送信失敗: " + e); return false;
         }
     }
 
-    // 3. 復元ボタン
+    // 2. ダウンロード（復元）
     async function downloadFromCloud() {
         const gasUrl = localStorage.getItem('dx_gas_url');
-        if(!gasUrl) { alert("GAS URLを設定してください"); return; }
-        if(!confirm("クラウドのデータで上書き復元しますか？\n（現在の端末データは消えます）")) return;
+        if(!gasUrl) { alert("GAS URL設定なし"); return; }
+        if(!confirm("クラウドデータで上書き復元しますか？")) return;
 
         showNotification('📥 取得中...');
         try {
             const res = await fetch(gasUrl + "?type=getAll");
-            const data = await res.json();
-            if(Array.isArray(data) && data.length > 0) {
+            const text = await res.text();       // ★テキストで受ける
+            const data = JSON.parse(text);       // ★自分でパース
+            
+            if(Array.isArray(data)) {
                 sites = data;
                 sites.sort((a, b) => (a.id > b.id ? -1 : 1));
                 localStorage.setItem('dx_sites', JSON.stringify(sites));
                 renderList(); closeAllModals();
                 showNotification(`✅ 復元完了 (${sites.length}件)`);
-            } else { alert("データが見つかりませんでした"); }
+            } else { alert("データ形式エラー"); }
         } catch(e) { alert("取得エラー: " + e); }
     }
 
-    // 4. 起動時チェック
+    // 3. 起動時チェック
     async function checkForCloudUpdates() {
         const targetUrl = localStorage.getItem('dx_gas_url');
         if(!targetUrl) return;
         try {
             const res = await fetch(targetUrl + "?type=getAll");
-            const cloudData = await res.json();
+            const text = await res.text();      // ★テキストで受ける
+            const cloudData = JSON.parse(text); // ★自分でパース
+            
             if (Array.isArray(cloudData) && cloudData.length > 0) {
                 const localMax = sites.length > 0 ? Math.max(...sites.map(s => s.updatedAt || 0)) : 0;
                 const cloudMax = Math.max(...cloudData.map(s => s.updatedAt || 0));

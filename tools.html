@@ -358,37 +358,29 @@
         if (!gasUrl) { alert("【設定エラー】\nナビ画面の設定から「GAS URL」を登録してください。"); return; }
         const reporterName = localStorage.getItem('dx_reporter_name') || "職人";
 
+        
         const btn = event.target;
-        const originalText = btn.innerHTML;
         btn.innerHTML = "⏳ 送信中..."; btn.disabled = true;
 
-        const data = { 
-            type: "report", 
-            id: currentSite ? currentSite.id : "", 
-            siteName: currentSite ? currentSite.name : "未定", 
-            address: currentSite ? currentSite.address : "", 
-            reporter: reporterName,
-            content: item.content,
-            timestamp: item.timestamp || new Date(item.date).getTime() // 互換性維持
-        };
-
         try {
-            // text/plain で送信してCORS回避
             const response = await fetch(gasUrl, {
                 method: 'POST',
                 headers: { 'Content-Type': 'text/plain' },
                 body: JSON.stringify(data)
             });
 
-            if (response.ok) {
-                alert("✅ 提出完了！\n(保存した日時で記録されました)");
+            // ★ここを修正
+            const resText = await response.text(); 
+            const resJson = JSON.parse(resText);
+
+            if (resJson.result === "success") {
+                alert("✅ 提出完了！");
                 btn.innerHTML = "✅ 済";
                 btn.style.background = "#ccc";
-                btn.style.color = "#555";
             } else { throw new Error("サーバーエラー"); }
         } catch(e) {
             alert("送信失敗: " + e);
-            btn.innerHTML = originalText;
+            btn.innerHTML = "📤 クラウドへ提出";
             btn.disabled = false;
         }
     }
