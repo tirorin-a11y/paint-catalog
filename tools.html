@@ -296,7 +296,7 @@
     function openForm() { document.getElementById('overlay').classList.add('show'); document.getElementById('inputForm').classList.add('show'); document.getElementById('siteName').value = currentSite ? currentSite.name : ''; document.getElementById('address').value = currentSite ? currentSite.address : ''; document.getElementById('status').value = currentSite ? currentSite.status : 'estimate'; }
     function closeAllModals() { document.querySelectorAll('.modal-box').forEach(el => el.classList.remove('show')); document.getElementById('overlay').classList.remove('show'); stopSpeech(); if(document.getElementById('photoPreviewArea').style.display==='flex') retakePhoto(); }
 
-    /* --- 日報機能（完全刷新版） --- */
+    /* --- 日報機能（重複防止・済マーク対応版） --- */
 
     // 保存機能
     function saveReportLocal() { 
@@ -308,9 +308,10 @@
         
         const now = new Date();
         reportHistory[targetId].unshift({ 
-            date: now.toLocaleString(), // 表示用
-            timestamp: now.getTime(),   // 送信用（正確な時刻）
-            content: text 
+            date: now.toLocaleString(), // 表示用日時
+            timestamp: now.getTime(),   // 固定ID（重複防止用）
+            content: text,
+            submitted: false            // 送信済みフラグ
         }); 
         
         localStorage.setItem('dx_reports', JSON.stringify(reportHistory)); 
@@ -331,6 +332,15 @@
         } 
 
         reportHistory[targetId].forEach((item, index) => { 
+            let btnText = "📤 クラウドへ提出";
+            // 提出済みの場合のスタイル上書き
+            let btnStyle = "";
+            
+            if (item.submitted) {
+                btnText = "✅ 提出済み";
+                btnStyle = "background: #27ae60 !important; color: white !important; border-color: #27ae60 !important; cursor: default;";
+            }
+
             const html = `
                 <div class="history-card">
                     <div class="history-header">
@@ -338,7 +348,7 @@
                     </div>
                     <div class="history-content">${item.content}</div>
                     <div class="history-actions">
-                        <button class="btn-resend" onclick="resendReport(${index})">📤 クラウドへ提出</button>
+                        <button class="btn-resend" style="${btnStyle}" onclick="resendReport(${index})">${btnText}</button>
                         <button class="btn-delete-hist" onclick="deleteReport(${index})">削除</button>
                     </div>
                 </div>`;
@@ -346,13 +356,18 @@
         }); 
     }
 
-    // 提出機能（履歴から指定して送信）
+    // 提出機能
     async function resendReport(index) {
         const targetId = siteId || 'preview';
         const item = reportHistory[targetId][index];
         if (!item) return;
 
-        if (!confirm(`📅 ${item.date} の日報として\nクラウドに提出しますか？`)) return;
+        if (item.submitted) {
+            // 既に送ってある場合
+            if(!confirm("✅ 既に提出済みです。\nそれでも再送しますか？")) return;
+        } else {
+            if (!confirm(`📅 ${item.date} の日報として\nクラウドに提出しますか？`)) return;
+        }
 
         const gasUrl = localStorage.getItem('dx_gas_url');
         if (!gasUrl) { alert("【設定エラー】\nナビ画面の設定から「GAS URL」を登録してください。"); return; }
@@ -362,7 +377,6 @@
         const originalText = btn.innerHTML;
         btn.innerHTML = "⏳ 送信中..."; btn.disabled = true;
 
-        // ★前回ここが抜けていました（送るデータの定義）
         const sendData = { 
             type: "report", 
             id: currentSite ? currentSite.id : "", 
@@ -370,26 +384,27 @@
             address: currentSite ? currentSite.address : "", 
             reporter: reporterName,
             content: item.content,
-            timestamp: item.timestamp || new Date(item.date).getTime()
+            timestamp: item.timestamp || new Date(item.date).getTime() // 固定日時を送る
         };
 
         try {
-            // text/plain で送信してCORS回避
             const response = await fetch(gasUrl, {
                 method: 'POST',
                 headers: { 'Content-Type': 'text/plain' },
-                body: JSON.stringify(sendData) // ★定義した sendData を送る
+                body: JSON.stringify(sendData)
             });
 
-            // ★テキストとして受け取ってからJSONに戻す
             const resText = await response.text();
             const resJson = JSON.parse(resText);
 
             if (resJson.result === "success") {
-                alert("✅ 提出完了！\n(保存した日時で記録されました)");
-                btn.innerHTML = "✅ 済";
-                btn.style.background = "#ccc";
-                btn.style.color = "#555";
+                alert("✅ 提出完了！");
+                
+                // 送信済みフラグを立てて保存
+                reportHistory[targetId][index].submitted = true;
+                localStorage.setItem('dx_reports', JSON.stringify(reportHistory));
+                renderReportHistory(); // 画面更新(緑色になる)
+
             } else { throw new Error("サーバーエラー"); }
         } catch(e) {
             alert("送信失敗: " + e);
@@ -406,7 +421,7 @@
         renderReportHistory();
     }
 
-    /* --- その他ツール（カメラ・カレンダー等） --- */
+    /* --- その他ツール（変更なし） --- */
 
     function handleCalendarAction() {
         const calId = localStorage.getItem('dx_calendar_id');
