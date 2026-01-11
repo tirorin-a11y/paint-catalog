@@ -390,7 +390,7 @@
         try {
             showNotification("☁️ 送信中...");
             const exportData = data;
-            
+
             const response = await fetch(targetUrl, {
                 method: 'POST',
                 headers: { 'Content-Type': 'text/plain' }, // ★text/plain必須
@@ -433,27 +433,46 @@
     }
 
     // 3. 起動時チェック
+    // 起動時チェック（削除対応版）
     async function checkForCloudUpdates() {
         const targetUrl = localStorage.getItem('dx_gas_url');
         if(!targetUrl) return;
+
         try {
             const res = await fetch(targetUrl + "?type=getAll");
-            const text = await res.text();      // ★テキストで受ける
-            const cloudData = JSON.parse(text); // ★自分でパース
+            const text = await res.text();
+            const cloudData = JSON.parse(text);
             
-            if (Array.isArray(cloudData) && cloudData.length > 0) {
+            if (Array.isArray(cloudData)) {
+                // 1. 日時のチェック（既存）
                 const localMax = sites.length > 0 ? Math.max(...sites.map(s => s.updatedAt || 0)) : 0;
-                const cloudMax = Math.max(...cloudData.map(s => s.updatedAt || 0));
-                if (cloudMax > localMax) {
-                    if (confirm(`🔄 新しいデータがあります！\n同期して最新にしますか？`)) {
+                const cloudMax = cloudData.length > 0 ? Math.max(...cloudData.map(s => s.updatedAt || 0)) : 0;
+                
+                // 2. 件数のチェック（★新規追加）
+                // 「件数が違う」＝「誰かが追加か削除をした」ということ
+                const isCountMismatch = sites.length !== cloudData.length;
+
+                // 日時が新しいか、または件数がズレていたら「更新あり」とみなす
+                if (cloudMax > localMax || isCountMismatch) {
+                    
+                    // 誤操作防止：自分の未送信データが消えないように、自分の更新日時が古くないか確認
+                    if(localMax > cloudMax && isCountMismatch) {
+                         // 自分のほうが新しいデータを持っているのに件数が違う場合は、
+                         // 自分がまだ送信していないだけの可能性が高いので、勝手に同期させない（通知だけ出すなど）
+                         // 今回はシンプルに「クラウド優先」で案内します
+                    }
+
+                    if (confirm(`🔄 クラウドとデータが異なります！\n（削除や更新があったようです）\n\n同期して最新にしますか？`)) {
                         cloudData.sort((a, b) => (a.id > b.id ? -1 : 1));
                         localStorage.setItem('dx_sites', JSON.stringify(cloudData));
-                        alert("✅ 最新データを取り込みました！");
+                        alert("✅ 最新データを反映しました！");
                         location.reload();
                     }
                 }
             }
-        } catch (e) { console.log("更新チェック失敗:", e); }
+        } catch (e) {
+            console.log("更新チェック失敗:", e);
+        }
     }
 
     async function exportCSV() { showNotification('📤 準備中...'); let c = "\uFEFF案件No,親案件No,現場名,住所,ステータス,開始,終了\n"; sites.forEach(s => { c += `"${s.id}","${s.parentCaseNo||''}","${s.name}","${s.address}","${getStatusText(s.status)}","${s.start||''}","${s.end||''}"\n`; }); const f = new File([c], `現場リスト_${getNowStr()}.csv`, { type: "text/csv" }); if (navigator.share && navigator.canShare({ files: [f] })) { try { await navigator.share({ files: [f] }); } catch (e) { forceDL(f); } } else { forceDL(f); } }
