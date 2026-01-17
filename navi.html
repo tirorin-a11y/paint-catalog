@@ -5,8 +5,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>現場ナビ - 職人ギア</title>
     <link rel="manifest" href="manifest.json">
-    <link rel="icon" href="icon-192x192.png">
     <link rel="apple-touch-icon" href="icon-192x192.png">
+    <link rel="icon" href="icon-192x192.png">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <style>
         /* --- デザイン定義 (UI復元版) --- */
@@ -180,9 +180,9 @@
     let sites = JSON.parse(localStorage.getItem('dx_sites')) || [];
     let isEditing = false, tapCount = 0, editingId = null, isSortMode = false, pressTimer = null; 
 
+    // ★修正：初期データを空にしました（鈴木さん削除）
     if (sites.length === 0) {
-        sites = [{ id: '2025-001', name: '【サンプル】鈴木様邸', address: '東京都墨田区押上1-1-2', status: 'contract', updatedAt: Date.now(), naviCount: 0 }];
-        localStorage.setItem('dx_sites', JSON.stringify(sites));
+        sites = [];
     }
 
     document.addEventListener('DOMContentLoaded', function() {
@@ -257,6 +257,12 @@
         const listEl = document.getElementById('siteList');
         const kw = document.getElementById('searchInput').value.toLowerCase();
         listEl.innerHTML = '';
+        
+        // ★データが0件の場合のメッセージ
+        if (sites.length === 0) {
+            listEl.innerHTML = '<div style="text-align:center; padding:40px; color:#888;">データがありません。<br>右下の「＋」ボタンから追加してください。</div>';
+            return;
+        }
         
         sites.forEach((site, index) => {
             if (kw && !site.name.toLowerCase().includes(kw) && !site.address.toLowerCase().includes(kw) && !site.id.includes(kw)) return;
@@ -350,17 +356,15 @@
     function unlockCaseNo() { tapCount++; if(tapCount>=5){ const el=document.getElementById('inputNum'); el.readOnly=false; el.className='input-num unlocked'; showNotification('🔓 ロック解除'); tapCount=0; } }
     function getNowStr() { const d=new Date(); return `${d.getFullYear()}${('0'+(d.getMonth()+1)).slice(-2)}${('0'+d.getDate()).slice(-2)}`; }
     
-    // --- クラウド同期機能 (安全・修正版) ---
+    // --- クラウド同期機能 ---
 
-    // 1. バックアップボタンで呼ばれる
     function syncAllDataToCloud() {
         if(!confirm("現在スマホにあるデータで、クラウドを上書き更新しますか？")) return;
         uploadDataToCloud(sites, "sync");
     }
 
-    // --- 通信関連 (テキストモード対応版) ---
+    // --- 通信関連 ---
 
-    // 1. アップロード・同期
     async function uploadDataToCloud(data, type = "sync") {
         const targetUrl = localStorage.getItem('dx_gas_url');
         if(!targetUrl || targetUrl.includes("script.google.com") === false) {
@@ -372,8 +376,8 @@
             showNotification("☁️ クラウド確認中...");
             try {
                 const checkRes = await fetch(targetUrl + "?type=getAll");
-                const text = await checkRes.text();      // ★テキストで受ける
-                const cloudData = JSON.parse(text);      // ★自分でパース
+                const text = await checkRes.text();
+                const cloudData = JSON.parse(text);
                 
                 const localMax = data.length > 0 ? Math.max(...data.map(s => s.updatedAt || 0)) : 0;
                 const cloudMax = Array.isArray(cloudData) && cloudData.length > 0 ? Math.max(...cloudData.map(s => s.updatedAt || 0)) : 0;
@@ -394,12 +398,12 @@
 
             const response = await fetch(targetUrl, {
                 method: 'POST',
-                headers: { 'Content-Type': 'text/plain' }, // ★text/plain必須
+                headers: { 'Content-Type': 'text/plain' },
                 body: JSON.stringify({ type: type, data: exportData, reporter: localStorage.getItem('dx_reporter_name') || "職人" })
             });
 
-            const resText = await response.text(); // ★テキストで受ける
-            const resJson = JSON.parse(resText);   // ★自分でパース
+            const resText = await response.text();
+            const resJson = JSON.parse(resText);
 
             if (resJson.result === "success") {
                 showNotification("✅ 送信完了");
@@ -411,7 +415,6 @@
         }
     }
 
-    // 2. ダウンロード（復元）
     async function downloadFromCloud() {
         const gasUrl = localStorage.getItem('dx_gas_url');
         if(!gasUrl) { alert("GAS URL設定なし"); return; }
@@ -420,8 +423,8 @@
         showNotification('📥 取得中...');
         try {
             const res = await fetch(gasUrl + "?type=getAll");
-            const text = await res.text();       // ★テキストで受ける
-            const data = JSON.parse(text);       // ★自分でパース
+            const text = await res.text();
+            const data = JSON.parse(text);
             
             if(Array.isArray(data)) {
                 sites = data;
@@ -433,8 +436,6 @@
         } catch(e) { alert("取得エラー: " + e); }
     }
 
-    // 3. 起動時チェック
-    // 起動時チェック（削除対応版）
     async function checkForCloudUpdates() {
         const targetUrl = localStorage.getItem('dx_gas_url');
         if(!targetUrl) return;
@@ -445,25 +446,15 @@
             const cloudData = JSON.parse(text);
             
             if (Array.isArray(cloudData)) {
-                // 1. 日時のチェック（既存）
                 const localMax = sites.length > 0 ? Math.max(...sites.map(s => s.updatedAt || 0)) : 0;
                 const cloudMax = cloudData.length > 0 ? Math.max(...cloudData.map(s => s.updatedAt || 0)) : 0;
                 
-                // 2. 件数のチェック（★新規追加）
-                // 「件数が違う」＝「誰かが追加か削除をした」ということ
                 const isCountMismatch = sites.length !== cloudData.length;
 
-                // 日時が新しいか、または件数がズレていたら「更新あり」とみなす
                 if (cloudMax > localMax || isCountMismatch) {
-                    
-                    // 誤操作防止：自分の未送信データが消えないように、自分の更新日時が古くないか確認
                     if(localMax > cloudMax && isCountMismatch) {
-                         // 自分のほうが新しいデータを持っているのに件数が違う場合は、
-                         // 自分がまだ送信していないだけの可能性が高いので、勝手に同期させない（通知だけ出すなど）
-                         // 今回はシンプルに「クラウド優先」で案内します
-                    }
-
-                    if (confirm(`🔄 クラウドとデータが異なります！\n（削除や更新があったようです）\n\n同期して最新にしますか？`)) {
+                         // ローカルの方が新しいのに件数が違う場合（クラウドに送信前）は、通知しない
+                    } else if (confirm(`🔄 クラウドとデータが異なります！\n（削除や更新があったようです）\n\n同期して最新にしますか？`)) {
                         cloudData.sort((a, b) => (a.id > b.id ? -1 : 1));
                         localStorage.setItem('dx_sites', JSON.stringify(cloudData));
                         alert("✅ 最新データを反映しました！");

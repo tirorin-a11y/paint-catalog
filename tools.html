@@ -252,7 +252,7 @@
     </select>
     <div class="edit-footer">
         <button class="btn-del-single" onclick="deleteSite()">🗑️</button>
-        <button class="cancel-btn" onclick="closeAllModals()">中止</button>
+        <button class="cancel-btn" onclick="copySite()" style="background-color:#8e44ad; color:white;">コピー作成</button>
         <button class="save-btn" onclick="saveEdit()">更新する</button>
     </div>
 </div>
@@ -490,7 +490,29 @@
     
     function sendReportLine() { const text = document.getElementById('reportText').value; if(!text) return; const lineUrl = `https://line.me/R/msg/text/?【日報：${currentSite ? currentSite.name : '現場'}】%0A${encodeURIComponent(text)}`; window.open(lineUrl, '_blank'); }
     function sendReportMail() { const text = document.getElementById('reportText').value; if(!text) return; const mailTo = localStorage.getItem('dx_manager_email'); if(!mailTo) { alert("【設定エラー】\nナビ画面の「設定(⚙️)」から、管理者のメールアドレスを登録してください。"); return; } saveReportLocal(); const subject = `【日報】${currentSite ? currentSite.name : '現場'} (${new Date().toLocaleDateString()})`; const body = `${currentSite ? currentSite.name : '現場'}\n\n${text}\n\n--\nSent from 職人ギア`; const mailUrl = `mailto:${mailTo}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`; window.location.href = mailUrl; }
+    function copySite() {
+        const name = document.getElementById('siteName').value;
+        const address = document.getElementById('address').value;
+        if(!name) return;
 
+        if(confirm('この現場情報をコピーして、新規案件を作成しますか？\n（状態は「見積中」として作成されます）')) {
+            // 新規IDの発番とオブジェクト作成
+            const newSite = {
+                id: Date.now().toString(),
+                name: name,
+                address: address,
+                status: 'estimate',   // 新規案件なので見積中にリセット
+                start: '', end: '',   // 日程情報はリセット
+                updatedAt: Date.now()
+            };
+            
+            sites.unshift(newSite); // リストの先頭に追加
+            localStorage.setItem('dx_sites', JSON.stringify(sites));
+            
+            alert('コピーを作成しました。一覧画面に戻ります。');
+            window.location.href = 'navi.html';
+        }
+    }
 </script>
 </body>
 </html>
