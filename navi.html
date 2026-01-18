@@ -28,9 +28,13 @@
         .search-input { width: 100%; padding: 10px; border-radius: 6px; border: none; font-size: 1rem; box-sizing: border-box; outline: none; }
         
         /* ★ フィルターボタンエリア（横スクロール対応） */
-        .filter-area { background: #34495e; padding: 5px 15px 15px 15px; position: sticky; top: 96px; z-index: 99; display: flex; gap: 8px; overflow-x: auto; white-space: nowrap; -webkit-overflow-scrolling: touch; box-shadow: 0 4px 5px rgba(0,0,0,0.1); }
-        .filter-area::-webkit-scrollbar { display: none; } /* スクロールバー消す */
-        .filter-btn { padding: 6px 14px; border-radius: 20px; font-size: 0.85rem; font-weight: bold; border: 1px solid rgba(255,255,255,0.3); background: rgba(255,255,255,0.1); color: #ccc; cursor: pointer; transition: 0.2s; flex-shrink: 0; }
+        /* topを115pxに変更して食い込みを防止 */
+        .filter-area { background: #34495e; padding: 5px 15px 15px 15px; position: sticky; top: 115px; z-index: 99; display: flex; gap: 8px; overflow-x: auto; white-space: nowrap; -webkit-overflow-scrolling: touch; box-shadow: 0 4px 5px rgba(0,0,0,0.1); }
+
+        /* スクロールバーを可視化（白く半透明にして見やすく） */
+        .filter-area::-webkit-scrollbar { height: 4px; }
+        .filter-area::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.5); border-radius: 4px; }
+        .filter-area::-webkit-scrollbar-track { background: transparent; }.filter-btn { padding: 6px 14px; border-radius: 20px; font-size: 0.85rem; font-weight: bold; border: 1px solid rgba(255,255,255,0.3); background: rgba(255,255,255,0.1); color: #ccc; cursor: pointer; transition: 0.2s; flex-shrink: 0; }
         .filter-btn.active { background: white; color: #333; border-color: white; transform: scale(1.05); box-shadow: 0 2px 5px rgba(0,0,0,0.2); }
         /* 各ステータスの色（アクティブ時） */
         .filter-btn[data-st="estimate"].active { color: #e67e22; border-color: #e67e22; }
