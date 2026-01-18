@@ -98,11 +98,11 @@
         
         /* 左ボタン用：減る演出（赤） */
         .hold-bar { position: absolute; top: 0; left: 0; height: 6px; background-color: #e74c3c; opacity: 0.8; width: 100%; transition: width 0s; z-index: 0; }
-        .holding .hold-bar { width: 0%; transition: width 2.0s linear; }
+        .holding .hold-bar { width: 0%; transition: width 5.0s linear; }
 
         /* 左ボタン用：増える演出（青） */
         .hold-bar-plus { position: absolute; top: 0; left: 0; height: 100%; background-color: rgba(41, 128, 185, 0.5); width: 0%; transition: width 0s; pointer-events: none; z-index: 0; }
-        .holding-plus .hold-bar-plus { width: 100%; transition: width 1.5s linear; }
+        .holding-plus .hold-bar-plus { width: 100%; transition: width 5.0s linear; }
         
         /* ★修正：中身（文字・絵文字）だけを前面に出すためのクラス */
         .btn-content { position: relative; z-index: 2; pointer-events: none; text-align: center; }
@@ -314,7 +314,7 @@
             if (navigator.vibrate) navigator.vibrate(100); 
             btn.classList.remove('holding'); updateNaviCount(id, -1); 
             showNotification('修正しました：カウント -1'); pressTimer = null; 
-        }, 2000);
+        }, 5000);
     }
     function handleTouchEnd(btn, id, address) {
         if (pressTimer) {
@@ -345,7 +345,7 @@
             
             updateNaviCount(id, 1);
             showNotification('修正しました：カウント +1');
-        }, 1500); // 1.5秒
+        }, 5000); // 5秒
     }
 
     function handleRightEnd(btn) {
