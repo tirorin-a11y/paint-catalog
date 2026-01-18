@@ -9,7 +9,7 @@
     <link rel="icon" href="icon-192x192.png">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <style>
-        /* --- デザイン定義 (UI復元版) --- */
+        /* --- デザイン定義 --- */
         body { font-family: -apple-system, BlinkMacSystemFont, "Helvetica Neue", "Yu Gothic", sans-serif; background-color: #f0f2f5; margin: 0; padding: 0; color: #333; -webkit-font-smoothing: antialiased; }
         header { background-color: #2c3e50; color: white; padding: 10px 15px; position: sticky; top: 0; z-index: 100; box-shadow: 0 2px 5px rgba(0,0,0,0.2); display: flex; justify-content: space-between; align-items: center; }
         .header-title-area { display: flex; align-items: baseline; gap: 8px; }
@@ -18,9 +18,27 @@
         .link-control:hover { color: white; border-color: white; }
         .header-btn-group { display: flex; align-items: center; gap: 15px; }
         .icon-btn { font-size: 1.4rem; cursor: pointer; text-decoration: none; color: white; display: flex; align-items: center; }
-        
-        .search-area { background: #34495e; padding: 10px 15px; position: sticky; top: 50px; z-index: 99; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
+        /* 並び替えモード中、ヘッダーのアイコンを黄色にする */
+        body.sort-mode .icon-btn[onclick="toggleSortMode()"] {
+        color: #f39c12;
+        text-shadow: 0 0 5px rgba(243, 156, 18, 0.5);
+        }
+
+        .search-area { background: #34495e; padding: 10px 15px 5px 15px; position: sticky; top: 50px; z-index: 99; }
         .search-input { width: 100%; padding: 10px; border-radius: 6px; border: none; font-size: 1rem; box-sizing: border-box; outline: none; }
+        
+        /* ★ フィルターボタンエリア（横スクロール対応） */
+        .filter-area { background: #34495e; padding: 5px 15px 15px 15px; position: sticky; top: 96px; z-index: 99; display: flex; gap: 8px; overflow-x: auto; white-space: nowrap; -webkit-overflow-scrolling: touch; box-shadow: 0 4px 5px rgba(0,0,0,0.1); }
+        .filter-area::-webkit-scrollbar { display: none; } /* スクロールバー消す */
+        .filter-btn { padding: 6px 14px; border-radius: 20px; font-size: 0.85rem; font-weight: bold; border: 1px solid rgba(255,255,255,0.3); background: rgba(255,255,255,0.1); color: #ccc; cursor: pointer; transition: 0.2s; flex-shrink: 0; }
+        .filter-btn.active { background: white; color: #333; border-color: white; transform: scale(1.05); box-shadow: 0 2px 5px rgba(0,0,0,0.2); }
+        /* 各ステータスの色（アクティブ時） */
+        .filter-btn[data-st="estimate"].active { color: #e67e22; border-color: #e67e22; }
+        .filter-btn[data-st="contract"].active { color: #2980b9; border-color: #2980b9; }
+        .filter-btn[data-st="billing"].active { color: #8e44ad; border-color: #8e44ad; }
+        .filter-btn[data-st="complete"].active { color: #7f8c8d; border-color: #7f8c8d; }
+        .filter-btn[data-st="lost"].active { color: #333; border-color: #333; }
+
         .container { max-width: 600px; margin: 0 auto; padding: 15px; padding-top: 20px; padding-bottom: 100px; }
         
         /* カードデザイン */
@@ -108,6 +126,15 @@
     <input type="search" id="searchInput" class="search-input" placeholder="🔍 現場名や住所で検索..." oninput="renderList()">
 </div>
 
+<div class="filter-area">
+    <button class="filter-btn active" onclick="setFilter('all', this)">全て</button>
+    <button class="filter-btn" data-st="estimate" onclick="setFilter('estimate', this)">見積中</button>
+    <button class="filter-btn" data-st="contract" onclick="setFilter('contract', this)">契約済</button>
+    <button class="filter-btn" data-st="billing" onclick="setFilter('billing', this)">請求</button>
+    <button class="filter-btn" data-st="complete" onclick="setFilter('complete', this)">完了</button>
+    <button class="filter-btn" data-st="lost" onclick="setFilter('lost', this)">失注</button>
+</div>
+
 <div class="container" id="siteList"></div>
 
 <input type="file" id="jsonInput" accept=".json" style="display:none" onchange="importJSON(this)">
@@ -179,8 +206,10 @@
 <script>
     let sites = JSON.parse(localStorage.getItem('dx_sites')) || [];
     let isEditing = false, tapCount = 0, editingId = null, isSortMode = false, pressTimer = null; 
+    
+    // ★追加：現在のフィルター状態
+    let currentFilter = 'all';
 
-    // ★修正：初期データを空にしました（鈴木さん削除）
     if (sites.length === 0) {
         sites = [];
     }
@@ -221,6 +250,24 @@
         showNotification('⚙️ 設定を保存しました');
     }
 
+    // ★追加：フィルター切り替え機能
+    function setFilter(status, btn) {
+        currentFilter = status;
+        
+        // ボタンの見た目更新
+        document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        
+        // リスト再描画
+        renderList();
+        
+        if (status !== 'all') {
+            showNotification(`🔍 「${btn.innerText}」で絞り込み (案件No順)`);
+        } else {
+            showNotification('📋 全て表示');
+        }
+    }
+
     function handleTouchStart(btn, id, address) {
         if (btn.classList.contains('holding')) return;
         btn.classList.add('holding'); 
@@ -258,20 +305,49 @@
         const kw = document.getElementById('searchInput').value.toLowerCase();
         listEl.innerHTML = '';
         
-        // ★データが0件の場合のメッセージ
         if (sites.length === 0) {
             listEl.innerHTML = '<div style="text-align:center; padding:40px; color:#888;">データがありません。<br>右下の「＋」ボタンから追加してください。</div>';
             return;
         }
         
-        sites.forEach((site, index) => {
+        // ★修正：表示用の一時リストを作る
+        let displaySites = [...sites];
+
+        // 1. フィルター適用
+        if (currentFilter !== 'all') {
+            displaySites = displaySites.filter(s => {
+                // "contract"ボタンなら "contract" と "active" 両方出す等の調整も可。
+                // ここではシンプルに一致判定（ただしactiveはcontract扱いにする）
+                if (currentFilter === 'contract') return s.status === 'contract' || s.status === 'active';
+                if (currentFilter === 'complete') return s.status === 'complete' || s.status === 'done';
+                return s.status === currentFilter;
+            });
+            
+            // ★重要：フィルター中は「案件Noの新しい順（降順）」に強制ソート！
+            displaySites.sort((a, b) => {
+                if (a.id < b.id) return 1;
+                if (a.id > b.id) return -1;
+                return 0;
+            });
+        }
+
+        displaySites.forEach((site) => {
+            // 元のインデックス（並び替え用）を探す
+            const originalIndex = sites.findIndex(s => s.id === site.id);
+
             if (kw && !site.name.toLowerCase().includes(kw) && !site.address.toLowerCase().includes(kw) && !site.id.includes(kw)) return;
+            
             let stLabel = '見積中', stClass = 'st-estimate';
             if(site.status === 'contract' || site.status === 'active') { stLabel = '契約済み'; stClass = 'st-contract'; }
             if(site.status === 'billing') { stLabel = '請求'; stClass = 'st-billing'; }
             if(site.status === 'complete' || site.status === 'done') { stLabel = '完了'; stClass = 'st-complete'; }
             if(site.status === 'lost') { stLabel = '失注'; stClass = 'st-lost'; }
             
+            // フィルター中はソートボタンを隠す（並び順が固定されるため）
+            const sortButtons = (currentFilter === 'all') ? 
+                `<div class="sort-actions"><button class="btn-up" onclick="moveItem(${originalIndex},-1)">⬆️</button><button class="btn-down" onclick="moveItem(${originalIndex},1)">⬇️</button></div>` 
+                : '';
+
             const html = `
                 <div class="site-card">
                     <div class="card-header"><span class="case-no">${site.id}</span><span class="status-badge ${stClass}">${stLabel}</span></div>
@@ -282,12 +358,15 @@
                         <a href="tools.html?id=${site.id}" class="action-btn btn-center">🧰<br><span style="font-size:0.7rem">ツール</span></a>
                         <div class="navi-wrapper"><span class="navi-count-label">${site.naviCount||0}回</span><a href="https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(site.address)}" target="_blank" class="action-btn btn-navi-side" onclick="updateNaviCount('${site.id}',1)">🚀<br><span style="font-size:0.7rem">ナビ</span></a></div>
                     </div>
-                    <div class="sort-actions"><button class="btn-up" onclick="moveItem(${index},-1)">⬆️</button><button class="btn-down" onclick="moveItem(${index},1)">⬇️</button></div>
+                    ${sortButtons}
                 </div>`;
             listEl.insertAdjacentHTML('beforeend', html);
         });
     }
     function moveItem(index, direction) {
+        // フィルター中は並び替え無効
+        if(currentFilter !== 'all') return;
+
         if ((direction === -1 && index > 0) || (direction === 1 && index < sites.length - 1)) {
             [sites[index], sites[index + direction]] = [sites[index + direction], sites[index]];
             localStorage.setItem('dx_sites', JSON.stringify(sites)); renderList();
@@ -356,15 +435,17 @@
     function unlockCaseNo() { tapCount++; if(tapCount>=5){ const el=document.getElementById('inputNum'); el.readOnly=false; el.className='input-num unlocked'; showNotification('🔓 ロック解除'); tapCount=0; } }
     function getNowStr() { const d=new Date(); return `${d.getFullYear()}${('0'+(d.getMonth()+1)).slice(-2)}${('0'+d.getDate()).slice(-2)}`; }
     
-    // --- クラウド同期機能 ---
+    // --- クラウド同期機能 (安全・修正版) ---
 
+    // 1. バックアップボタンで呼ばれる
     function syncAllDataToCloud() {
         if(!confirm("現在スマホにあるデータで、クラウドを上書き更新しますか？")) return;
         uploadDataToCloud(sites, "sync");
     }
 
-    // --- 通信関連 ---
+    // --- 通信関連 (テキストモード対応版) ---
 
+    // 1. アップロード・同期
     async function uploadDataToCloud(data, type = "sync") {
         const targetUrl = localStorage.getItem('dx_gas_url');
         if(!targetUrl || targetUrl.includes("script.google.com") === false) {
@@ -376,8 +457,8 @@
             showNotification("☁️ クラウド確認中...");
             try {
                 const checkRes = await fetch(targetUrl + "?type=getAll");
-                const text = await checkRes.text();
-                const cloudData = JSON.parse(text);
+                const text = await checkRes.text();      // ★テキストで受ける
+                const cloudData = JSON.parse(text);      // ★自分でパース
                 
                 const localMax = data.length > 0 ? Math.max(...data.map(s => s.updatedAt || 0)) : 0;
                 const cloudMax = Array.isArray(cloudData) && cloudData.length > 0 ? Math.max(...cloudData.map(s => s.updatedAt || 0)) : 0;
@@ -398,12 +479,12 @@
 
             const response = await fetch(targetUrl, {
                 method: 'POST',
-                headers: { 'Content-Type': 'text/plain' },
+                headers: { 'Content-Type': 'text/plain' }, // ★text/plain必須
                 body: JSON.stringify({ type: type, data: exportData, reporter: localStorage.getItem('dx_reporter_name') || "職人" })
             });
 
-            const resText = await response.text();
-            const resJson = JSON.parse(resText);
+            const resText = await response.text(); // ★テキストで受ける
+            const resJson = JSON.parse(resText);   // ★自分でパース
 
             if (resJson.result === "success") {
                 showNotification("✅ 送信完了");
@@ -415,6 +496,7 @@
         }
     }
 
+    // 2. ダウンロード（復元）
     async function downloadFromCloud() {
         const gasUrl = localStorage.getItem('dx_gas_url');
         if(!gasUrl) { alert("GAS URL設定なし"); return; }
@@ -423,8 +505,8 @@
         showNotification('📥 取得中...');
         try {
             const res = await fetch(gasUrl + "?type=getAll");
-            const text = await res.text();
-            const data = JSON.parse(text);
+            const text = await res.text();       // ★テキストで受ける
+            const data = JSON.parse(text);       // ★自分でパース
             
             if(Array.isArray(data)) {
                 sites = data;
@@ -436,6 +518,8 @@
         } catch(e) { alert("取得エラー: " + e); }
     }
 
+    // 3. 起動時チェック
+    // 起動時チェック（削除対応版）
     async function checkForCloudUpdates() {
         const targetUrl = localStorage.getItem('dx_gas_url');
         if(!targetUrl) return;
@@ -446,15 +530,25 @@
             const cloudData = JSON.parse(text);
             
             if (Array.isArray(cloudData)) {
+                // 1. 日時のチェック（既存）
                 const localMax = sites.length > 0 ? Math.max(...sites.map(s => s.updatedAt || 0)) : 0;
                 const cloudMax = cloudData.length > 0 ? Math.max(...cloudData.map(s => s.updatedAt || 0)) : 0;
                 
+                // 2. 件数のチェック（★新規追加）
+                // 「件数が違う」＝「誰かが追加か削除をした」ということ
                 const isCountMismatch = sites.length !== cloudData.length;
 
+                // 日時が新しいか、または件数がズレていたら「更新あり」とみなす
                 if (cloudMax > localMax || isCountMismatch) {
+                    
+                    // 誤操作防止：自分の未送信データが消えないように、自分の更新日時が古くないか確認
                     if(localMax > cloudMax && isCountMismatch) {
-                         // ローカルの方が新しいのに件数が違う場合（クラウドに送信前）は、通知しない
-                    } else if (confirm(`🔄 クラウドとデータが異なります！\n（削除や更新があったようです）\n\n同期して最新にしますか？`)) {
+                         // 自分のほうが新しいデータを持っているのに件数が違う場合は、
+                         // 自分がまだ送信していないだけの可能性が高いので、勝手に同期させない（通知だけ出すなど）
+                         // 今回はシンプルに「クラウド優先」で案内します
+                    }
+
+                    if (confirm(`🔄 クラウドとデータが異なります！\n（削除や更新があったようです）\n\n同期して最新にしますか？`)) {
                         cloudData.sort((a, b) => (a.id > b.id ? -1 : 1));
                         localStorage.setItem('dx_sites', JSON.stringify(cloudData));
                         alert("✅ 最新データを反映しました！");
