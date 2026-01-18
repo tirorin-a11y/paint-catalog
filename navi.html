@@ -11,30 +11,65 @@
     <style>
         /* --- デザイン定義 --- */
         body { font-family: -apple-system, BlinkMacSystemFont, "Helvetica Neue", "Yu Gothic", sans-serif; background-color: #f0f2f5; margin: 0; padding: 0; color: #333; -webkit-font-smoothing: antialiased; }
-        header { background-color: #2c3e50; color: white; padding: 10px 15px; position: sticky; top: 0; z-index: 100; box-shadow: 0 2px 5px rgba(0,0,0,0.2); display: flex; justify-content: space-between; align-items: center; }
+        
+        /* ★修正：3要素をまとめる固定用コンテナ */
+        .fixed-header-group {
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            background-color: #34495e; /* 隙間から背景が見えないように */
+            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+        }
+
+        /* ヘッダー（固定解除・デザイン維持） */
+        header { 
+            background-color: #2c3e50; 
+            color: white; 
+            padding: 10px 15px; 
+            position: static; /* 固定解除 */
+            display: flex; 
+            justify-content: space-between; 
+            align-items: center; 
+        }
+        
         .header-title-area { display: flex; align-items: baseline; gap: 8px; }
         h1 { margin: 0; font-size: 1.1rem; letter-spacing: 0.05em; font-weight: bold; }
         .link-control { font-size: 0.75rem; color: #95a5a6; text-decoration: none; border: 1px solid #555; padding: 2px 6px; border-radius: 4px; transition: 0.2s; }
         .link-control:hover { color: white; border-color: white; }
         .header-btn-group { display: flex; align-items: center; gap: 15px; }
-        .icon-btn { font-size: 1.4rem; cursor: pointer; text-decoration: none; color: white; display: flex; align-items: center; }
-        /* 並び替えモード中、ヘッダーのアイコンを黄色にする */
+        .icon-btn { font-size: 1.4rem; cursor: pointer; text-decoration: none; color: white; display: flex; align-items: center; transition: 0.2s; }
+        
+        /* ★追加：並び替えモード中のアイコン強調 */
         body.sort-mode .icon-btn[onclick="toggleSortMode()"] {
-        color: #f39c12;
-        text-shadow: 0 0 5px rgba(243, 156, 18, 0.5);
+            color: #f39c12;
+            text-shadow: 0 0 5px rgba(243, 156, 18, 0.5);
         }
 
-        .search-area { background: #34495e; padding: 10px 15px 5px 15px; position: sticky; top: 50px; z-index: 99; }
+        /* 検索エリア（固定解除・パディング調整） */
+        .search-area { 
+            background: #34495e; 
+            padding: 10px 15px 0 15px; /* 下を詰める */
+            position: static; /* 固定解除 */
+        }
         .search-input { width: 100%; padding: 10px; border-radius: 6px; border: none; font-size: 1rem; box-sizing: border-box; outline: none; }
         
-        /* ★ フィルターボタンエリア（横スクロール対応） */
-        /* topを115pxに変更して食い込みを防止 */
-        .filter-area { background: #34495e; padding: 5px 15px 15px 15px; position: sticky; top: 115px; z-index: 99; display: flex; gap: 8px; overflow-x: auto; white-space: nowrap; -webkit-overflow-scrolling: touch; box-shadow: 0 4px 5px rgba(0,0,0,0.1); }
-
-        /* スクロールバーを可視化（白く半透明にして見やすく） */
+        /* フィルターエリア（固定解除・スクロールバー追加） */
+        .filter-area { 
+            background: #34495e; 
+            padding: 5px 15px 15px 15px; 
+            position: static; /* 固定解除 */
+            display: flex; 
+            gap: 8px; 
+            overflow-x: auto; 
+            white-space: nowrap; 
+            -webkit-overflow-scrolling: touch; 
+        }
+        /* スクロールバーを見やすくカスタマイズ */
         .filter-area::-webkit-scrollbar { height: 4px; }
         .filter-area::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.5); border-radius: 4px; }
-        .filter-area::-webkit-scrollbar-track { background: transparent; }.filter-btn { padding: 6px 14px; border-radius: 20px; font-size: 0.85rem; font-weight: bold; border: 1px solid rgba(255,255,255,0.3); background: rgba(255,255,255,0.1); color: #ccc; cursor: pointer; transition: 0.2s; flex-shrink: 0; }
+        .filter-area::-webkit-scrollbar-track { background: transparent; }
+
+        .filter-btn { padding: 6px 14px; border-radius: 20px; font-size: 0.85rem; font-weight: bold; border: 1px solid rgba(255,255,255,0.3); background: rgba(255,255,255,0.1); color: #ccc; cursor: pointer; transition: 0.2s; flex-shrink: 0; }
         .filter-btn.active { background: white; color: #333; border-color: white; transform: scale(1.05); box-shadow: 0 2px 5px rgba(0,0,0,0.2); }
         /* 各ステータスの色（アクティブ時） */
         .filter-btn[data-st="estimate"].active { color: #e67e22; border-color: #e67e22; }
@@ -115,30 +150,33 @@
 </head>
 <body>
 
-<header>
-    <div class="header-title-area">
-        <h1>🚗 現場ナビ</h1>
-        <a href="manager.html" class="link-control">📊 工程管理</a>
+<div class="fixed-header-group">
+
+    <header>
+        <div class="header-title-area">
+            <h1>🚗 現場ナビ</h1>
+            <a href="manager.html" class="link-control">📊 工程管理</a>
+        </div>
+        <div class="header-btn-group">
+            <span class="icon-btn" onclick="toggleSortMode()" title="並び替え">⇅</span>
+            <span class="icon-btn" onclick="openSettings()" title="設定">⚙️</span>
+        </div>
+    </header>
+
+    <div class="search-area">
+        <input type="search" id="searchInput" class="search-input" placeholder="🔍 現場名や住所で検索..." oninput="renderList()">
     </div>
-    <div class="header-btn-group">
-        <span class="icon-btn" onclick="toggleSortMode()" title="並び替え">⇅</span>
-        <span class="icon-btn" onclick="openSettings()" title="設定">⚙️</span>
+
+    <div class="filter-area">
+        <button class="filter-btn active" onclick="setFilter('all', this)">全て</button>
+        <button class="filter-btn" data-st="estimate" onclick="setFilter('estimate', this)">見積中</button>
+        <button class="filter-btn" data-st="contract" onclick="setFilter('contract', this)">契約済</button>
+        <button class="filter-btn" data-st="billing" onclick="setFilter('billing', this)">請求</button>
+        <button class="filter-btn" data-st="complete" onclick="setFilter('complete', this)">完了</button>
+        <button class="filter-btn" data-st="lost" onclick="setFilter('lost', this)">失注</button>
     </div>
-</header>
 
-<div class="search-area">
-    <input type="search" id="searchInput" class="search-input" placeholder="🔍 現場名や住所で検索..." oninput="renderList()">
 </div>
-
-<div class="filter-area">
-    <button class="filter-btn active" onclick="setFilter('all', this)">全て</button>
-    <button class="filter-btn" data-st="estimate" onclick="setFilter('estimate', this)">見積中</button>
-    <button class="filter-btn" data-st="contract" onclick="setFilter('contract', this)">契約済</button>
-    <button class="filter-btn" data-st="billing" onclick="setFilter('billing', this)">請求</button>
-    <button class="filter-btn" data-st="complete" onclick="setFilter('complete', this)">完了</button>
-    <button class="filter-btn" data-st="lost" onclick="setFilter('lost', this)">失注</button>
-</div>
-
 <div class="container" id="siteList"></div>
 
 <input type="file" id="jsonInput" accept=".json" style="display:none" onchange="importJSON(this)">
@@ -211,7 +249,7 @@
     let sites = JSON.parse(localStorage.getItem('dx_sites')) || [];
     let isEditing = false, tapCount = 0, editingId = null, isSortMode = false, pressTimer = null; 
     
-    // ★追加：現在のフィルター状態
+    // 現在のフィルター状態
     let currentFilter = 'all';
 
     if (sites.length === 0) {
@@ -254,7 +292,7 @@
         showNotification('⚙️ 設定を保存しました');
     }
 
-    // ★追加：フィルター切り替え機能
+    // フィルター切り替え機能
     function setFilter(status, btn) {
         currentFilter = status;
         
@@ -314,20 +352,18 @@
             return;
         }
         
-        // ★修正：表示用の一時リストを作る
+        // 表示用の一時リストを作る
         let displaySites = [...sites];
 
         // 1. フィルター適用
         if (currentFilter !== 'all') {
             displaySites = displaySites.filter(s => {
-                // "contract"ボタンなら "contract" と "active" 両方出す等の調整も可。
-                // ここではシンプルに一致判定（ただしactiveはcontract扱いにする）
                 if (currentFilter === 'contract') return s.status === 'contract' || s.status === 'active';
                 if (currentFilter === 'complete') return s.status === 'complete' || s.status === 'done';
                 return s.status === currentFilter;
             });
             
-            // ★重要：フィルター中は「案件Noの新しい順（降順）」に強制ソート！
+            // フィルター中は「案件Noの新しい順（降順）」に強制ソート！
             displaySites.sort((a, b) => {
                 if (a.id < b.id) return 1;
                 if (a.id > b.id) return -1;
