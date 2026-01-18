@@ -12,21 +12,20 @@
         /* --- デザイン定義 --- */
         body { font-family: -apple-system, BlinkMacSystemFont, "Helvetica Neue", "Yu Gothic", sans-serif; background-color: #f0f2f5; margin: 0; padding: 0; color: #333; -webkit-font-smoothing: antialiased; }
         
-        /* ★修正：3要素をまとめる固定用コンテナ */
+        /* 3要素をまとめる固定用コンテナ */
         .fixed-header-group {
             position: sticky;
             top: 0;
             z-index: 100;
-            background-color: #34495e; /* 隙間から背景が見えないように */
+            background-color: #34495e; 
             box-shadow: 0 2px 5px rgba(0,0,0,0.2);
         }
 
-        /* ヘッダー（固定解除・デザイン維持） */
         header { 
             background-color: #2c3e50; 
             color: white; 
             padding: 10px 15px; 
-            position: static; /* 固定解除 */
+            position: static; 
             display: flex; 
             justify-content: space-between; 
             align-items: center; 
@@ -39,39 +38,34 @@
         .header-btn-group { display: flex; align-items: center; gap: 15px; }
         .icon-btn { font-size: 1.4rem; cursor: pointer; text-decoration: none; color: white; display: flex; align-items: center; transition: 0.2s; }
         
-        /* ★追加：並び替えモード中のアイコン強調 */
         body.sort-mode .icon-btn[onclick="toggleSortMode()"] {
             color: #f39c12;
             text-shadow: 0 0 5px rgba(243, 156, 18, 0.5);
         }
 
-        /* 検索エリア（固定解除・パディング調整） */
         .search-area { 
             background: #34495e; 
-            padding: 10px 15px 0 15px; /* 下を詰める */
-            position: static; /* 固定解除 */
+            padding: 10px 15px 0 15px; 
+            position: static; 
         }
         .search-input { width: 100%; padding: 10px; border-radius: 6px; border: none; font-size: 1rem; box-sizing: border-box; outline: none; }
         
-        /* フィルターエリア（固定解除・スクロールバー追加） */
         .filter-area { 
             background: #34495e; 
             padding: 5px 15px 15px 15px; 
-            position: static; /* 固定解除 */
+            position: static; 
             display: flex; 
             gap: 8px; 
             overflow-x: auto; 
             white-space: nowrap; 
             -webkit-overflow-scrolling: touch; 
         }
-        /* スクロールバーを見やすくカスタマイズ */
         .filter-area::-webkit-scrollbar { height: 4px; }
         .filter-area::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.5); border-radius: 4px; }
         .filter-area::-webkit-scrollbar-track { background: transparent; }
 
         .filter-btn { padding: 6px 14px; border-radius: 20px; font-size: 0.85rem; font-weight: bold; border: 1px solid rgba(255,255,255,0.3); background: rgba(255,255,255,0.1); color: #ccc; cursor: pointer; transition: 0.2s; flex-shrink: 0; }
         .filter-btn.active { background: white; color: #333; border-color: white; transform: scale(1.05); box-shadow: 0 2px 5px rgba(0,0,0,0.2); }
-        /* 各ステータスの色（アクティブ時） */
         .filter-btn[data-st="estimate"].active { color: #e67e22; border-color: #e67e22; }
         .filter-btn[data-st="contract"].active { color: #2980b9; border-color: #2980b9; }
         .filter-btn[data-st="billing"].active { color: #8e44ad; border-color: #8e44ad; }
@@ -80,7 +74,6 @@
 
         .container { max-width: 600px; margin: 0 auto; padding: 15px; padding-top: 20px; padding-bottom: 100px; }
         
-        /* カードデザイン */
         .site-card { background: white; border-radius: 12px; padding: 16px; margin-bottom: 16px; box-shadow: 0 2px 6px rgba(0,0,0,0.06); position: relative; transition: transform 0.2s; }
         .card-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
         .case-no { font-size: 0.8rem; color: #666; background: #eee; padding: 3px 8px; border-radius: 4px; font-family: monospace; font-weight: bold; }
@@ -102,8 +95,17 @@
         .btn-center { flex: 1; background-color: #fdf2e9; border: 1px solid #f5c6cb; color: #d35400; font-size: 0.8rem; }
         .navi-wrapper { flex: 1.5; display: flex; flex-direction: column; align-items: center; gap: 2px; }
         .navi-count-label { font-size: 0.7rem; color: #888; font-family: monospace; font-weight: bold; }
-        .hold-bar { position: absolute; top: 0; left: 0; height: 6px; background-color: #e74c3c; opacity: 0.8; width: 100%; transition: width 0s; }
+        
+        /* 左ボタン用：減る演出（赤） */
+        .hold-bar { position: absolute; top: 0; left: 0; height: 6px; background-color: #e74c3c; opacity: 0.8; width: 100%; transition: width 0s; z-index: 0; }
         .holding .hold-bar { width: 0%; transition: width 2.0s linear; }
+
+        /* 左ボタン用：増える演出（青） */
+        .hold-bar-plus { position: absolute; top: 0; left: 0; height: 100%; background-color: rgba(41, 128, 185, 0.5); width: 0%; transition: width 0s; pointer-events: none; z-index: 0; }
+        .holding-plus .hold-bar-plus { width: 100%; transition: width 1.5s linear; }
+        
+        /* ★修正：中身（文字・絵文字）だけを前面に出すためのクラス */
+        .btn-content { position: relative; z-index: 2; pointer-events: none; text-align: center; }
 
         .sort-actions { display: none; width: 100%; gap: 8px; height: 60px; }
         body.sort-mode .card-actions { display: none; }
@@ -177,6 +179,7 @@
     </div>
 
 </div>
+
 <div class="container" id="siteList"></div>
 
 <input type="file" id="jsonInput" accept=".json" style="display:none" onchange="importJSON(this)">
@@ -249,7 +252,6 @@
     let sites = JSON.parse(localStorage.getItem('dx_sites')) || [];
     let isEditing = false, tapCount = 0, editingId = null, isSortMode = false, pressTimer = null; 
     
-    // 現在のフィルター状態
     let currentFilter = 'all';
 
     if (sites.length === 0) {
@@ -263,7 +265,7 @@
         if(localStorage.getItem('dx_gas_url')) document.getElementById('gasUrl').value = localStorage.getItem('dx_gas_url');
         if(localStorage.getItem('dx_calendar_id')) document.getElementById('calendarId').value = localStorage.getItem('dx_calendar_id');
         checkAutoLost();
-        checkForCloudUpdates(); // 起動時チェック
+        checkForCloudUpdates(); 
     });
 
     function checkAutoLost() {
@@ -292,17 +294,11 @@
         showNotification('⚙️ 設定を保存しました');
     }
 
-    // フィルター切り替え機能
     function setFilter(status, btn) {
         currentFilter = status;
-        
-        // ボタンの見た目更新
         document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
         btn.classList.add('active');
-        
-        // リスト再描画
         renderList();
-        
         if (status !== 'all') {
             showNotification(`🔍 「${btn.innerText}」で絞り込み (案件No順)`);
         } else {
@@ -310,6 +306,7 @@
         }
     }
 
+    // 左ボタン（減る演出）の制御
     function handleTouchStart(btn, id, address) {
         if (btn.classList.contains('holding')) return;
         btn.classList.add('holding'); 
@@ -326,6 +323,54 @@
             window.open(`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(address)}`, '_blank');
         }
     }
+
+    // --- 右ボタン長押しで「左ボタン」を青くする制御 ---
+    let rightPressTimer = null;
+    let isRightLongPress = false;
+
+    function handleRightStart(btn, id) {
+        // 同じカード内の左ボタン（.card-actions の最初の .action-btn）を探す
+        const card = btn.closest('.site-card');
+        const leftBtn = card.querySelector('.card-actions > .action-btn:first-child');
+        
+        if (!leftBtn || leftBtn.classList.contains('holding-plus')) return;
+        
+        isRightLongPress = false;
+        leftBtn.classList.add('holding-plus'); // 左ボタンにアニメーション付与
+
+        rightPressTimer = setTimeout(() => {
+            isRightLongPress = true; // 長押し成立
+            if (navigator.vibrate) navigator.vibrate(100);
+            leftBtn.classList.remove('holding-plus');
+            
+            updateNaviCount(id, 1);
+            showNotification('修正しました：カウント +1');
+        }, 1500); // 1.5秒
+    }
+
+    function handleRightEnd(btn) {
+        const card = btn.closest('.site-card');
+        const leftBtn = card.querySelector('.card-actions > .action-btn:first-child');
+
+        if (rightPressTimer) {
+            clearTimeout(rightPressTimer);
+            rightPressTimer = null;
+        }
+        if(leftBtn) leftBtn.classList.remove('holding-plus'); // アニメーション解除
+    }
+
+    function handleRightClick(e, id) {
+        if (isRightLongPress) {
+            // 長押し成立時はリンク移動をキャンセル
+            e.preventDefault();
+            return false;
+        }
+        // 通常タップ時はカウントアップしてリンク移動
+        updateNaviCount(id, 1);
+        return true;
+    }
+    // ----------------------------------------
+
     function updateNaviCount(id, delta) {
         const idx = sites.findIndex(s => s.id === id);
         if (idx !== -1) {
@@ -352,10 +397,8 @@
             return;
         }
         
-        // 表示用の一時リストを作る
         let displaySites = [...sites];
 
-        // 1. フィルター適用
         if (currentFilter !== 'all') {
             displaySites = displaySites.filter(s => {
                 if (currentFilter === 'contract') return s.status === 'contract' || s.status === 'active';
@@ -363,7 +406,6 @@
                 return s.status === currentFilter;
             });
             
-            // フィルター中は「案件Noの新しい順（降順）」に強制ソート！
             displaySites.sort((a, b) => {
                 if (a.id < b.id) return 1;
                 if (a.id > b.id) return -1;
@@ -372,7 +414,6 @@
         }
 
         displaySites.forEach((site) => {
-            // 元のインデックス（並び替え用）を探す
             const originalIndex = sites.findIndex(s => s.id === site.id);
 
             if (kw && !site.name.toLowerCase().includes(kw) && !site.address.toLowerCase().includes(kw) && !site.id.includes(kw)) return;
@@ -383,7 +424,6 @@
             if(site.status === 'complete' || site.status === 'done') { stLabel = '完了'; stClass = 'st-complete'; }
             if(site.status === 'lost') { stLabel = '失注'; stClass = 'st-lost'; }
             
-            // フィルター中はソートボタンを隠す（並び順が固定されるため）
             const sortButtons = (currentFilter === 'all') ? 
                 `<div class="sort-actions"><button class="btn-up" onclick="moveItem(${originalIndex},-1)">⬆️</button><button class="btn-down" onclick="moveItem(${originalIndex},1)">⬇️</button></div>` 
                 : '';
@@ -394,9 +434,31 @@
                     <div class="site-name">${site.name}</div>
                     <div class="site-address">📍 ${site.address}</div>
                     <div class="card-actions">
-                        <div class="action-btn btn-navi-side" onmousedown="handleTouchStart(this,'${site.id}','${site.address}')" onmouseup="handleTouchEnd(this,'${site.id}','${site.address}')" ontouchstart="handleTouchStart(this,'${site.id}','${site.address}')" ontouchend="handleTouchEnd(this,'${site.id}','${site.address}')" oncontextmenu="return false;">🚀<br><span style="font-size:0.7rem">ナビ</span><div class="hold-bar"></div></div>
-                        <a href="tools.html?id=${site.id}" class="action-btn btn-center">🧰<br><span style="font-size:0.7rem">ツール</span></a>
-                        <div class="navi-wrapper"><span class="navi-count-label">${site.naviCount||0}回</span><a href="https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(site.address)}" target="_blank" class="action-btn btn-navi-side" onclick="updateNaviCount('${site.id}',1)">🚀<br><span style="font-size:0.7rem">ナビ</span></a></div>
+                        <div class="action-btn btn-navi-side" onmousedown="handleTouchStart(this,'${site.id}','${site.address}')" onmouseup="handleTouchEnd(this,'${site.id}','${site.address}')" ontouchstart="handleTouchStart(this,'${site.id}','${site.address}')" ontouchend="handleTouchEnd(this,'${site.id}','${site.address}')" oncontextmenu="return false;">
+                            <div class="btn-content">
+                                🚀<br><span style="font-size:0.7rem">ナビ</span>
+                            </div>
+                            <div class="hold-bar"></div>
+                            <div class="hold-bar-plus"></div>
+                        </div>
+
+                        <a href="tools.html?id=${site.id}" class="action-btn btn-center">
+                            <div class="btn-content">🧰<br><span style="font-size:0.7rem">ツール</span></div>
+                        </a>
+                        
+                        <div class="navi-wrapper"><span class="navi-count-label">${site.naviCount||0}回</span>
+                        
+                        <a href="https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(site.address)}" target="_blank" class="action-btn btn-navi-side" 
+                           onclick="return handleRightClick(event, '${site.id}')"
+                           onmousedown="handleRightStart(this, '${site.id}')" 
+                           onmouseup="handleRightEnd(this)" 
+                           ontouchstart="handleRightStart(this, '${site.id}')" 
+                           ontouchend="handleRightEnd(this)" 
+                           oncontextmenu="return false;">
+                           <div class="btn-content">🚀<br><span style="font-size:0.7rem">ナビ</span></div>
+                        </a>
+
+                        </div>
                     </div>
                     ${sortButtons}
                 </div>`;
@@ -404,9 +466,7 @@
         });
     }
     function moveItem(index, direction) {
-        // フィルター中は並び替え無効
         if(currentFilter !== 'all') return;
-
         if ((direction === -1 && index > 0) || (direction === 1 && index < sites.length - 1)) {
             [sites[index], sites[index + direction]] = [sites[index + direction], sites[index]];
             localStorage.setItem('dx_sites', JSON.stringify(sites)); renderList();
@@ -475,30 +535,23 @@
     function unlockCaseNo() { tapCount++; if(tapCount>=5){ const el=document.getElementById('inputNum'); el.readOnly=false; el.className='input-num unlocked'; showNotification('🔓 ロック解除'); tapCount=0; } }
     function getNowStr() { const d=new Date(); return `${d.getFullYear()}${('0'+(d.getMonth()+1)).slice(-2)}${('0'+d.getDate()).slice(-2)}`; }
     
-    // --- クラウド同期機能 (安全・修正版) ---
-
-    // 1. バックアップボタンで呼ばれる
     function syncAllDataToCloud() {
         if(!confirm("現在スマホにあるデータで、クラウドを上書き更新しますか？")) return;
         uploadDataToCloud(sites, "sync");
     }
 
-    // --- 通信関連 (テキストモード対応版) ---
-
-    // 1. アップロード・同期
     async function uploadDataToCloud(data, type = "sync") {
         const targetUrl = localStorage.getItem('dx_gas_url');
         if(!targetUrl || targetUrl.includes("script.google.com") === false) {
             alert("GAS URLを設定してください"); return false;
         }
         
-        // 競合チェック
         if (type === "sync") {
             showNotification("☁️ クラウド確認中...");
             try {
                 const checkRes = await fetch(targetUrl + "?type=getAll");
-                const text = await checkRes.text();      // ★テキストで受ける
-                const cloudData = JSON.parse(text);      // ★自分でパース
+                const text = await checkRes.text();      
+                const cloudData = JSON.parse(text);      
                 
                 const localMax = data.length > 0 ? Math.max(...data.map(s => s.updatedAt || 0)) : 0;
                 const cloudMax = Array.isArray(cloudData) && cloudData.length > 0 ? Math.max(...cloudData.map(s => s.updatedAt || 0)) : 0;
@@ -512,19 +565,18 @@
             } catch(e) { console.warn("チェック失敗:", e); }
         }
         
-        // 送信処理
         try {
             showNotification("☁️ 送信中...");
             const exportData = data;
 
             const response = await fetch(targetUrl, {
                 method: 'POST',
-                headers: { 'Content-Type': 'text/plain' }, // ★text/plain必須
+                headers: { 'Content-Type': 'text/plain' }, 
                 body: JSON.stringify({ type: type, data: exportData, reporter: localStorage.getItem('dx_reporter_name') || "職人" })
             });
 
-            const resText = await response.text(); // ★テキストで受ける
-            const resJson = JSON.parse(resText);   // ★自分でパース
+            const resText = await response.text(); 
+            const resJson = JSON.parse(resText);   
 
             if (resJson.result === "success") {
                 showNotification("✅ 送信完了");
@@ -536,7 +588,6 @@
         }
     }
 
-    // 2. ダウンロード（復元）
     async function downloadFromCloud() {
         const gasUrl = localStorage.getItem('dx_gas_url');
         if(!gasUrl) { alert("GAS URL設定なし"); return; }
@@ -545,8 +596,8 @@
         showNotification('📥 取得中...');
         try {
             const res = await fetch(gasUrl + "?type=getAll");
-            const text = await res.text();       // ★テキストで受ける
-            const data = JSON.parse(text);       // ★自分でパース
+            const text = await res.text();       
+            const data = JSON.parse(text);       
             
             if(Array.isArray(data)) {
                 sites = data;
@@ -558,8 +609,6 @@
         } catch(e) { alert("取得エラー: " + e); }
     }
 
-    // 3. 起動時チェック
-    // 起動時チェック（削除対応版）
     async function checkForCloudUpdates() {
         const targetUrl = localStorage.getItem('dx_gas_url');
         if(!targetUrl) return;
@@ -570,22 +619,12 @@
             const cloudData = JSON.parse(text);
             
             if (Array.isArray(cloudData)) {
-                // 1. 日時のチェック（既存）
                 const localMax = sites.length > 0 ? Math.max(...sites.map(s => s.updatedAt || 0)) : 0;
                 const cloudMax = cloudData.length > 0 ? Math.max(...cloudData.map(s => s.updatedAt || 0)) : 0;
-                
-                // 2. 件数のチェック（★新規追加）
-                // 「件数が違う」＝「誰かが追加か削除をした」ということ
                 const isCountMismatch = sites.length !== cloudData.length;
 
-                // 日時が新しいか、または件数がズレていたら「更新あり」とみなす
                 if (cloudMax > localMax || isCountMismatch) {
-                    
-                    // 誤操作防止：自分の未送信データが消えないように、自分の更新日時が古くないか確認
                     if(localMax > cloudMax && isCountMismatch) {
-                         // 自分のほうが新しいデータを持っているのに件数が違う場合は、
-                         // 自分がまだ送信していないだけの可能性が高いので、勝手に同期させない（通知だけ出すなど）
-                         // 今回はシンプルに「クラウド優先」で案内します
                     }
 
                     if (confirm(`🔄 クラウドとデータが異なります！\n（削除や更新があったようです）\n\n同期して最新にしますか？`)) {
