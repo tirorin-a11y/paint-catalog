@@ -438,12 +438,75 @@
         closeAllModals();
     }
     function registerSharedCalendar() {
-        if(!confirm("共有カレンダーに、本日の予定として登録しますか？")) return;
+        if (!currentSite) return;
+
+        // 1. 日付の決定ロジック（安全装置）
+        // 工期(start)があればそれを使い、なければ今日の日付(today)を使う
+        const today = new Date().toISOString().split('T')[0]; // YYYY-MM-DD
+        const targetDate = currentSite.start || today;
+        const targetEndDate = currentSite.end || targetDate; // 終了日がなければ開始日と同じにする
+
+        // 確認メッセージも親切に変更
+        const dateMsg = currentSite.start ? `期間: ${targetDate} 〜 ${targetEndDate}` : `日付: ${targetDate} (本日)`;
+        
+        if(!confirm(`共有カレンダーに登録しますか？\n\n${dateMsg}\n現場: ${currentSite.name}`)) return;
+        
         const calId = localStorage.getItem('dx_calendar_id');
         const gasUrl = localStorage.getItem('dx_gas_url');
-        if(!gasUrl) { alert("GAS URL設定がありません"); return; }
-        const data = { type: "calendar", calendarId: calId, id: currentSite.id, title: `【${(currentSite.status === 'contract' || currentSite.status === 'active') ? '施工中' : '予定'}】${currentSite.name}`, address: currentSite.address, status: currentSite.status };
-        fetch(gasUrl, { method: 'POST', headers: { 'Content-Type': 'text/plain' }, body: JSON.stringify(data) }).then(() => { alert("✅ 登録しました！"); closeAllModals(); }).catch(err => alert("送信エラー"));
+        
+        if(!gasUrl) { alert("GAS URL設定がありません。ナビ画面の設定から入力してください。"); return; }
+        if(!calId) { alert("共有カレンダーIDが設定されていません。個人カレンダー機能を使用してください。"); return; }
+        
+        // 2. データ送信（網羅的に送る）
+        const data = { 
+            type: "calendar", 
+            calendarId: calId, 
+            id: currentSite.id, 
+            title: `【${getStatusLabel(currentSite.status)}】${currentSite.name}`, 
+            description: `住所: ${currentSite.address}\n状況: ${getStatusLabel(currentSite.status)}\n案件No: ${currentSite.id}`,
+            address: currentSite.address, 
+            status: currentSite.status,
+            
+            // ★修正ポイント：GAS側がどの変数名で待っていてもいいように、考えられる全てを送る
+            date: targetDate,
+            start: targetDate,
+            startDate: targetDate,
+            end: targetEndDate,
+            endDate: targetEndDate,
+            startTime: targetDate,
+            endTime: targetEndDate
+        };
+        
+        // 送信処理
+        fetch(gasUrl, {
+            method: 'POST',
+            headers: { 'Content-Type': 'text/plain' },
+            body: JSON.stringify(data)
+        })
+        .then(response => response.text())
+        .then(text => {
+            try {
+                const res = JSON.parse(text);
+                if(res.result === 'success') {
+                    alert("✅ カレンダーに登録しました！");
+                } else {
+                    alert("⚠️ 登録エラー: " + (res.error || "GAS側でエラーが発生しました"));
+                }
+            } catch(e) {
+                // JSONじゃないレスポンス（GASのエラー画面HTMLなど）が返ってきた場合
+                console.error(text);
+                alert("⚠️ 通信エラー: サーバーからの応答が不正です。\n（工期未入力などが原因の可能性がありますが、今回は今日の日付で送信しました）");
+            }
+        })
+        .catch(err => {
+            alert("通信失敗: " + err);
+        });
+    }
+
+    // (補助関数) ステータス日本語化（もし無ければ追加してください）
+    function getStatusLabel(st) {
+        const map = { 'estimate':'見積', 'contract':'施工', 'billing':'請求', 'complete':'完了', 'lost':'失注' };
+        return map[st] || '予定';
     }
 
     /* カメラ・黒板処理（変更なし） */
