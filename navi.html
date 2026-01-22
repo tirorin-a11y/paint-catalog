@@ -306,46 +306,68 @@
         }
     }
 
-    // 左ボタン（減る演出）の制御
+    // 左ボタン（減る演出）の制御   
     function handleTouchStart(btn, id, address) {
         if (btn.classList.contains('holding')) return;
+        
+        // ★追加：押した時刻を記録
+        btn.dataset.startTime = Date.now();
+
         btn.classList.add('holding'); 
         pressTimer = setTimeout(() => {
             if (navigator.vibrate) navigator.vibrate(100); 
             btn.classList.remove('holding'); updateNaviCount(id, -1); 
             showNotification('修正しました：カウント -1'); pressTimer = null; 
-        }, 5000);
+            // 長押し完了時は時刻をリセット（ナビ起動防止）
+            btn.dataset.startTime = 0;
+        }, 5000); // 5秒設定
     }
+
     function handleTouchEnd(btn, id, address) {
+        // タイマー解除
         if (pressTimer) {
-            clearTimeout(pressTimer); pressTimer = null; btn.classList.remove('holding');
+            clearTimeout(pressTimer); 
+            pressTimer = null; 
+            btn.classList.remove('holding');
+        }
+
+        // ★追加：経過時間を判定（短押し判定）
+        const pressTime = Date.now() - (parseInt(btn.dataset.startTime) || 0);
+        
+        // 0.5秒（500ms）未満の場合のみナビ起動
+        // ※長押し完了時(startTime=0)はここは実行されない
+        if (pressTime > 0 && pressTime < 500) {
             updateNaviCount(id, 1);
             window.open(`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(address)}`, '_blank');
         }
     }
-
-    // --- 右ボタン長押しで「左ボタン」を青くする制御 ---
+    // --- 右ボタン制御 ---
     let rightPressTimer = null;
     let isRightLongPress = false;
 
     function handleRightStart(btn, id) {
-        // 同じカード内の左ボタン（.card-actions の最初の .action-btn）を探す
+        // ★追加：押した時刻を記録
+        btn.dataset.startTime = Date.now();
+
         const card = btn.closest('.site-card');
         const leftBtn = card.querySelector('.card-actions > .action-btn:first-child');
         
         if (!leftBtn || leftBtn.classList.contains('holding-plus')) return;
         
         isRightLongPress = false;
-        leftBtn.classList.add('holding-plus'); // 左ボタンにアニメーション付与
+        leftBtn.classList.add('holding-plus'); 
 
         rightPressTimer = setTimeout(() => {
-            isRightLongPress = true; // 長押し成立
+            isRightLongPress = true; 
             if (navigator.vibrate) navigator.vibrate(100);
             leftBtn.classList.remove('holding-plus');
             
             updateNaviCount(id, 1);
             showNotification('修正しました：カウント +1');
-        }, 5000); // 5秒
+            
+            // 長押し完了後はナビ起動を無効化するために時刻リセット
+            btn.dataset.startTime = 0;
+        }, 5000); // 5秒設定
     }
 
     function handleRightEnd(btn) {
@@ -356,16 +378,21 @@
             clearTimeout(rightPressTimer);
             rightPressTimer = null;
         }
-        if(leftBtn) leftBtn.classList.remove('holding-plus'); // アニメーション解除
+        if(leftBtn) leftBtn.classList.remove('holding-plus');
     }
 
     function handleRightClick(e, id) {
-        if (isRightLongPress) {
-            // 長押し成立時はリンク移動をキャンセル
+        // リンクのクリックイベント（遷移するかどうかの最終判定）
+        const btn = e.currentTarget;
+        const pressTime = Date.now() - (parseInt(btn.dataset.startTime) || 0);
+
+        // 長押し成立時、または「0.5秒以上」経過していたら遷移をキャンセル
+        if (isRightLongPress || pressTime >= 500 || pressTime <= 0) {
             e.preventDefault();
             return false;
         }
-        // 通常タップ時はカウントアップしてリンク移動
+        
+        // 0.5秒未満のサクッとしたタップなら遷移＆カウントアップ
         updateNaviCount(id, 1);
         return true;
     }
@@ -434,7 +461,14 @@
                     <div class="site-name">${site.name}</div>
                     <div class="site-address">📍 ${site.address}</div>
                     <div class="card-actions">
-                        <div class="action-btn btn-navi-side" onmousedown="handleTouchStart(this,'${site.id}','${site.address}')" onmouseup="handleTouchEnd(this,'${site.id}','${site.address}')" ontouchstart="handleTouchStart(this,'${site.id}','${site.address}')" ontouchend="handleTouchEnd(this,'${site.id}','${site.address}')" oncontextmenu="return false;">
+                        <div class="action-btn btn-navi-side" 
+                             onmousedown="handleTouchStart(this,'${site.id}','${site.address}')" 
+                             onmouseup="handleTouchEnd(this,'${site.id}','${site.address}')" 
+                             onmouseleave="handleTouchEnd(this,'${site.id}','${site.address}')" 
+                             ontouchstart="handleTouchStart(this,'${site.id}','${site.address}')" 
+                             ontouchend="handleTouchEnd(this,'${site.id}','${site.address}')" 
+                             ontouchcancel="handleTouchEnd(this,'${site.id}','${site.address}')" 
+                             oncontextmenu="return false;">
                             <div class="btn-content">
                                 🚀<br><span style="font-size:0.7rem">ナビ</span>
                             </div>
@@ -452,8 +486,10 @@
                            onclick="return handleRightClick(event, '${site.id}')"
                            onmousedown="handleRightStart(this, '${site.id}')" 
                            onmouseup="handleRightEnd(this)" 
+                           onmouseleave="handleRightEnd(this)" 
                            ontouchstart="handleRightStart(this, '${site.id}')" 
                            ontouchend="handleRightEnd(this)" 
+                           ontouchcancel="handleRightEnd(this)" 
                            oncontextmenu="return false;">
                            <div class="btn-content">🚀<br><span style="font-size:0.7rem">ナビ</span></div>
                         </a>
