@@ -62,10 +62,8 @@
         .overlay.show { display: block; }
         .modal-box { position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 85%; max-width: 400px; background: white; padding: 20px; border-radius: 12px; z-index: 160; box-shadow: 0 10px 25px rgba(0,0,0,0.3); display: none; }
         .modal-box.show { display: block; }
-        .modal-btn-area { display: flex; gap: 10px; margin-top: 20px; }
-        .modal-btn { flex: 1; padding: 12px; border: none; border-radius: 6px; font-weight: bold; cursor: pointer; }
-        .btn-save { background: #2980b9; color: white; }
-        .btn-cancel { background: #eee; color: #333; }
+        
+        /* ★修正：ボタンエリアのデザイン調整 */
         input, select { width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 6px; box-sizing: border-box; margin-top: 5px; font-size: 1rem; }
         label { display: block; margin-top: 15px; font-size: 0.9rem; font-weight: bold; color: #555; }
     </style>
@@ -95,9 +93,14 @@
     <p id="editSiteName" style="font-weight:bold; color:#2980b9; border-bottom:1px solid #eee; padding-bottom:10px;"></p>
     <label>開始日</label><input type="date" id="editStart">
     <label>終了日</label><input type="date" id="editEnd">
-    <div class="modal-btn-area">
-        <button class="modal-btn btn-cancel" onclick="closeModal()">キャンセル</button>
-        <button class="modal-btn btn-save" onclick="saveSchedule()">保 存</button>
+    
+    <div style="margin-top:20px; display:flex; justify-content:space-between; align-items:center; gap: 8px;">
+        <button onclick="sendCalendarFromManager()" style="background:#f39c12; color:white; border:none; padding:10px 12px; border-radius:6px; font-weight:bold; cursor:pointer; font-size:0.8rem; white-space:nowrap;">📅 カレンダー登録</button>
+        
+        <div style="display:flex; gap:8px;">
+            <button onclick="closeModal()" style="background:#95a5a6; color:white; border:none; padding:10px 15px; border-radius:6px; cursor:pointer; font-weight:bold;">キャンセル</button>
+            <button onclick="saveSchedule()" style="background:#2980b9; color:white; border:none; padding:10px 15px; border-radius:6px; font-weight:bold; cursor:pointer;">保 存</button>
+        </div>
     </div>
 </div>
 
@@ -243,6 +246,72 @@
     }
 
     document.addEventListener('DOMContentLoaded', renderGantt);
+
+    // --- ★追加：ガントチャートからカレンダー登録機能 ---
+    function sendCalendarFromManager() {
+        if (!editingId) return;
+        
+        // 現在編集中のデータを取得
+        const site = sites.find(s => s.id === editingId);
+        if (!site) return;
+
+        // 日付情報の整理（入力欄の値を優先する）
+        const inputStart = document.getElementById('editStart').value;
+        const inputEnd = document.getElementById('editEnd').value;
+        
+        const targetStart = inputStart || site.start || new Date().toISOString().split('T')[0];
+        const targetEnd = inputEnd || site.end || targetStart;
+
+        if(!confirm(`この工期でカレンダーに登録しますか？\n\n期間: ${targetStart} 〜 ${targetEnd}\n現場: ${site.name}`)) return;
+
+        const gasUrl = localStorage.getItem('dx_gas_url');
+        const calId = localStorage.getItem('dx_calendar_id');
+
+        if (!gasUrl) { alert("設定エラー: navi画面でGAS URLを設定してください"); return; }
+        if (!calId) { alert("設定エラー: navi画面でカレンダーIDを設定してください"); return; }
+
+        // 送信データ作成
+        const data = {
+            type: "calendar",
+            calendarId: calId,
+            title: `【${getStatusText(site.status)}】${site.name}`,
+            description: `案件No: ${site.id}\n住所: ${site.address}`,
+            address: site.address,
+            start: targetStart,
+            end: targetEnd
+        };
+
+        // 送信中表示
+        const btn = event.target;
+        const orgText = btn.innerText;
+        btn.innerText = "送信中...";
+        btn.disabled = true;
+
+        fetch(gasUrl, {
+            method: 'POST',
+            headers: { 'Content-Type': 'text/plain' },
+            body: JSON.stringify(data)
+        })
+        .then(res => res.json())
+        .then(json => {
+            if(json.result === 'success') {
+                alert("✅ カレンダーに登録しました！");
+            } else {
+                alert("エラー: " + json.error);
+            }
+        })
+        .catch(e => alert("通信エラー: " + e))
+        .finally(() => {
+            btn.innerText = orgText;
+            btn.disabled = false;
+        });
+    }
+
+    // (補助) ステータス文字変換
+    function getStatusText(st) {
+        const map = { 'estimate':'見積', 'contract':'施工', 'billing':'請求', 'complete':'完了', 'lost':'失注' };
+        return map[st] || '予定';
+    }
 </script>
 </body>
 </html>
