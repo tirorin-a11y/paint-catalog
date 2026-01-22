@@ -553,26 +553,56 @@
     
     function sendReportLine() { const text = document.getElementById('reportText').value; if(!text) return; const lineUrl = `https://line.me/R/msg/text/?【日報：${currentSite ? currentSite.name : '現場'}】%0A${encodeURIComponent(text)}`; window.open(lineUrl, '_blank'); }
     function sendReportMail() { const text = document.getElementById('reportText').value; if(!text) return; const mailTo = localStorage.getItem('dx_manager_email'); if(!mailTo) { alert("【設定エラー】\nナビ画面の「設定(⚙️)」から、管理者のメールアドレスを登録してください。"); return; } saveReportLocal(); const subject = `【日報】${currentSite ? currentSite.name : '現場'} (${new Date().toLocaleDateString()})`; const body = `${currentSite ? currentSite.name : '現場'}\n\n${text}\n\n--\nSent from 職人ギア`; const mailUrl = `mailto:${mailTo}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`; window.location.href = mailUrl; }
+    // ★追加：次の連番を計算する関数（navi.htmlと同じロジック）
+    function getNextNum(year) {
+        let max = 0;
+        // グローバルのsitesリストを走査
+        sites.forEach(s => {
+            // IDが "2026-" のように、その年の年号で始まるものを探す
+            if (s.id && s.id.startsWith(year + '-')) {
+                const parts = s.id.split('-');
+                if (parts[1]) {
+                    const n = parseInt(parts[1], 10);
+                    if (!isNaN(n) && n > max) max = n;
+                }
+            }
+        });
+        // 最大値+1 を3桁の0埋めで返す（例: 5 → "006"）
+        return (max + 1).toString().padStart(3, '0');
+    }
     function copySite() {
         const name = document.getElementById('siteName').value;
         const address = document.getElementById('address').value;
+        
+        // 親案件Noがあれば引き継ぐ（inputがある場合）
+        const parentEl = document.getElementById('parentCaseNo');
+        const parentNo = parentEl ? parentEl.value : '';
+
         if(!name) return;
 
         if(confirm('この現場情報をコピーして、新規案件を作成しますか？\n（状態は「見積中」として作成されます）')) {
-            // 新規IDの発番とオブジェクト作成
+            
+            // ★修正：年-連番形式でIDを生成
+            const currentYear = new Date().getFullYear().toString();
+            const nextNum = getNextNum(currentYear);
+            const newId = `${currentYear}-${nextNum}`;
+
             const newSite = {
-                id: Date.now().toString(),
+                id: newId,            // 新しい連番ID
                 name: name,
                 address: address,
-                status: 'estimate',   // 新規案件なので見積中にリセット
-                start: '', end: '',   // 日程情報はリセット
+                status: 'estimate',   // 見積中にリセット
+                parentCaseNo: parentNo, // 親案件Noを引き継ぎ
+                start: '', end: '',   // 日程リセット
+                naviCount: 0,         // ナビ回数リセット
                 updatedAt: Date.now()
             };
             
-            sites.unshift(newSite); // リストの先頭に追加
+            sites.unshift(newSite); // 先頭に追加
             localStorage.setItem('dx_sites', JSON.stringify(sites));
             
-            alert('コピーを作成しました。一覧画面に戻ります。');
+            // ユーザーに分かりやすく新番号を通知
+            alert(`コピーを作成しました。\n新案件No: ${newId}`);
             window.location.href = 'navi.html';
         }
     }
