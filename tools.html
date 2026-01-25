@@ -179,8 +179,8 @@
         <h3 style="text-align:center; margin-top:0;">黒板の準備</h3>
         <div class="preview-canvas-wrapper"><canvas id="boardCanvas" width="400" height="300"></canvas></div>
         <label>会社名</label>
-        <input type="text" id="companyName" value="山岡塗装工業" oninput="drawBoard()">
-        
+        <input type="text" id="companyName" placeholder="会社名を入力" oninput="drawBoard(); saveCameraSettings()">
+
         <label>工程 (固定)</label>
         <div class="process-btns">
             <button class="proc-btn active" onclick="setProcess(this, '施工前')">施工前</button>
@@ -295,11 +295,25 @@
     }
 
     window.onload = () => {
-        // renderCustomButtons(); // ←古い関数は削除
-        renderCameraButtons(); // ★新しい関数を実行
-        if(document.getElementById('boardCanvas')) drawBoard();
+        // ★追加：会社名の読み込み処理
+        const savedComp = localStorage.getItem('dx_company_name');
+        if (savedComp) {
+            document.getElementById('companyName').value = savedComp;
+        } else {
+            // 初回やデータがない場合のデフォルト
+            document.getElementById('companyName').value = "ペイントハウス"; 
+        }
+
+        renderCameraButtons(); 
+        if(document.getElementById('boardCanvas')) drawBoard(); // 読み込んだ名前で描画
         if(siteId) renderReportHistory();
     };
+
+    // ★追加：会社名を保存する関数
+    function saveCameraSettings() {
+        const val = document.getElementById('companyName').value;
+        localStorage.setItem('dx_company_name', val);
+    }
 
     function openModal(type) { 
         document.getElementById('overlay').classList.add('show'); 

@@ -66,6 +66,12 @@
         /* ★修正：ボタンエリアのデザイン調整 */
         input, select { width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 6px; box-sizing: border-box; margin-top: 5px; font-size: 1rem; }
         label { display: block; margin-top: 15px; font-size: 0.9rem; font-weight: bold; color: #555; }
+        /* 工期未定の現場を目立たせる */
+        .site-name-col.no-date { 
+            background-color: #ffebee; /* 薄い赤背景 */
+            color: #c62828;            /* 赤文字 */
+            border-left: 5px solid #e74c3c; /* 左に赤い線 */
+        }
     </style>
 </head>
 <body>
@@ -195,8 +201,16 @@
         
         target.forEach(site => {
             let barHTML = '';
-            if(site.start && site.end) {
+            
+            // ★追加：工期がセットされているか判定
+            const hasDate = site.start && site.end;
+            // ★追加：クラスを決定（工期がなければ no-date クラスをつける）
+            const nameClass = hasDate ? '' : 'no-date';
+
+            // 日付がある場合のみバー計算を行う
+            if(hasDate) {
                 const sDate = parseDate(site.start), eDate = parseDate(site.end);
+                
                 // 範囲内かチェック
                 if(eDate >= startDate && sDate <= endDate) {
                     const off = getDiffDays(startDate, sDate);
@@ -216,10 +230,13 @@
                 }
             }
 
-            // 行には「現場名」と「バー」しか入れない（空のdivを大量生成しない！）
+            // ★重要：ここ（行の生成）は if(hasDate) の外で行う
+            // そうしないと、日付がない現場が表示されなくなってしまう
             rowsHTML += `
                 <div class="site-row">
-                    <div class="site-name-col" onclick="openEditModal('${site.id}')">${site.name} <span style="font-size:0.6rem; color:#888;">✎</span></div>
+                    <div class="site-name-col ${nameClass}" onclick="openEditModal('${site.id}')">
+                        ${site.name} <span style="font-size:0.6rem; color:#888;">✎</span>
+                    </div>
                     ${barHTML}
                 </div>`;
         });

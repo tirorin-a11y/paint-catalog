@@ -571,11 +571,58 @@
     function unlockCaseNo() { tapCount++; if(tapCount>=5){ const el=document.getElementById('inputNum'); el.readOnly=false; el.className='input-num unlocked'; showNotification('🔓 ロック解除'); tapCount=0; } }
     function getNowStr() { const d=new Date(); return `${d.getFullYear()}${('0'+(d.getMonth()+1)).slice(-2)}${('0'+d.getDate()).slice(-2)}`; }
     
-    function syncAllDataToCloud() {
-        if(!confirm("現在スマホにあるデータで、クラウドを上書き更新しますか？")) return;
-        uploadDataToCloud(sites, "sync");
-    }
+    // ★修正版：クラウドへバックアップ（スマホの内容で上書き）
+    async function syncAllDataToCloud() {
+        if(!confirm("現在スマホにあるデータで、クラウドを上書き保存しますか？")) return;
 
+        const targetUrl = localStorage.getItem('dx_gas_url');
+        if(!targetUrl || targetUrl.includes("script.google.com") === false) {
+            alert("GAS URLを設定してください"); return false;
+        }
+        
+        showNotification("☁️ クラウド確認中...");
+        
+        try {
+            // まずクラウドの状況を確認
+            const checkRes = await fetch(targetUrl + "?type=getAll");
+            const text = await checkRes.text();      
+            const cloudData = JSON.parse(text);      
+            
+            // タイムスタンプ比較
+            const localMax = sites.length > 0 ? Math.max(...sites.map(s => s.updatedAt || 0)) : 0;
+            const cloudMax = Array.isArray(cloudData) && cloudData.length > 0 ? Math.max(...cloudData.map(s => s.updatedAt || 0)) : 0;
+            
+            // ★修正：明らかにクラウドの方が新しい場合のみ警告する
+            // （スマホで編集直後は localMax > cloudMax になるので、ここはスルーされる＝正常）
+            if (cloudMax > localMax) {
+                const cloudDate = new Date(cloudMax).toLocaleString();
+                if (!confirm(`⚠️ 警告！\nクラウド側に、スマホより新しいデータがあります（${cloudDate}）。\n\n本当にスマホのデータで上書きして良いですか？\n（クラウドの新しい変更が消えます）`)) {
+                    showNotification("中断しました"); return false;
+                }
+            }
+        } catch(e) { console.warn("チェック失敗:", e); }
+        
+        // 送信処理
+        try {
+            showNotification("☁️ 送信中...");
+            const response = await fetch(targetUrl, {
+                method: 'POST',
+                headers: { 'Content-Type': 'text/plain' }, 
+                body: JSON.stringify({ type: "sync", data: sites, reporter: localStorage.getItem('dx_reporter_name') || "職人" })
+            });
+
+            const resText = await response.text(); 
+            const resJson = JSON.parse(resText);   
+
+            if (resJson.result === "success") {
+                showNotification("✅ 送信完了");
+                alert("クラウドに保存しました！");
+                return true;
+            } else { throw new Error("GASエラー"); }
+        } catch(e) {
+            alert("送信失敗: " + e); return false;
+        }
+    }
     async function uploadDataToCloud(data, type = "sync") {
         const targetUrl = localStorage.getItem('dx_gas_url');
         if(!targetUrl || targetUrl.includes("script.google.com") === false) {
@@ -645,6 +692,7 @@
         } catch(e) { alert("取得エラー: " + e); }
     }
 
+    // ★修正版：クラウドの更新チェック（自動巡回）
     async function checkForCloudUpdates() {
         const targetUrl = localStorage.getItem('dx_gas_url');
         if(!targetUrl) return;
@@ -657,15 +705,16 @@
             if (Array.isArray(cloudData)) {
                 const localMax = sites.length > 0 ? Math.max(...sites.map(s => s.updatedAt || 0)) : 0;
                 const cloudMax = cloudData.length > 0 ? Math.max(...cloudData.map(s => s.updatedAt || 0)) : 0;
-                const isCountMismatch = sites.length !== cloudData.length;
 
-                if (cloudMax > localMax || isCountMismatch) {
-                    if(localMax > cloudMax && isCountMismatch) {
-                    }
-
-                    if (confirm(`🔄 クラウドとデータが異なります！\n（削除や更新があったようです）\n\n同期して最新にしますか？`)) {
+                // ★超重要修正：
+                // スマホの方が新しい(localMax >= cloudMax)場合は、
+                // たとえ件数が違っても（新規追加したばかりでも）「更新通知」は出さない。
+                // 「クラウドの方が明らかに未来の時間を持っている」場合だけ通知する。
+                if (cloudMax > localMax) {
+                    if (confirm(`🔄 クラウドに新しいデータがあります！\n（誰かが更新したようです）\n\nデータを取り込みますか？\n※「キャンセル」を押すと今のスマホの状態を維持します。`)) {
                         cloudData.sort((a, b) => (a.id > b.id ? -1 : 1));
-                        localStorage.setItem('dx_sites', JSON.stringify(cloudData));
+                        sites = cloudData;
+                        localStorage.setItem('dx_sites', JSON.stringify(sites));
                         alert("✅ 最新データを反映しました！");
                         location.reload();
                     }
