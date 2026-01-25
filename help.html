@@ -97,11 +97,19 @@
             <p>エディタの文字を全て消し、以下のコードを貼り付けてください。</p>
             
             <textarea id="gasCode" class="code-area" readonly>
+// --- メイン処理 (スマホからの通信受付) ---
 function doPost(e) {
-  var json = JSON.parse(e.postData.contents);
+  var json = {};
+  try {
+    json = JSON.parse(e.postData.contents);
+  } catch (err) {
+    return createResponse({ result: "error", error: "JSON parse error" });
+  }
+
   var type = json.type;
   var ss = SpreadsheetApp.getActiveSpreadsheet();
 
+  // --- A: 日報送信 ---
   if (type === "report") {
     var sheet = ss.getSheetByName("日報");
     if (!sheet) { 
@@ -112,67 +120,148 @@ function doPost(e) {
     var reporter = json.reporter || "職人";
     var reportDate = json.timestamp ? new Date(json.timestamp) : new Date();
     sheet.appendRow([reportDate, json.id, json.siteName, json.address, reporter, json.content]);
-    return ContentService.createTextOutput(JSON.stringify({ result: "success" })).setMimeType(ContentService.MimeType.TEXT);
+    
+    return createResponse({ result: "success" });
   }
 
+  // --- B: 全データ同期 (スマホ→シートへ保存) ---
   else if (type === "sync") {
     var sheet = ss.getSheetByName("案件一覧");
     if (!sheet) { sheet = ss.insertSheet("案件一覧"); }
+    
+    // シートを一度クリアしてヘッダーを作り直す
     sheet.clear();
     var header = ["案件No", "親案件No", "現場名", "住所", "ステータス", "ナビ回数", "工期開始", "工期終了", "最終更新日時", "JSONデータ"];
     sheet.appendRow(header);
     
     var sites = json.data;
     var rows = [];
+    
+    // 日本語変換マップ（スマホ英語 -> シート日本語）
     var stMap = { 'estimate':'見積中', 'contract':'契約済み', 'billing':'請求', 'complete':'完了', 'lost':'失注' };
 
     for (var i = 0; i < sites.length; i++) {
       var s = sites[i];
+      // 日本語に変換して保存
       var stLabel = stMap[s.status] || s.status;
+      
       rows.push([
-        s.id, s.parentCaseNo||"", s.name, s.address, stLabel, 
-        s.naviCount||0, s.start||"", s.end||"", 
+        s.id, 
+        s.parentCaseNo||"", 
+        s.name, 
+        s.address, 
+        stLabel, // E列: 日本語
+        s.naviCount||0, 
+        s.start||"", 
+        s.end||"", 
         s.updatedAt ? new Date(s.updatedAt).toLocaleString() : "",
-        JSON.stringify(s)
+        JSON.stringify(s) // J列: バックアップ用JSON
       ]);
     }
+    
     if (rows.length > 0) { sheet.getRange(2, 1, rows.length, rows[0].length).setValues(rows); }
-    return ContentService.createTextOutput(JSON.stringify({ result: "success", msg: "保存完了" })).setMimeType(ContentService.MimeType.TEXT);
+    return createResponse({ result: "success", msg: "保存完了" });
   }
 
+  // --- C: カレンダー機能（期間対応版） ---
   else if (type === "calendar") {
-    var cal = CalendarApp.getCalendarById(json.calendarId);
-    if(cal) cal.createAllDayEvent(json.title, new Date(), { location: json.address, description: "登録: 職人ギア" });
-    return ContentService.createTextOutput(JSON.stringify({ result: "success" })).setMimeType(ContentService.MimeType.TEXT);
+    try {
+      var calId = json.calendarId;
+      var cal = CalendarApp.getCalendarById(calId);
+      
+      if (!cal) throw new Error("カレンダーIDが見つかりません: " + calId);
+
+      // 開始日の取得
+      var startStr = json.start || json.startDate || json.date;
+      if (!startStr) throw new Error("開始日がありません");
+      var startDate = new Date(startStr);
+
+      // 終了日の取得（あれば）
+      var endStr = json.end || json.endDate;
+      
+      var title = json.title || "現場予定";
+      var options = {
+        description: json.description || "登録: 職人ギア",
+        location: json.address || ""
+      };
+
+      // ★ここが進化ポイント：期間判定
+      if (endStr && endStr !== startStr) {
+        // 終了日がある場合
+        var endDate = new Date(endStr);
+        // Googleカレンダーの仕様上、終了日は「その日を含まない」ので、+1日してあげる必要がある
+        endDate.setDate(endDate.getDate() + 1);
+        
+        // 期間イベントとして作成
+        cal.createAllDayEvent(title, startDate, endDate, options);
+      } else {
+        // 1日だけのイベントとして作成
+        cal.createAllDayEvent(title, startDate, options);
+      }
+      
+      return createResponse({ result: "success", message: "登録完了" });
+      
+    } catch (error) {
+      return createResponse({ result: "error", error: error.toString() });
+    }
   }
+
+  return createResponse({ result: "error", error: "不明なリクエストタイプ: " + type });
 }
 
+// レスポンス作成用ヘルパー関数
+function createResponse(data) {
+  return ContentService.createTextOutput(JSON.stringify(data))
+    .setMimeType(ContentService.MimeType.JSON);
+}
+
+// --- シートのセルを読んでスマホに返す (変更なし) ---
 function doGet(e) {
   var type = e.parameter.type;
   var ss = SpreadsheetApp.getActiveSpreadsheet();
 
+  // データ取得
   if (type === "getAll") {
     var sheet = ss.getSheetByName("案件一覧");
-    if (!sheet) return ContentService.createTextOutput(JSON.stringify([])).setMimeType(ContentService.MimeType.TEXT);
+    // シートがなければ空配列を返す
+    if (!sheet) return createResponse([]);
+    
     var rows = sheet.getDataRange().getValues();
     var data = [];
+
+    // 逆変換マップ（シート日本語 -> スマホ英語）
     var reverseStMap = { '見積中':'estimate', '契約済み':'contract', '請求':'billing', '完了':'complete', '失注':'lost' };
 
+    // 1行目(ヘッダー)は飛ばして、2行目から読む
     for (var i = 1; i < rows.length; i++) {
       var row = rows[i];
+      
+      // JSON列(J列)は無視して、セルから直接データを作る！
       var siteData = {
-        id: String(row[0]), parentCaseNo: String(row[1]), name: String(row[2]), address: String(row[3]),
-        status: reverseStMap[row[4]] || 'estimate', naviCount: Number(row[5]),
-        start: row[6] ? formatYMD(row[6]) : "", end: row[7] ? formatYMD(row[7]) : "",
-        updatedAt: row[8] ? new Date(row[8]).getTime() : 0
+        id: String(row[0]),          // A列: 案件No
+        parentCaseNo: String(row[1]),// B列: 親案件No
+        name: String(row[2]),        // C列: 現場名
+        address: String(row[3]),     // D列: 住所
+        status: reverseStMap[row[4]] || 'estimate', // E列: ステータス(日本語を英語に戻す)
+        naviCount: Number(row[5]),   // F列
+        start: row[6] ? formatYMD(row[6]) : "", // G列: 日付変換
+        end: row[7] ? formatYMD(row[7]) : "",   // H列
+        updatedAt: row[8] ? new Date(row[8]).getTime() : 0 // I列: 更新日時
       };
-      if(siteData.id) { data.push(siteData); }
+      
+      // もしIDが空ならスキップ
+      if(siteData.id) {
+        data.push(siteData);
+      }
     }
-    return ContentService.createTextOutput(JSON.stringify(data)).setMimeType(ContentService.MimeType.TEXT);
+    
+    return createResponse(data);
   }
-  return ContentService.createTextOutput(JSON.stringify({msg:"ready"})).setMimeType(ContentService.MimeType.TEXT);
+  
+  return createResponse({msg:"ready"});
 }
 
+// 日付型を "YYYY-MM-DD" 文字列になおす補助関数
 function formatYMD(val) {
   if (!val) return "";
   var d = new Date(val);
@@ -183,6 +272,7 @@ function formatYMD(val) {
   return y + "-" + m + "-" + da;
 }
 
+// --- スプレッドシート編集検知 (変更なし) ---
 function onEdit(e) {
   var sheet = e.source.getActiveSheet();
   if (sheet.getName() !== "案件一覧") return;
@@ -191,6 +281,7 @@ function onEdit(e) {
   if (row < 2 || col === 9) return;
   sheet.getRange(row, 9).setValue(new Date());
 }
+
             </textarea>
             <button class="btn-copy" onclick="copyCode()">📋 コードをコピー</button>
 
