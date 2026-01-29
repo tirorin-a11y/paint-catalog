@@ -32,8 +32,9 @@
         .grid-layer { display: flex; position: absolute; top: 0; left: 0; height: 100%; z-index: 1; pointer-events: none; }
         
         /* データレイヤー（現場行） */
-        .data-layer { position: absolute; top: 0; left: 0; width: 100%; z-index: 10; }
-
+        /* ★修正：absoluteをやめてrelativeにし、背景を押し広げるようにする */
+        .data-layer { position: relative; width: 100%; z-index: 10; }
+        
         /* 共通セル定義 */
         .gantt-cell { min-width: 40px; width: 40px; height: 100%; border-right: 1px solid #eee; box-sizing: border-box; flex-shrink: 0; }
         .header-cell { height: 40px; line-height: 40px; text-align: center; font-size: 0.8rem; border-bottom: 1px solid #ddd; }
