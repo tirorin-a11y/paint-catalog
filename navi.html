@@ -33,8 +33,9 @@
         
         .header-title-area { display: flex; align-items: baseline; gap: 8px; }
         h1 { margin: 0; font-size: 1.1rem; letter-spacing: 0.05em; font-weight: bold; }
-        .link-control { font-size: 0.75rem; color: #95a5a6; text-decoration: none; border: 1px solid #555; padding: 2px 6px; border-radius: 4px; transition: 0.2s; }
-        .link-control:hover { color: white; border-color: white; }
+        /* 最初から白文字・白枠にして視認性を高める */
+        .link-control { font-size: 0.75rem; color: white; text-decoration: none; border: 1px solid white; padding: 2px 6px; border-radius: 4px; transition: 0.2s; }
+        .link-control:active { transform: scale(0.95); opacity: 0.8; } /* 押したときの感触を追加 */
         .header-btn-group { display: flex; align-items: center; gap: 15px; }
         .icon-btn { font-size: 1.4rem; cursor: pointer; text-decoration: none; color: white; display: flex; align-items: center; transition: 0.2s; }
         
