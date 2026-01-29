@@ -148,6 +148,35 @@
         
         .notification { position: fixed; top: 80px; left: 50%; transform: translateX(-50%); background: rgba(44, 62, 80, 0.95); color: #fff; padding: 12px 24px; border-radius: 30px; opacity: 0; pointer-events: none; transition: opacity 0.3s; z-index: 200; font-weight: bold; box-shadow: 0 5px 15px rgba(0,0,0,0.2); width: max-content; max-width: 80%; text-align: center; }
         .notification.show { opacity: 1; top: 90px; }
+        /* --- 設定画面のタブ切り替えデザイン --- */
+        .tab-header { display: flex; gap: 5px; margin-bottom: 0; padding-bottom: 0; }
+        .tab-btn { 
+            flex: 1; padding: 12px; border: none; 
+            border-radius: 12px 12px 0 0; cursor: pointer; 
+            font-weight: bold; color: #888; background: #eee; 
+            transition: 0.2s; border: 1px solid transparent; border-bottom: none;
+        }
+        
+        /* 現場タブのアクティブ時（緑） */
+        .tab-btn.tab-site.active { background: #e8f5e9; color: #2e7d32; border-color: #c8e6c9; z-index: 10; box-shadow: 0 -2px 5px rgba(0,0,0,0.05); }
+        /* 管理者タブのアクティブ時（青） */
+        .tab-btn.tab-manager.active { background: #fff; color: #1565c0; border-color: #ddd; z-index: 10; box-shadow: 0 -2px 5px rgba(0,0,0,0.05); }
+
+        /* コンテンツエリア（タブの中身） */
+        .settings-content { 
+            padding: 20px; border-radius: 0 0 12px 12px; 
+            border: 1px solid #ddd; border-top: none; 
+            min-height: 300px;
+        }
+        
+        /* 現場モードの背景色 */
+        .mode-site-bg { background-color: #e8f5e9; border-color: #c8e6c9; }
+        /* 管理者モードの背景色 */
+        .mode-manager-bg { background-color: #fff; border-color: #ddd; }
+
+        /* 管理者専用アイテム（現場タブでは消す） */
+        .manager-only { display: block; }
+        .hide-in-site { display: none !important; }
     </style>
 </head>
 <body>
@@ -219,26 +248,58 @@
     </div>
 </div>
 
-<div id="settingsModal" class="modal-box settings-menu">
-    <h3>⚙️ 設定・データ管理</h3>
-    <div style="margin-bottom:15px;"><label>👤 報告者名</label><input type="text" id="reporterName" placeholder="例：山岡" onchange="saveSettings()" style="background:#f9f9f9;"></div>
-    <div style="margin-bottom:15px;"><label>📩 日報送信先</label><input type="email" id="managerEmail" placeholder="example@gmail.com" onchange="saveSettings()" style="background:#f9f9f9;"></div>
-    <div style="margin-bottom:15px;"><label>☁️ GAS URL</label><input type="text" id="gasUrl" placeholder="https://script.google.com/..." onchange="saveSettings()" style="background:#f9f9f9;"></div>
-    <div style="margin-bottom:15px;"><label>📅 カレンダーID</label><input type="text" id="calendarId" onchange="saveSettings()" style="background:#f9f9f9;"></div>
+<div id="settingsModal" class="modal-box settings-menu" style="padding:0; background:transparent; box-shadow:none; width:95%; max-width:500px;">
     
-    <a href="index.html" class="settings-item">🔍 カタログ検索へ</a>
-    
-    <button class="settings-item" onclick="syncAllDataToCloud()" style="background:#e8f5e9; border-color:#a5d6a7; color:#2e7d32;">☁️ クラウドへバックアップ</button>
-    <button class="settings-item" onclick="downloadFromCloud()" style="background:#fff3e0; border-color:#ffe0b2; color:#e65100;">📥 クラウドから復元 (上書き)</button>
+    <div class="tab-header">
+        <button class="tab-btn tab-site active" id="tabSite" onclick="switchSettingsTab('site')">⛑️ 現場</button>
+        <button class="tab-btn tab-manager" id="tabManager" onclick="switchSettingsTab('manager')">👔 管理者</button>
+    </div>
 
-    <button class="settings-item" onclick="copyToClipboard()">📋 スプレッドシート用コピー</button>
-    <button class="settings-item" onclick="exportCSV()">💾 CSV出力</button>
-    <hr style="border:0; border-top:1px solid #eee;">
-    <button class="settings-item" onclick="document.getElementById('jsonInput').click()">📥 ファイルから復元</button>
-    <a href="help.html" class="settings-item">📖 使い方ガイド</a>
-    <div class="settings-footer">
-        <button class="btn-delete-all" onclick="deleteAllData()">🗑️ 全削除</button>
-        <button class="btn-close" onclick="closeAllModals()">閉じる</button>
+    <div id="settingsBody" class="settings-content mode-site-bg">
+        
+        <h3 style="margin-top:0; margin-bottom:20px; text-align:center; opacity:0.7;">
+            <span id="tabTitle">現場用メニュー</span>
+        </h3>
+
+        <div style="margin-bottom:15px;">
+            <label>👤 報告者名</label>
+            <input type="text" id="reporterName" placeholder="例：山岡" onchange="saveSettings()" style="background:#fff;">
+        </div>
+        <div style="margin-bottom:15px;">
+            <label>📩 日報送信先</label>
+            <input type="email" id="managerEmail" placeholder="example@gmail.com" onchange="saveSettings()" style="background:#fff;">
+        </div>
+
+        <div class="manager-only">
+            <details class="accordion-box">
+                <summary>🔧 システム連携設定 (GAS・カレンダー)</summary>
+                <div class="accordion-content">
+                    <p style="font-size:0.8rem; color:#e67e22; margin-top:0;">※ここを変更すると連携が動かなくなる場合があります。</p>
+                    <label>☁️ GAS URL</label>
+                    <input type="text" id="gasUrl" onchange="saveSettings()">
+                    <label>📅 カレンダーID</label>
+                    <input type="text" id="calendarId" onchange="saveSettings()">
+                </div>
+            </details>
+        </div>
+        
+        <a href="index.html" class="settings-item">🔍 カタログ検索へ</a>
+        
+        <div class="manager-only">
+            <button class="settings-item" onclick="syncAllDataToCloud()" style="background:#e8f5e9; border-color:#a5d6a7; color:#2e7d32;">☁️ クラウドへバックアップ</button>
+            <button class="settings-item" onclick="downloadFromCloud()" style="background:#fff3e0; border-color:#ffe0b2; color:#e65100;">📥 クラウドから復元 (上書き)</button>
+            <button class="settings-item" onclick="copyToClipboard()">📋 スプレッドシート用コピー</button>
+            <button class="settings-item" onclick="exportCSV()">💾 CSV出力</button>
+            <hr style="border:0; border-top:1px solid #eee;">
+            <button class="settings-item" onclick="document.getElementById('jsonInput').click()">📥 ファイルから復元</button>
+        </div>
+
+        <a href="help.html" class="settings-item">📖 使い方ガイド</a>
+        
+        <div class="settings-footer">
+            <button class="btn-delete-all manager-only" onclick="deleteAllData()">🗑️ 全削除</button>
+            <button class="btn-close" onclick="closeAllModals()">閉じる</button>
+        </div>
     </div>
 </div>
 
@@ -732,6 +793,45 @@
     function importJSON(input) { const f=input.files[0]; if(!f)return; const r=new FileReader(); r.onload=function(e){ try{ const d=JSON.parse(e.target.result); if(!Array.isArray(d)){alert('エラー');return;} let add=0,upd=0; d.forEach(n=>{ const i=sites.findIndex(s=>s.id===n.id); if(i!==-1){ if((n.updatedAt||0)>(sites[i].updatedAt||0)){sites[i]=n;upd++;} }else{sites.push(n);add++;} }); sites.sort((a,b)=>(a.id>b.id?-1:1)); localStorage.setItem('dx_sites',JSON.stringify(sites)); renderList(); closeAllModals(); showNotification(`復元: ${upd}件更新, ${add}件追加`); }catch(e){alert('読込失敗');} input.value=''; }; r.readAsText(f); }
     function deleteAllData() { if(confirm('本当に全削除しますか？')) { sites=[]; localStorage.setItem('dx_sites',JSON.stringify(sites)); renderList(); closeAllModals(); showNotification('🗑️ 全削除完了'); } }
     function showNotification(msg) { const el = document.getElementById('notification'); el.textContent = msg; el.classList.add('show'); setTimeout(() => el.classList.remove('show'), 2000); }
+    // ★追加：タブ切り替え処理
+    function switchSettingsTab(mode) {
+        const body = document.getElementById('settingsBody');
+        const tabSite = document.getElementById('tabSite');
+        const tabManager = document.getElementById('tabManager');
+        const title = document.getElementById('tabTitle');
+        const managerItems = document.querySelectorAll('.manager-only');
+
+        if (mode === 'site') {
+            // 現場モードへ
+            tabSite.classList.add('active');
+            tabManager.classList.remove('active');
+            body.className = 'settings-content mode-site-bg'; // 緑背景
+            title.innerText = '⛑️ 現場用メニュー (安全モード)';
+            
+            // 管理者専用項目を隠す
+            managerItems.forEach(el => el.classList.add('hide-in-site'));
+            
+        } else {
+            // 管理者モードへ
+            tabManager.classList.add('active');
+            tabSite.classList.remove('active');
+            body.className = 'settings-content mode-manager-bg'; // 白背景
+            title.innerText = '👔 管理者設定 (フル機能)';
+            
+            // 管理者専用項目を表示
+            managerItems.forEach(el => el.classList.remove('hide-in-site'));
+            
+            // 切り替え時にバイブレーション（気づきのため）
+            if(navigator.vibrate) navigator.vibrate(50);
+        }
+    }
+
+    // ★修正：設定を開くときは、必ず「現場タブ」をデフォルトにする
+    function openSettings() {
+        document.getElementById('overlay').classList.add('show');
+        document.getElementById('settingsModal').classList.add('show');
+        switchSettingsTab('site'); // 安全のため現場タブで開く
+    }
 </script>
 </body>
 </html>
