@@ -189,6 +189,15 @@
         
         .notification { position: fixed; top: 80px; left: 50%; transform: translateX(-50%); background: rgba(44, 62, 80, 0.95); color: #fff; padding: 12px 24px; border-radius: 30px; opacity: 0; pointer-events: none; transition: opacity 0.3s; z-index: 200; font-weight: bold; box-shadow: 0 5px 15px rgba(0,0,0,0.2); width: max-content; max-width: 80%; text-align: center; }
         .notification.show { opacity: 1; top: 90px; }
+        /* --- 通信中アイコンのアニメーション --- */
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+        .sync-spinner { 
+            display: inline-block; 
+            margin-left: 8px; 
+            font-size: 1rem; 
+            animation: spin 1s linear infinite; /* クルクル回す */
+            vertical-align: middle;
+        }
     </style>
 </head>
 <body>
@@ -197,8 +206,8 @@
 
     <header>
         <div class="header-title-area">
-            <h1>🚗 現場ナビ</h1>
-            <a href="manager.html" class="link-control">📊 工程管理</a>
+            <h1>🚗 現場ナビ<span id="syncIndicator" style="display:none;">🔄</span></h1>
+                        <a href="manager.html" class="link-control">📊 工程管理</a>
         </div>
         <div class="header-btn-group">
             <span class="icon-btn" onclick="toggleSortMode()" title="並び替え">⇅</span>
@@ -671,34 +680,58 @@
         } catch(e) { alert("取得エラー: " + e); }
     }
 
-    // ★修正版：自動更新チェック（連打ガード機能付き）
+    // ★修正版：自動更新チェック（視覚効果付き）
     async function checkForCloudUpdates() {
         const targetUrl = localStorage.getItem('dx_gas_url');
         if(!targetUrl) return;
 
-        // ★追加：10秒以内の連打ならスキップ（クールダウン）
+        // 連打ガード（10秒）
         const now = Date.now();
         if (now - lastCheckTime < 10000) {
             console.log("短時間の連打のためスキップしました");
             return;
         }
-        lastCheckTime = now; // チェック時刻を更新
+        lastCheckTime = now;
+
+        // ★視覚効果：アイコンを表示して回す
+        const indicator = document.getElementById('syncIndicator');
+        if(indicator) {
+            indicator.style.display = 'inline-block'; // 表示
+            indicator.classList.add('sync-spinner');  // 回す
+        }
 
         try {
             const res = await fetch(targetUrl + "?type=getAll");
-            const text = await res.text(); const cloudData = JSON.parse(text);
+            const text = await res.text(); 
+            const cloudData = JSON.parse(text);
+            
             if (Array.isArray(cloudData)) {
                 const localMax = sites.length > 0 ? Math.max(...sites.map(s => s.updatedAt || 0)) : 0;
                 const cloudMax = cloudData.length > 0 ? Math.max(...cloudData.map(s => s.updatedAt || 0)) : 0;
+                
                 if (cloudMax > localMax) {
-                    if (confirm(`🔄 クラウドに新しいデータがあります！\n（誰かが更新したようです）\n\nデータを取り込みますか？\n※「キャンセル」を押すと今のスマホの状態を維持します。`)) {
+                    // 更新があった場合
+                    if (confirm(`🔄 クラウドに新しいデータがあります！\n取り込みますか？`)) {
                         cloudData.sort((a, b) => (a.id > b.id ? -1 : 1));
-                        sites = cloudData; localStorage.setItem('dx_sites', JSON.stringify(sites));
-                        alert("✅ 最新データを反映しました！"); location.reload();
+                        sites = cloudData; 
+                        localStorage.setItem('dx_sites', JSON.stringify(sites));
+                        alert("✅ 最新データを反映しました！"); 
+                        location.reload();
                     }
                 }
             }
-        } catch (e) { console.log("更新チェック失敗:", e); }
+        } catch (e) { 
+            console.log("更新チェック失敗（オフラインの可能性）:", e); 
+        } finally {
+            // ★重要：成功しても失敗しても、最後に必ずアイコンを消す
+            if(indicator) {
+                // 一瞬で消えると見逃すので、0.5秒だけ余韻を残して消す
+                setTimeout(() => {
+                    indicator.classList.remove('sync-spinner'); // 止める
+                    indicator.style.display = 'none';           // 隠す
+                }, 500);
+            }
+        }
     }
 
     async function exportCSV() { showNotification('📤 準備中...'); let c = "\uFEFF案件No,親案件No,現場名,住所,ステータス,開始,終了\n"; sites.forEach(s => { c += `"${s.id}","${s.parentCaseNo||''}","${s.name}","${s.address}","${getStatusText(s.status)}","${s.start||''}","${s.end||''}"\n`; }); const f = new File([c], `現場リスト_${getNowStr()}.csv`, { type: "text/csv" }); if (navigator.share && navigator.canShare({ files: [f] })) { try { await navigator.share({ files: [f] }); } catch (e) { forceDL(f); } } else { forceDL(f); } }
