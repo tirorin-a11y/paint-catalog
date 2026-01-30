@@ -33,9 +33,11 @@
         
         .header-title-area { display: flex; align-items: baseline; gap: 8px; }
         h1 { margin: 0; font-size: 1.1rem; letter-spacing: 0.05em; font-weight: bold; }
+        
         /* 最初から白文字・白枠にして視認性を高める */
         .link-control { font-size: 0.75rem; color: white; text-decoration: none; border: 1px solid white; padding: 2px 6px; border-radius: 4px; transition: 0.2s; }
-        .link-control:active { transform: scale(0.95); opacity: 0.8; } /* 押したときの感触を追加 */
+        .link-control:active { transform: scale(0.95); opacity: 0.8; }
+
         .header-btn-group { display: flex; align-items: center; gap: 15px; }
         .icon-btn { font-size: 1.4rem; cursor: pointer; text-decoration: none; color: white; display: flex; align-items: center; transition: 0.2s; }
         
@@ -97,15 +99,15 @@
         .navi-wrapper { flex: 1.5; display: flex; flex-direction: column; align-items: center; gap: 2px; }
         .navi-count-label { font-size: 0.7rem; color: #888; font-family: monospace; font-weight: bold; }
         
-        /* 左ボタン用：減る演出（赤） */
+        /* 左ボタン用：減る演出（赤） - 5秒設定 */
         .hold-bar { position: absolute; top: 0; left: 0; height: 6px; background-color: #e74c3c; opacity: 0.8; width: 100%; transition: width 0s; z-index: 0; }
         .holding .hold-bar { width: 0%; transition: width 5.0s linear; }
 
-        /* 左ボタン用：増える演出（青） */
+        /* 左ボタン用：増える演出（青） - 5秒設定 */
         .hold-bar-plus { position: absolute; top: 0; left: 0; height: 100%; background-color: rgba(41, 128, 185, 0.5); width: 0%; transition: width 0s; pointer-events: none; z-index: 0; }
         .holding-plus .hold-bar-plus { width: 100%; transition: width 5.0s linear; }
         
-        /* ★修正：中身（文字・絵文字）だけを前面に出すためのクラス */
+        /* 中身（文字・絵文字）だけを前面に出すためのクラス */
         .btn-content { position: relative; z-index: 2; pointer-events: none; text-align: center; }
 
         .sort-actions { display: none; width: 100%; gap: 8px; height: 60px; }
@@ -141,14 +143,14 @@
         .btn-close { flex: 2; background-color: #95a5a6; color: white; padding: 12px; border: none; border-radius: 8px; font-weight: bold; cursor: pointer; }
         .btn-delete-all { flex: 1; background-color: white; color: #e74c3c; border: 1px solid #e74c3c; padding: 12px; border-radius: 8px; font-weight: bold; cursor: pointer; font-size: 0.9rem; }
 
-        .fab-container { position: fixed; bottom: 24px; right: 20px; display: flex; flex-direction: column; gap: 12px; align-items: flex-end; z-index: 90; }
-        .fab-btn { width: 56px; height: 56px; border-radius: 28px; border: none; color: white; font-size: 24px; box-shadow: 0 4px 10px rgba(0,0,0,0.3); cursor: pointer; display: flex; justify-content: center; align-items: center; transition: transform 0.1s; }
-        .add-fab { background-color: #2980b9; font-size: 30px; }
-        .share-fab { background-color: #f39c12; font-size: 22px; }
-        .fab-label { font-size: 10px; background: rgba(0,0,0,0.7); color: white; padding: 2px 6px; border-radius: 4px; margin-right: 8px; position: absolute; right: 60px; pointer-events: none; white-space: nowrap; }
-        
-        .notification { position: fixed; top: 80px; left: 50%; transform: translateX(-50%); background: rgba(44, 62, 80, 0.95); color: #fff; padding: 12px 24px; border-radius: 30px; opacity: 0; pointer-events: none; transition: opacity 0.3s; z-index: 200; font-weight: bold; box-shadow: 0 5px 15px rgba(0,0,0,0.2); width: max-content; max-width: 80%; text-align: center; }
-        .notification.show { opacity: 1; top: 90px; }
+        /* アコーディオン（折りたたみ設定） */
+        .accordion-box { border: 1px solid #ddd; border-radius: 8px; margin-bottom: 15px; background: white; overflow: hidden; }
+        .accordion-box summary { background: #f1f2f6; padding: 12px 15px; cursor: pointer; font-weight: bold; font-size: 0.9rem; color: #2c3e50; list-style: none; display: flex; align-items: center; justify-content: space-between; user-select: none; }
+        .accordion-box summary::-webkit-details-marker { display: none; }
+        .accordion-box summary::after { content: '▼'; font-size: 0.8rem; color: #888; transition: 0.2s; }
+        .accordion-box[open] summary::after { transform: rotate(180deg); }
+        .accordion-content { padding: 15px; border-top: 1px solid #eee; background: #fffcf5; }
+
         /* --- 設定画面のタブ切り替えデザイン --- */
         .tab-header { display: flex; gap: 5px; margin-bottom: 0; padding-bottom: 0; }
         .tab-btn { 
@@ -178,6 +180,15 @@
         /* 管理者専用アイテム（現場タブでは消す） */
         .manager-only { display: block; }
         .hide-in-site { display: none !important; }
+
+        .fab-container { position: fixed; bottom: 24px; right: 20px; display: flex; flex-direction: column; gap: 12px; align-items: flex-end; z-index: 90; }
+        .fab-btn { width: 56px; height: 56px; border-radius: 28px; border: none; color: white; font-size: 24px; box-shadow: 0 4px 10px rgba(0,0,0,0.3); cursor: pointer; display: flex; justify-content: center; align-items: center; transition: transform 0.1s; }
+        .add-fab { background-color: #2980b9; font-size: 30px; }
+        .share-fab { background-color: #f39c12; font-size: 22px; }
+        .fab-label { font-size: 10px; background: rgba(0,0,0,0.7); color: white; padding: 2px 6px; border-radius: 4px; margin-right: 8px; position: absolute; right: 60px; pointer-events: none; white-space: nowrap; }
+        
+        .notification { position: fixed; top: 80px; left: 50%; transform: translateX(-50%); background: rgba(44, 62, 80, 0.95); color: #fff; padding: 12px 24px; border-radius: 30px; opacity: 0; pointer-events: none; transition: opacity 0.3s; z-index: 200; font-weight: bold; box-shadow: 0 5px 15px rgba(0,0,0,0.2); width: max-content; max-width: 80%; text-align: center; }
+        .notification.show { opacity: 1; top: 90px; }
     </style>
 </head>
 <body>
@@ -313,8 +324,10 @@
 <script>
     let sites = JSON.parse(localStorage.getItem('dx_sites')) || [];
     let isEditing = false, tapCount = 0, editingId = null, isSortMode = false, pressTimer = null; 
-    
     let currentFilter = 'all';
+    
+    // ★追加：連打防止用の変数（クールダウン用）
+    let lastCheckTime = 0; 
 
     if (sites.length === 0) {
         sites = [];
@@ -327,7 +340,21 @@
         if(localStorage.getItem('dx_gas_url')) document.getElementById('gasUrl').value = localStorage.getItem('dx_gas_url');
         if(localStorage.getItem('dx_calendar_id')) document.getElementById('calendarId').value = localStorage.getItem('dx_calendar_id');
         checkAutoLost();
+        
+        // --- ★ここから自動更新ロジック ---
+        // 1. 起動時にまず1回チェック
         checkForCloudUpdates(); 
+
+        // 2. その後は「60秒ごと」に自動チェック（ポーリング）
+        setInterval(checkForCloudUpdates, 60000);
+
+        // 3. 「画面が表示された瞬間（ポケットから出した時など）」に更新チェック
+        document.addEventListener("visibilitychange", function() {
+            if (document.visibilityState === 'visible') {
+                console.log("画面がアクティブになりました。更新をチェックします。");
+                checkForCloudUpdates();
+            }
+        });
     });
 
     function checkAutoLost() {
@@ -368,93 +395,64 @@
         }
     }
 
-    // 左ボタン（減る演出）の制御   
+    // 左ボタン（減る演出）の制御
     function handleTouchStart(btn, id, address) {
         if (btn.classList.contains('holding')) return;
-        
-        // ★追加：押した時刻を記録
         btn.dataset.startTime = Date.now();
-
         btn.classList.add('holding'); 
         pressTimer = setTimeout(() => {
             if (navigator.vibrate) navigator.vibrate(100); 
             btn.classList.remove('holding'); updateNaviCount(id, -1); 
             showNotification('修正しました：カウント -1'); pressTimer = null; 
-            // 長押し完了時は時刻をリセット（ナビ起動防止）
-            btn.dataset.startTime = 0;
-        }, 5000); // 5秒設定
+            btn.dataset.startTime = 0; 
+        }, 5000); 
     }
 
     function handleTouchEnd(btn, id, address) {
-        // タイマー解除
         if (pressTimer) {
-            clearTimeout(pressTimer); 
-            pressTimer = null; 
-            btn.classList.remove('holding');
+            clearTimeout(pressTimer); pressTimer = null; btn.classList.remove('holding');
         }
-
-        // ★追加：経過時間を判定（短押し判定）
         const pressTime = Date.now() - (parseInt(btn.dataset.startTime) || 0);
-        
-        // 0.5秒（500ms）未満の場合のみナビ起動
-        // ※長押し完了時(startTime=0)はここは実行されない
         if (pressTime > 0 && pressTime < 500) {
             updateNaviCount(id, 1);
             window.open(`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(address)}`, '_blank');
         }
     }
+
     // --- 右ボタン制御 ---
     let rightPressTimer = null;
     let isRightLongPress = false;
 
     function handleRightStart(btn, id) {
-        // ★追加：押した時刻を記録
         btn.dataset.startTime = Date.now();
-
         const card = btn.closest('.site-card');
         const leftBtn = card.querySelector('.card-actions > .action-btn:first-child');
-        
         if (!leftBtn || leftBtn.classList.contains('holding-plus')) return;
-        
         isRightLongPress = false;
-        leftBtn.classList.add('holding-plus'); 
-
+        leftBtn.classList.add('holding-plus');
         rightPressTimer = setTimeout(() => {
             isRightLongPress = true; 
             if (navigator.vibrate) navigator.vibrate(100);
             leftBtn.classList.remove('holding-plus');
-            
             updateNaviCount(id, 1);
             showNotification('修正しました：カウント +1');
-            
-            // 長押し完了後はナビ起動を無効化するために時刻リセット
             btn.dataset.startTime = 0;
-        }, 5000); // 5秒設定
+        }, 5000);
     }
 
     function handleRightEnd(btn) {
         const card = btn.closest('.site-card');
         const leftBtn = card.querySelector('.card-actions > .action-btn:first-child');
-
-        if (rightPressTimer) {
-            clearTimeout(rightPressTimer);
-            rightPressTimer = null;
-        }
-        if(leftBtn) leftBtn.classList.remove('holding-plus');
+        if (rightPressTimer) { clearTimeout(rightPressTimer); rightPressTimer = null; }
+        if(leftBtn) leftBtn.classList.remove('holding-plus'); 
     }
 
     function handleRightClick(e, id) {
-        // リンクのクリックイベント（遷移するかどうかの最終判定）
         const btn = e.currentTarget;
         const pressTime = Date.now() - (parseInt(btn.dataset.startTime) || 0);
-
-        // 長押し成立時、または「0.5秒以上」経過していたら遷移をキャンセル
         if (isRightLongPress || pressTime >= 500 || pressTime <= 0) {
-            e.preventDefault();
-            return false;
+            e.preventDefault(); return false;
         }
-        
-        // 0.5秒未満のサクッとしたタップなら遷移＆カウントアップ
         updateNaviCount(id, 1);
         return true;
     }
@@ -480,43 +478,25 @@
         const listEl = document.getElementById('siteList');
         const kw = document.getElementById('searchInput').value.toLowerCase();
         listEl.innerHTML = '';
-        
-        if (sites.length === 0) {
-            listEl.innerHTML = '<div style="text-align:center; padding:40px; color:#888;">データがありません。<br>右下の「＋」ボタンから追加してください。</div>';
-            return;
-        }
-        
+        if (sites.length === 0) { listEl.innerHTML = '<div style="text-align:center; padding:40px; color:#888;">データがありません。<br>右下の「＋」ボタンから追加してください。</div>'; return; }
         let displaySites = [...sites];
-
         if (currentFilter !== 'all') {
             displaySites = displaySites.filter(s => {
                 if (currentFilter === 'contract') return s.status === 'contract' || s.status === 'active';
                 if (currentFilter === 'complete') return s.status === 'complete' || s.status === 'done';
                 return s.status === currentFilter;
             });
-            
-            displaySites.sort((a, b) => {
-                if (a.id < b.id) return 1;
-                if (a.id > b.id) return -1;
-                return 0;
-            });
+            displaySites.sort((a, b) => { if (a.id < b.id) return 1; if (a.id > b.id) return -1; return 0; });
         }
-
         displaySites.forEach((site) => {
             const originalIndex = sites.findIndex(s => s.id === site.id);
-
             if (kw && !site.name.toLowerCase().includes(kw) && !site.address.toLowerCase().includes(kw) && !site.id.includes(kw)) return;
-            
             let stLabel = '見積中', stClass = 'st-estimate';
             if(site.status === 'contract' || site.status === 'active') { stLabel = '契約済み'; stClass = 'st-contract'; }
             if(site.status === 'billing') { stLabel = '請求'; stClass = 'st-billing'; }
             if(site.status === 'complete' || site.status === 'done') { stLabel = '完了'; stClass = 'st-complete'; }
             if(site.status === 'lost') { stLabel = '失注'; stClass = 'st-lost'; }
-            
-            const sortButtons = (currentFilter === 'all') ? 
-                `<div class="sort-actions"><button class="btn-up" onclick="moveItem(${originalIndex},-1)">⬆️</button><button class="btn-down" onclick="moveItem(${originalIndex},1)">⬇️</button></div>` 
-                : '';
-
+            const sortButtons = (currentFilter === 'all') ? `<div class="sort-actions"><button class="btn-up" onclick="moveItem(${originalIndex},-1)">⬆️</button><button class="btn-down" onclick="moveItem(${originalIndex},1)">⬇️</button></div>` : '';
             const html = `
                 <div class="site-card">
                     <div class="card-header"><span class="case-no">${site.id}</span><span class="status-badge ${stClass}">${stLabel}</span></div>
@@ -531,19 +511,11 @@
                              ontouchend="handleTouchEnd(this,'${site.id}','${site.address}')" 
                              ontouchcancel="handleTouchEnd(this,'${site.id}','${site.address}')" 
                              oncontextmenu="return false;">
-                            <div class="btn-content">
-                                🚀<br><span style="font-size:0.7rem">ナビ</span>
-                            </div>
-                            <div class="hold-bar"></div>
-                            <div class="hold-bar-plus"></div>
+                            <div class="btn-content">🚀<br><span style="font-size:0.7rem">ナビ</span></div>
+                            <div class="hold-bar"></div><div class="hold-bar-plus"></div>
                         </div>
-
-                        <a href="tools.html?id=${site.id}" class="action-btn btn-center">
-                            <div class="btn-content">🧰<br><span style="font-size:0.7rem">ツール</span></div>
-                        </a>
-                        
+                        <a href="tools.html?id=${site.id}" class="action-btn btn-center"><div class="btn-content">🧰<br><span style="font-size:0.7rem">ツール</span></div></a>
                         <div class="navi-wrapper"><span class="navi-count-label">${site.naviCount||0}回</span>
-                        
                         <a href="https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(site.address)}" target="_blank" class="action-btn btn-navi-side" 
                            onclick="return handleRightClick(event, '${site.id}')"
                            onmousedown="handleRightStart(this, '${site.id}')" 
@@ -554,9 +526,7 @@
                            ontouchcancel="handleRightEnd(this)" 
                            oncontextmenu="return false;">
                            <div class="btn-content">🚀<br><span style="font-size:0.7rem">ナビ</span></div>
-                        </a>
-
-                        </div>
+                        </a></div>
                     </div>
                     ${sortButtons}
                 </div>`;
@@ -628,163 +598,107 @@
         }
     }
     function getNextNum(y) { let max=0; sites.filter(s=>s.id.startsWith(y)).forEach(s=>{ const n=parseInt(s.id.split('-')[1]); if(n>max)max=n; }); return (max+1).toString().padStart(3,'0'); }
-    function openSettings() { document.getElementById('overlay').classList.add('show'); document.getElementById('settingsModal').classList.add('show'); }
+    
+    // 開くときは「現場タブ」をデフォルトにする
+    function openSettings() { 
+        document.getElementById('overlay').classList.add('show'); 
+        document.getElementById('settingsModal').classList.add('show'); 
+        switchSettingsTab('site'); 
+    }
+    
     function closeAllModals() { document.querySelectorAll('.modal-box').forEach(el=>el.classList.remove('show')); document.getElementById('overlay').classList.remove('show'); }
     function unlockCaseNo() { tapCount++; if(tapCount>=5){ const el=document.getElementById('inputNum'); el.readOnly=false; el.className='input-num unlocked'; showNotification('🔓 ロック解除'); tapCount=0; } }
     function getNowStr() { const d=new Date(); return `${d.getFullYear()}${('0'+(d.getMonth()+1)).slice(-2)}${('0'+d.getDate()).slice(-2)}`; }
     
-    // ★修正版：クラウドへバックアップ（スマホの内容で上書き）
+    // タブ切り替え処理
+    function switchSettingsTab(mode) {
+        const body = document.getElementById('settingsBody');
+        const tabSite = document.getElementById('tabSite');
+        const tabManager = document.getElementById('tabManager');
+        const title = document.getElementById('tabTitle');
+        const managerItems = document.querySelectorAll('.manager-only');
+
+        if (mode === 'site') {
+            tabSite.classList.add('active'); tabManager.classList.remove('active');
+            body.className = 'settings-content mode-site-bg'; title.innerText = '⛑️ 現場用メニュー (安全モード)';
+            managerItems.forEach(el => el.classList.add('hide-in-site'));
+        } else {
+            tabManager.classList.add('active'); tabSite.classList.remove('active');
+            body.className = 'settings-content mode-manager-bg'; title.innerText = '👔 管理者設定 (フル機能)';
+            managerItems.forEach(el => el.classList.remove('hide-in-site'));
+            if(navigator.vibrate) navigator.vibrate(50);
+        }
+    }
+
+    // クラウド保存（同期バグ修正版）
     async function syncAllDataToCloud() {
         if(!confirm("現在スマホにあるデータで、クラウドを上書き保存しますか？")) return;
-
         const targetUrl = localStorage.getItem('dx_gas_url');
-        if(!targetUrl || targetUrl.includes("script.google.com") === false) {
-            alert("GAS URLを設定してください"); return false;
-        }
-        
+        if(!targetUrl || targetUrl.includes("script.google.com") === false) { alert("GAS URLを設定してください"); return false; }
         showNotification("☁️ クラウド確認中...");
-        
         try {
-            // まずクラウドの状況を確認
             const checkRes = await fetch(targetUrl + "?type=getAll");
-            const text = await checkRes.text();      
-            const cloudData = JSON.parse(text);      
-            
-            // タイムスタンプ比較
+            const text = await checkRes.text(); const cloudData = JSON.parse(text);      
             const localMax = sites.length > 0 ? Math.max(...sites.map(s => s.updatedAt || 0)) : 0;
             const cloudMax = Array.isArray(cloudData) && cloudData.length > 0 ? Math.max(...cloudData.map(s => s.updatedAt || 0)) : 0;
-            
-            // ★修正：明らかにクラウドの方が新しい場合のみ警告する
-            // （スマホで編集直後は localMax > cloudMax になるので、ここはスルーされる＝正常）
             if (cloudMax > localMax) {
                 const cloudDate = new Date(cloudMax).toLocaleString();
-                if (!confirm(`⚠️ 警告！\nクラウド側に、スマホより新しいデータがあります（${cloudDate}）。\n\n本当にスマホのデータで上書きして良いですか？\n（クラウドの新しい変更が消えます）`)) {
-                    showNotification("中断しました"); return false;
-                }
+                if (!confirm(`⚠️ 警告！\nクラウド側に、スマホより新しいデータがあります（${cloudDate}）。\n\n本当にスマホのデータで上書きして良いですか？\n（クラウドの新しい変更が消えます）`)) { showNotification("中断しました"); return false; }
             }
         } catch(e) { console.warn("チェック失敗:", e); }
         
-        // 送信処理
         try {
             showNotification("☁️ 送信中...");
-            const response = await fetch(targetUrl, {
-                method: 'POST',
-                headers: { 'Content-Type': 'text/plain' }, 
-                body: JSON.stringify({ type: "sync", data: sites, reporter: localStorage.getItem('dx_reporter_name') || "職人" })
-            });
-
-            const resText = await response.text(); 
-            const resJson = JSON.parse(resText);   
-
-            if (resJson.result === "success") {
-                showNotification("✅ 送信完了");
-                alert("クラウドに保存しました！");
-                return true;
-            } else { throw new Error("GASエラー"); }
-        } catch(e) {
-            alert("送信失敗: " + e); return false;
-        }
-    }
-    async function uploadDataToCloud(data, type = "sync") {
-        const targetUrl = localStorage.getItem('dx_gas_url');
-        if(!targetUrl || targetUrl.includes("script.google.com") === false) {
-            alert("GAS URLを設定してください"); return false;
-        }
-        
-        if (type === "sync") {
-            showNotification("☁️ クラウド確認中...");
-            try {
-                const checkRes = await fetch(targetUrl + "?type=getAll");
-                const text = await checkRes.text();      
-                const cloudData = JSON.parse(text);      
-                
-                const localMax = data.length > 0 ? Math.max(...data.map(s => s.updatedAt || 0)) : 0;
-                const cloudMax = Array.isArray(cloudData) && cloudData.length > 0 ? Math.max(...cloudData.map(s => s.updatedAt || 0)) : 0;
-                
-                if (cloudMax > localMax) {
-                    const cloudDate = new Date(cloudMax).toLocaleString();
-                    if (!confirm(`⚠️ 上書き注意！\nクラウドに新しいデータがあります（${cloudDate}）。\n強制上書きしますか？`)) {
-                        showNotification("中断しました"); return false;
-                    }
-                }
-            } catch(e) { console.warn("チェック失敗:", e); }
-        }
-        
-        try {
-            showNotification("☁️ 送信中...");
-            const exportData = data;
-
-            const response = await fetch(targetUrl, {
-                method: 'POST',
-                headers: { 'Content-Type': 'text/plain' }, 
-                body: JSON.stringify({ type: type, data: exportData, reporter: localStorage.getItem('dx_reporter_name') || "職人" })
-            });
-
-            const resText = await response.text(); 
-            const resJson = JSON.parse(resText);   
-
-            if (resJson.result === "success") {
-                showNotification("✅ 送信完了");
-                if(type==="sync") alert("クラウドに保存しました！");
-                return true;
-            } else { throw new Error("GASエラー"); }
-        } catch(e) {
-            alert("送信失敗: " + e); return false;
-        }
+            const response = await fetch(targetUrl, { method: 'POST', headers: { 'Content-Type': 'text/plain' }, body: JSON.stringify({ type: "sync", data: sites, reporter: localStorage.getItem('dx_reporter_name') || "職人" }) });
+            const resText = await response.text(); const resJson = JSON.parse(resText);   
+            if (resJson.result === "success") { showNotification("✅ 送信完了"); alert("クラウドに保存しました！"); return true; } else { throw new Error("GASエラー"); }
+        } catch(e) { alert("送信失敗: " + e); return false; }
     }
 
     async function downloadFromCloud() {
         const gasUrl = localStorage.getItem('dx_gas_url');
         if(!gasUrl) { alert("GAS URL設定なし"); return; }
         if(!confirm("クラウドデータで上書き復元しますか？")) return;
-
         showNotification('📥 取得中...');
         try {
             const res = await fetch(gasUrl + "?type=getAll");
-            const text = await res.text();       
-            const data = JSON.parse(text);       
-            
+            const text = await res.text(); const data = JSON.parse(text);       
             if(Array.isArray(data)) {
-                sites = data;
-                sites.sort((a, b) => (a.id > b.id ? -1 : 1));
+                sites = data; sites.sort((a, b) => (a.id > b.id ? -1 : 1));
                 localStorage.setItem('dx_sites', JSON.stringify(sites));
-                renderList(); closeAllModals();
-                showNotification(`✅ 復元完了 (${sites.length}件)`);
+                renderList(); closeAllModals(); showNotification(`✅ 復元完了 (${sites.length}件)`);
             } else { alert("データ形式エラー"); }
         } catch(e) { alert("取得エラー: " + e); }
     }
 
-    // ★修正版：クラウドの更新チェック（自動巡回）
+    // ★修正版：自動更新チェック（連打ガード機能付き）
     async function checkForCloudUpdates() {
         const targetUrl = localStorage.getItem('dx_gas_url');
         if(!targetUrl) return;
 
+        // ★追加：10秒以内の連打ならスキップ（クールダウン）
+        const now = Date.now();
+        if (now - lastCheckTime < 10000) {
+            console.log("短時間の連打のためスキップしました");
+            return;
+        }
+        lastCheckTime = now; // チェック時刻を更新
+
         try {
             const res = await fetch(targetUrl + "?type=getAll");
-            const text = await res.text();
-            const cloudData = JSON.parse(text);
-            
+            const text = await res.text(); const cloudData = JSON.parse(text);
             if (Array.isArray(cloudData)) {
                 const localMax = sites.length > 0 ? Math.max(...sites.map(s => s.updatedAt || 0)) : 0;
                 const cloudMax = cloudData.length > 0 ? Math.max(...cloudData.map(s => s.updatedAt || 0)) : 0;
-
-                // ★超重要修正：
-                // スマホの方が新しい(localMax >= cloudMax)場合は、
-                // たとえ件数が違っても（新規追加したばかりでも）「更新通知」は出さない。
-                // 「クラウドの方が明らかに未来の時間を持っている」場合だけ通知する。
                 if (cloudMax > localMax) {
                     if (confirm(`🔄 クラウドに新しいデータがあります！\n（誰かが更新したようです）\n\nデータを取り込みますか？\n※「キャンセル」を押すと今のスマホの状態を維持します。`)) {
                         cloudData.sort((a, b) => (a.id > b.id ? -1 : 1));
-                        sites = cloudData;
-                        localStorage.setItem('dx_sites', JSON.stringify(sites));
-                        alert("✅ 最新データを反映しました！");
-                        location.reload();
+                        sites = cloudData; localStorage.setItem('dx_sites', JSON.stringify(sites));
+                        alert("✅ 最新データを反映しました！"); location.reload();
                     }
                 }
             }
-        } catch (e) {
-            console.log("更新チェック失敗:", e);
-        }
+        } catch (e) { console.log("更新チェック失敗:", e); }
     }
 
     async function exportCSV() { showNotification('📤 準備中...'); let c = "\uFEFF案件No,親案件No,現場名,住所,ステータス,開始,終了\n"; sites.forEach(s => { c += `"${s.id}","${s.parentCaseNo||''}","${s.name}","${s.address}","${getStatusText(s.status)}","${s.start||''}","${s.end||''}"\n`; }); const f = new File([c], `現場リスト_${getNowStr()}.csv`, { type: "text/csv" }); if (navigator.share && navigator.canShare({ files: [f] })) { try { await navigator.share({ files: [f] }); } catch (e) { forceDL(f); } } else { forceDL(f); } }
@@ -794,45 +708,6 @@
     function importJSON(input) { const f=input.files[0]; if(!f)return; const r=new FileReader(); r.onload=function(e){ try{ const d=JSON.parse(e.target.result); if(!Array.isArray(d)){alert('エラー');return;} let add=0,upd=0; d.forEach(n=>{ const i=sites.findIndex(s=>s.id===n.id); if(i!==-1){ if((n.updatedAt||0)>(sites[i].updatedAt||0)){sites[i]=n;upd++;} }else{sites.push(n);add++;} }); sites.sort((a,b)=>(a.id>b.id?-1:1)); localStorage.setItem('dx_sites',JSON.stringify(sites)); renderList(); closeAllModals(); showNotification(`復元: ${upd}件更新, ${add}件追加`); }catch(e){alert('読込失敗');} input.value=''; }; r.readAsText(f); }
     function deleteAllData() { if(confirm('本当に全削除しますか？')) { sites=[]; localStorage.setItem('dx_sites',JSON.stringify(sites)); renderList(); closeAllModals(); showNotification('🗑️ 全削除完了'); } }
     function showNotification(msg) { const el = document.getElementById('notification'); el.textContent = msg; el.classList.add('show'); setTimeout(() => el.classList.remove('show'), 2000); }
-    // ★追加：タブ切り替え処理
-    function switchSettingsTab(mode) {
-        const body = document.getElementById('settingsBody');
-        const tabSite = document.getElementById('tabSite');
-        const tabManager = document.getElementById('tabManager');
-        const title = document.getElementById('tabTitle');
-        const managerItems = document.querySelectorAll('.manager-only');
-
-        if (mode === 'site') {
-            // 現場モードへ
-            tabSite.classList.add('active');
-            tabManager.classList.remove('active');
-            body.className = 'settings-content mode-site-bg'; // 緑背景
-            title.innerText = '⛑️ 現場用メニュー (安全モード)';
-            
-            // 管理者専用項目を隠す
-            managerItems.forEach(el => el.classList.add('hide-in-site'));
-            
-        } else {
-            // 管理者モードへ
-            tabManager.classList.add('active');
-            tabSite.classList.remove('active');
-            body.className = 'settings-content mode-manager-bg'; // 白背景
-            title.innerText = '👔 管理者設定 (フル機能)';
-            
-            // 管理者専用項目を表示
-            managerItems.forEach(el => el.classList.remove('hide-in-site'));
-            
-            // 切り替え時にバイブレーション（気づきのため）
-            if(navigator.vibrate) navigator.vibrate(50);
-        }
-    }
-
-    // ★修正：設定を開くときは、必ず「現場タブ」をデフォルトにする
-    function openSettings() {
-        document.getElementById('overlay').classList.add('show');
-        document.getElementById('settingsModal').classList.add('show');
-        switchSettingsTab('site'); // 安全のため現場タブで開く
-    }
 </script>
 </body>
 </html>
