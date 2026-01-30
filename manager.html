@@ -265,30 +265,44 @@
 
     document.addEventListener('DOMContentLoaded', renderGantt);
 
-    // --- ★追加：ガントチャートからカレンダー登録機能 ---
+    // ★修正版：カレンダー登録（同時にアプリ内のデータも保存更新する）
     function sendCalendarFromManager() {
         if (!editingId) return;
         
-        // 現在編集中のデータを取得
-        const site = sites.find(s => s.id === editingId);
-        if (!site) return;
+        // 編集中のデータを探す
+        const idx = sites.findIndex(s => s.id === editingId);
+        if (idx === -1) return;
+        const site = sites[idx];
 
-        // 日付情報の整理（入力欄の値を優先する）
+        // 入力欄の値を取得
         const inputStart = document.getElementById('editStart').value;
         const inputEnd = document.getElementById('editEnd').value;
         
+        // 日付チェック
+        if(inputStart && inputEnd && inputStart > inputEnd){ 
+            alert("開始日が終了日より後です"); return; 
+        }
+
         const targetStart = inputStart || site.start || new Date().toISOString().split('T')[0];
         const targetEnd = inputEnd || site.end || targetStart;
 
-        if(!confirm(`この工期でカレンダーに登録しますか？\n\n期間: ${targetStart} 〜 ${targetEnd}\n現場: ${site.name}`)) return;
+        // 確認
+        if(!confirm(`この工期でカレンダーに登録しますか？\n（同時にこの工期でアプリに保存します）\n\n期間: ${targetStart} 〜 ${targetEnd}\n現場: ${site.name}`)) return;
 
+        // ★ここが追加機能：アプリ側のデータを更新・保存・再描画
+        site.start = inputStart;
+        site.end = inputEnd;
+        site.updatedAt = Date.now();
+        localStorage.setItem('dx_sites', JSON.stringify(sites));
+        renderGantt(); // 背景の表を即座に更新！
+
+        // --- 以下、GAS送信処理 ---
         const gasUrl = localStorage.getItem('dx_gas_url');
         const calId = localStorage.getItem('dx_calendar_id');
 
         if (!gasUrl) { alert("設定エラー: navi画面でGAS URLを設定してください"); return; }
         if (!calId) { alert("設定エラー: navi画面でカレンダーIDを設定してください"); return; }
 
-        // 送信データ作成
         const data = {
             type: "calendar",
             calendarId: calId,
@@ -299,7 +313,6 @@
             end: targetEnd
         };
 
-        // 送信中表示
         const btn = event.target;
         const orgText = btn.innerText;
         btn.innerText = "送信中...";
@@ -313,7 +326,8 @@
         .then(res => res.json())
         .then(json => {
             if(json.result === 'success') {
-                alert("✅ カレンダーに登録しました！");
+                alert("✅ カレンダー登録＆保存完了！");
+                closeModal(); // 成功したら閉じる
             } else {
                 alert("エラー: " + json.error);
             }
