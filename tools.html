@@ -72,7 +72,7 @@
         .proc-btn.active { background: #2c3e50; color: white; border-color: #2c3e50; }
         .custom-btn-area { border-top: 1px dashed #ddd; padding-top: 15px; margin-top: 10px; }
         
-        /* ★追加：任意ボタン用グリッドスタイル */
+        /* 任意ボタン用グリッドスタイル */
         .input-grid-cam { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; margin-top: 5px; }
         .cam-chip { 
             background: #f0f0f0; border: 1px solid #ccc; border-radius: 6px; 
@@ -86,6 +86,54 @@
         .cam-chip.btn-switch { background: #34495e; color: white; border: none; font-size: 0.75rem; } /* 切替ボタン */
         .chip-bar { position: absolute; bottom: 0; left: 0; height: 3px; background: #f39c12; width: 0%; transition: width 0s; }
         .pressing .chip-bar { width: 100%; transition: width 0.8s linear; }
+
+        /* 階数カウンターボタン（3分割）用 */
+        .cam-chip.split-btn {
+            display: flex; padding: 0; overflow: hidden;
+            background: #fff; border-color: #aaa;
+        }
+        .split-part {
+            display: flex; align-items: center; justify-content: center;
+            height: 100%; cursor: pointer; transition: 0.1s;
+        }
+        .split-minus, .split-plus {
+            width: 25%; background: #eceff1; color: #555; font-weight: bold; font-size: 1.1rem;
+        }
+        .split-center {
+            width: 50%; font-weight: bold; color: #2e7d32; border-left: 1px solid #ddd; border-right: 1px solid #ddd;
+            font-size: 1rem;
+        }
+        .split-minus:active, .split-plus:active { background: #cfd8dc; }
+        .split-center:active { background: #e8f5e9; }
+
+        /* 方位スライダーのポップアップ */
+        .slider-overlay {
+            position: fixed; bottom: 100px; left: 50%; transform: translateX(-50%);
+            width: 85%; max-width: 400px;
+            background: rgba(44, 62, 80, 0.95);
+            padding: 20px; border-radius: 15px;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.5);
+            z-index: 200; display: none; text-align: center;
+            color: white; backdrop-filter: blur(5px);
+        }
+        .slider-overlay.show { display: block; animation: popUp 0.2s ease-out; }
+        @keyframes popUp { from { transform: translate(-50%, 20px); opacity: 0; } to { transform: translate(-50%, 0); opacity: 1; } }
+        
+        .slider-label { font-size: 2.5rem; font-weight: bold; margin-bottom: 10px; color: #f39c12; text-shadow: 0 2px 4px rgba(0,0,0,0.3); }
+        .slider-sub { font-size: 0.9rem; color: #bdc3c7; margin-bottom: 15px; }
+        
+        /* スライダー本体 */
+        input[type=range] {
+            -webkit-appearance: none; 
+            appearance: none; /* ★これを追加すると警告が消えます */
+            width: 100%; height: 10px; border-radius: 5px; background: #555; outline: none;
+        }
+        input[type=range]::-webkit-slider-thumb {
+            -webkit-appearance: none; appearance: none;
+            width: 30px; height: 30px; border-radius: 50%; 
+            background: #f39c12; cursor: pointer; border: 3px solid white;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.3);
+        }
 
         /* 日報モーダル */
         .rough-paper { background-color: #fff9c4; border: 2px dashed #dcdcdc; border-radius: 8px; padding: 15px; margin-top: 20px; position: relative; }
@@ -276,6 +324,8 @@
     const siteId = params.get('id');
     let currentSite = null;
     let sites = JSON.parse(localStorage.getItem('dx_sites')) || [];
+    
+    // ★グローバル変数として定義
     let currentProcess = '施工前';
     
     // 履歴読み込み
@@ -295,21 +345,21 @@
     }
 
     window.onload = () => {
-        // ★追加：会社名の読み込み処理
+        
         const savedComp = localStorage.getItem('dx_company_name');
         if (savedComp) {
             document.getElementById('companyName').value = savedComp;
-        } else {
-            // 初回やデータがない場合のデフォルト
+        } 
+        else {
             document.getElementById('companyName').value = "ペイントハウス"; 
         }
 
         renderCameraButtons(); 
-        if(document.getElementById('boardCanvas')) drawBoard(); // 読み込んだ名前で描画
+        if(document.getElementById('boardCanvas')) drawBoard(); 
         if(siteId) renderReportHistory();
     };
 
-    // ★追加：会社名を保存する関数
+    
     function saveCameraSettings() {
         const val = document.getElementById('companyName').value;
         localStorage.setItem('dx_company_name', val);
@@ -325,7 +375,7 @@
     function openForm() { document.getElementById('overlay').classList.add('show'); document.getElementById('inputForm').classList.add('show'); document.getElementById('siteName').value = currentSite ? currentSite.name : ''; document.getElementById('address').value = currentSite ? currentSite.address : ''; document.getElementById('status').value = currentSite ? currentSite.status : 'estimate'; }
     function closeAllModals() { document.querySelectorAll('.modal-box').forEach(el => el.classList.remove('show')); document.getElementById('overlay').classList.remove('show'); stopSpeech(); if(document.getElementById('photoPreviewArea').style.display==='flex') retakePhoto(); }
 
-    /* --- 日報機能（重複防止・済マーク対応版） --- */
+    /* --- 日報機能 --- */
     function saveReportLocal() { 
         const text = document.getElementById('reportText').value; 
         if(!text) { alert('日報の内容が空です'); return; }
@@ -425,11 +475,62 @@
     overlayBoard.addEventListener('touchmove', (e) => { if (!isDragging) return; overlayBoard.style.left = `${initialLeft + e.touches[0].clientX - startX}px`; overlayBoard.style.top = `${initialTop + e.touches[0].clientY - startY}px`; e.preventDefault(); });
     overlayBoard.addEventListener('touchend', () => isDragging = false);
 
-    // --- ★任意ボタン機能（ファンクションキー・長押し編集対応版） ---
+    // --- ★任意ボタン機能（スライダー＆長押し早送り対応版） ---
+    
     const DX_CAM_PARTS = ["ケレン", "洗浄", "養生", "シーリング", "足場", "パターン調整", "下地処理", "吹付", "鉄部", "木部", "付帯部"];
-    const DX_CAM_LOCS  = ["東面", "西面", "南面", "北面", "1F", "2F", "屋上", "ベランダ", "玄関廻り", "全体", "詳細"];
-    let isCamLocationMode = false; // false=部位, true=場所
-    let btnPressTimer = null;
+    const DX_CAM_LOCS  = ["ベランダ", "共用廊下", "階段", "屋上", "玄関廻り", "エントランス", "妻面", "詳細"];
+    
+    const DIRECTIONS = [
+        "北面", "北北東面", "北東面", "東北東面", 
+        "東面", "東南東面", "南東面", "南南東面", 
+        "南面", "南南西面", "南西面", "西南西面", 
+        "西面", "西北西面", "北西面", "北北西面"
+    ];
+
+    let isCamLocationMode = false; 
+    let btnPressTimer = null; // 黒板入力ボタンの長押し用
+    let rapidFireTimer = null; // 左右ボタンの連打用
+
+    let currentFloorLevel = 1; 
+    let currentDirIndex = 0; 
+
+    if(localStorage.getItem('dx_last_floor')) currentFloorLevel = parseInt(localStorage.getItem('dx_last_floor'));
+    if(localStorage.getItem('dx_last_dir')) currentDirIndex = parseInt(localStorage.getItem('dx_last_dir'));
+
+    // スライダー用のHTMLをJSで生成して埋め込む
+    document.addEventListener('DOMContentLoaded', () => {
+        // すでにスライダーがあれば作らない（重複防止）
+        if(document.getElementById('dirSliderOverlay')) return;
+
+        const sliderHTML = `
+            <div id="dirSliderOverlay" class="slider-overlay">
+                <div class="slider-sub">指をスライドして方位を決定</div>
+                <div id="dirSliderLabel" class="slider-label">北</div>
+                <input type="range" id="dirRange" min="0" max="15" value="0" step="1">
+            </div>
+        `;
+        document.body.insertAdjacentHTML('beforeend', sliderHTML);
+        
+        // スライダー操作イベント
+        const range = document.getElementById('dirRange');
+        range.addEventListener('input', (e) => {
+            const idx = parseInt(e.target.value);
+            document.getElementById('dirSliderLabel').innerText = DIRECTIONS[idx];
+            currentDirIndex = idx;
+            // リアルタイムでボタンの文字も更新
+            const centerBtn = document.getElementById('dirCenterBtn');
+            if(centerBtn) {
+                centerBtn.innerText = DIRECTIONS[idx];
+                if(DIRECTIONS[idx].length>=3) centerBtn.style.fontSize='0.85rem'; else centerBtn.style.fontSize='';
+            }
+        });
+        range.addEventListener('change', () => {
+            // 指を離したら確定して閉じる
+            localStorage.setItem('dx_last_dir', currentDirIndex);
+            document.getElementById('dirSliderOverlay').classList.remove('show');
+            renderCameraButtons(); // 念のため再描画
+        });
+    });
 
     function getCamItems(mode) {
         const key = mode ? 'dx_cam_locs' : 'dx_cam_parts';
@@ -437,6 +538,7 @@
         if (raw) return JSON.parse(raw);
         return mode ? [...DX_CAM_LOCS] : [...DX_CAM_PARTS];
     }
+    
     function saveCamItems(mode, items) {
         const key = mode ? 'dx_cam_locs' : 'dx_cam_parts';
         localStorage.setItem(key, JSON.stringify(items));
@@ -447,7 +549,7 @@
         if(!group) return;
         group.innerHTML = '';
 
-        // 1. 切替ボタン
+        // 切替ボタン
         const switchBtn = document.createElement('div');
         switchBtn.className = 'cam-chip btn-switch';
         switchBtn.innerHTML = isCamLocationMode ? '🔄 部位へ' : '🔄 場所へ';
@@ -458,16 +560,52 @@
         };
         group.appendChild(switchBtn);
 
-        // 2. アイテムボタン生成 (最大11個)
+        // ★場所モード：特殊ボタン生成
+        if (isCamLocationMode) {
+            
+            // --- ① 階数ボタン ---
+            const floorBtn = document.createElement('div');
+            floorBtn.className = 'cam-chip split-btn';
+            floorBtn.innerHTML = `
+                <div class="split-part split-minus" onmousedown="startRapidFloor(-1)" ontouchstart="startRapidFloor(-1)" onmouseup="stopRapid()" ontouchend="stopRapid()" onmouseleave="stopRapid()">－</div>
+                <div class="split-part split-center" onclick="inputSpecialText('${currentFloorLevel}F', event)">${currentFloorLevel}F</div>
+                <div class="split-part split-plus" onmousedown="startRapidFloor(1)" ontouchstart="startRapidFloor(1)" onmouseup="stopRapid()" ontouchend="stopRapid()" onmouseleave="stopRapid()">＋</div>
+            `;
+            group.appendChild(floorBtn);
+
+            // --- ② 方位ボタン（スライダー起動付き） ---
+            const dirBtn = document.createElement('div');
+            dirBtn.className = 'cam-chip split-btn';
+            const dirText = DIRECTIONS[currentDirIndex];
+            const smallFont = dirText.length >= 3 ? 'style="font-size:0.85rem;"' : '';
+            
+            // 真ん中ボタン：タップで入力、長押しでスライダー起動
+            dirBtn.innerHTML = `
+                <div class="split-part split-minus" onmousedown="startRapidDir(-1)" ontouchstart="startRapidDir(-1)" onmouseup="stopRapid()" ontouchend="stopRapid()" onmouseleave="stopRapid()">＜</div>
+                <div class="split-part split-center" id="dirCenterBtn" ${smallFont} 
+                     onmousedown="handleDirCenterStart(event)" ontouchstart="handleDirCenterStart(event)" 
+                     onmouseup="handleDirCenterEnd(event)" ontouchend="handleDirCenterEnd(event)">
+                     ${dirText}
+                </div>
+                <div class="split-part split-plus" onmousedown="startRapidDir(1)" ontouchstart="startRapidDir(1)" onmouseup="stopRapid()" ontouchend="stopRapid()" onmouseleave="stopRapid()">＞</div>
+            `;
+            group.appendChild(dirBtn);
+        }
+
+        // 通常アイテム生成
         const currentList = getCamItems(isCamLocationMode);
-        for(let i=0; i < 11; i++) {
+        const maxCount = isCamLocationMode ? 9 : 11;
+
+        for(let i=0; i < maxCount; i++) {
             const text = currentList[i] || '（空）';
             const btn = document.createElement('div');
             btn.className = 'cam-chip';
             if(isCamLocationMode) btn.classList.add('mode-loc');
             
-            // 現在の選択状態を表示（部位モード時のみ）
-            if(!isCamLocationMode && currentProcess === text) btn.classList.add('active');
+            // ★ currentProcess が定義されたので正常に動作
+            if(!isCamLocationMode && typeof currentProcess !== 'undefined' && currentProcess === text) {
+                btn.classList.add('active');
+            }
 
             btn.innerHTML = `<span style="pointer-events:none;">${text}</span><div class="chip-bar"></div>`;
             setupCamBtnEvents(btn, i, text);
@@ -475,16 +613,114 @@
         }
     }
 
+    // --- ★ここから特殊操作ロジック ---
+
+    // 1. 連打（早送り）機能
+    function startRapidFloor(delta) {
+        changeFloor(delta); // まず1回
+        // 0.5秒後に高速連打開始
+        rapidFireTimer = setTimeout(() => {
+            rapidFireTimer = setInterval(() => changeFloor(delta), 100);
+        }, 400);
+    }
+    function startRapidDir(delta) {
+        changeDirection(delta);
+        rapidFireTimer = setTimeout(() => {
+            rapidFireTimer = setInterval(() => changeDirection(delta), 100);
+        }, 400);
+    }
+    function stopRapid() {
+        if(rapidFireTimer) { clearTimeout(rapidFireTimer); clearInterval(rapidFireTimer); rapidFireTimer = null; }
+    }
+
+    function changeFloor(delta) {
+        currentFloorLevel += delta;
+        if(currentFloorLevel < 1) currentFloorLevel = 1;
+        localStorage.setItem('dx_last_floor', currentFloorLevel);
+        // 部分更新
+        const btns = document.querySelectorAll('.split-center');
+        if(btns.length > 0) btns[0].innerText = currentFloorLevel + "F";
+    }
+
+    function changeDirection(delta) {
+        currentDirIndex += delta;
+        if (currentDirIndex >= DIRECTIONS.length) currentDirIndex = 0;
+        if (currentDirIndex < 0) currentDirIndex = DIRECTIONS.length - 1;
+        localStorage.setItem('dx_last_dir', currentDirIndex);
+        
+        const txt = DIRECTIONS[currentDirIndex];
+        const btn = document.getElementById('dirCenterBtn');
+        if(btn) {
+            btn.innerText = txt;
+            if(txt.length>=3) btn.style.fontSize='0.85rem'; else btn.style.fontSize='';
+        }
+    }
+
+    // 2. 方位スライダー起動ロジック
+    let dirCenterTimer = null;
+    let isSliderMode = false;
+
+    function handleDirCenterStart(e) {
+        e.preventDefault(); 
+        isSliderMode = false;
+        const btn = e.currentTarget;
+        btn.style.backgroundColor = '#e0f7fa'; // 押した色
+
+        // 0.5秒長押しでスライダー起動
+        dirCenterTimer = setTimeout(() => {
+            isSliderMode = true;
+            if(navigator.vibrate) navigator.vibrate(50);
+            
+            // スライダーを表示
+            const overlay = document.getElementById('dirSliderOverlay');
+            const range = document.getElementById('dirRange');
+            const label = document.getElementById('dirSliderLabel');
+            
+            range.value = currentDirIndex;
+            label.innerText = DIRECTIONS[currentDirIndex];
+            overlay.classList.add('show');
+            
+        }, 500);
+    }
+
+    function handleDirCenterEnd(e) {
+        e.preventDefault();
+        if(dirCenterTimer) clearTimeout(dirCenterTimer);
+        e.currentTarget.style.backgroundColor = '';
+
+        // 長押しじゃなかった（ただのタップ）なら、文字を入力
+        if (!isSliderMode) {
+            inputSpecialText(DIRECTIONS[currentDirIndex], e);
+        }
+    }
+
+    function inputSpecialText(text, e) {
+        const detailBox = document.getElementById('photoDetail');
+        detailBox.value = detailBox.value + (detailBox.value ? ' ' : '') + text;
+        drawBoard();
+        if(e && e.target) {
+            const t = e.target;
+            t.style.backgroundColor = '#c8e6c9';
+            setTimeout(() => t.style.backgroundColor = '', 150);
+        }
+    }
+    // --- 既存のボタンイベント設定（全角スペース除去版） ---
     function setupCamBtnEvents(btn, index, text) {
         let isLongPress = false;
+        
+        // --- 押したときの処理 ---
         const start = (e) => {
             if (e.type === 'mousedown' && e.button !== 0) return;
             isLongPress = false;
             btn.classList.add('pressing');
+            
+            // 長押しタイマー開始
             btnPressTimer = setTimeout(() => {
                 isLongPress = true;
                 btn.classList.remove('pressing');
                 if(navigator.vibrate) navigator.vibrate(100);
+                
+                // 名前変更プロンプト
                 const newName = prompt(`ボタンの名称を変更します\n（現在の設定：${text}）`, text);
                 if (newName !== null) {
                     const list = getCamItems(isCamLocationMode);
@@ -494,32 +730,40 @@
                 }
             }, 800);
         };
+
+        // --- 離したときの処理 ---
         const end = (e) => {
             clearTimeout(btnPressTimer);
             btn.classList.remove('pressing');
+            
             if (!isLongPress) {
-                // クリック処理
+                
                 if (text !== '（空）') {
                     if (isCamLocationMode) {
-                        // 場所モード：施工箇所に入力（追記）
+                        // 場所モード：文字を追加
                         const detailBox = document.getElementById('photoDetail');
                         detailBox.value = detailBox.value + (detailBox.value ? ' ' : '') + text;
                         drawBoard();
-                    } else {
-                        // 部位モード：工程としてセット
+                    } else 
+                    {
+                        // 部位モード：選択状態を切り替え
                         if (btn.classList.contains('active')) {
-                            btn.classList.remove('active'); currentProcess = '';
-                        } else {
-                            // 他の選択を解除
+                            btn.classList.remove('active'); 
+                            currentProcess = '';
+                        } 
+                        else {
                             document.querySelectorAll('.proc-btn').forEach(b => b.classList.remove('active'));
                             document.querySelectorAll('.cam-chip').forEach(b => b.classList.remove('active'));
-                            btn.classList.add('active'); currentProcess = text;
+                            btn.classList.add('active'); 
+                            currentProcess = text;
                         }
                         drawBoard();
                     }
                 }
             }
         };
+
+        // イベントリスナー登録
         btn.addEventListener('touchstart', start, {passive: true});
         btn.addEventListener('touchend', end);
         btn.addEventListener('mousedown', start);
