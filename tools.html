@@ -158,6 +158,39 @@
         .cancel-btn { flex: 1; background-color: #e0e0e0; color: #333; padding: 14px; border: none; border-radius: 8px; font-weight: bold; cursor: pointer; }
         label { margin-top: 15px; display: block; font-weight: bold; font-size: 0.95rem; color: #2c3e50; }
         input[type="text"], select { width: 100%; padding: 12px; margin-top: 5px; border: 1px solid #ccc; border-radius: 6px; font-size: 1rem; box-sizing: border-box; background: #f9f9f9; }
+        
+        /* ★修正：入力欄の左側にクリアボタンを配置 */
+    .input-wrapper { display: flex; align-items: center; margin-top: 5px; gap: 5px; }
+    .btn-clear-left {
+        width: 40px; height: 40px; border-radius: 6px; border: 1px solid #ccc;
+        background: #ffebee; color: #c62828; font-weight: bold; font-size: 1.2rem;
+        cursor: pointer; flex-shrink: 0;
+    }
+    .input-wrapper input { flex: 1; margin-top: 0; }
+
+    /* ★追加：階数・方位の選択状態デザイン */
+    .cam-chip.target-floor.selected {
+        background-color: #2196F3; color: white; border-color: #1976D2; /* 青 */
+    }
+    .cam-chip.target-dir.selected {
+        background-color: #FFEB3B; color: #333; border-color: #FBC02D; /* 黄 */
+    }
+    /* 操作ボタン（＋－） */
+    .cam-chip.op-btn {
+        background-color: #eceff1; color: #333; font-size: 1.4rem; font-weight: 900;
+    }
+    .cam-chip.op-btn:active { background-color: #cfd8dc; }
+    /* 独立した操作ボタン（大きく押しやすく） */
+    .cam-chip.control-btn {
+        background: #eceff1; color: #333; font-size: 1.2rem;
+    }
+    .cam-chip.control-btn:active {
+        background: #cfd8dc;
+    }
+    /* 真ん中の表示ボタン（目立たせる） */
+    .cam-chip.display-btn {
+        background: #fff; border: 2px solid #2e7d32; color: #2e7d32; font-size: 1.1rem;
+    }
     </style>
 </head>
 <body>
@@ -238,11 +271,9 @@
         </div>
         
         <label>施工箇所</label>
-        <input type="text" id="photoDetail" placeholder="例：北面、軒天など" oninput="drawBoard()">
-        <div style="margin-top:auto; padding-top:20px; display:flex; gap:10px;">
-            <button class="btn-close" onclick="closeAllModals()">閉じる</button>
-            <input type="file" id="nativeCameraInput" accept="image/*" capture="environment" style="display:none;" onchange="handlePhotoSelect(this)">
-            <button class="save-btn" onclick="document.getElementById('nativeCameraInput').click()" style="background:#00C853; font-size:1.1rem;">📸 標準カメラ起動</button>
+        <div class="input-wrapper">
+            <button class="btn-clear-left" onclick="clearLocation()">×</button>
+            <input type="text" id="photoDetail" placeholder="例：北面、軒天など" oninput="drawBoard()">
         </div>
     </div>
     <div id="photoPreviewArea">
@@ -578,6 +609,8 @@
 
     let currentFloorLevel = 1; 
     let currentDirIndex = 0; 
+    // ...既存の変数定義の下あたりに追加...
+    let editTarget = 'floor'; // 操作対象: 'floor' または 'dir'
 
     if(localStorage.getItem('dx_last_floor')) currentFloorLevel = parseInt(localStorage.getItem('dx_last_floor'));
     if(localStorage.getItem('dx_last_dir')) currentDirIndex = parseInt(localStorage.getItem('dx_last_dir'));
@@ -629,134 +662,197 @@
         localStorage.setItem(key, JSON.stringify(items));
     }
 
+    // --- ★修正版：階数・方位 操作ロジック（重複防止・選択挙動対応） ---
+    
     function renderCameraButtons() {
         const group = document.getElementById('customBtnGroup');
         if(!group) return;
         group.innerHTML = '';
 
-        // 切替ボタン
+        // 切替ボタンを作る（後で配置）
         const switchBtn = document.createElement('div');
         switchBtn.className = 'cam-chip btn-switch';
         switchBtn.innerHTML = isCamLocationMode ? '🔄 部位へ' : '🔄 場所へ';
-        switchBtn.onclick = function() {
+        // 重複防止のため onclick のみを使用
+        switchBtn.onclick = (e) => {
+            e.preventDefault();
             isCamLocationMode = !isCamLocationMode;
             renderCameraButtons();
             if(navigator.vibrate) navigator.vibrate(50);
         };
-        group.appendChild(switchBtn);
 
-        // ★場所モード：特殊ボタン生成
+
         if (isCamLocationMode) {
+            // --- 場所モード：1行目（4マス）を操作盤にする ---
             
-            // --- ① 階数ボタン ---
+            // 1. [ 1F ] ボタン（階数）
             const floorBtn = document.createElement('div');
-            floorBtn.className = 'cam-chip split-btn';
-            floorBtn.innerHTML = `
-                <div class="split-part split-minus" onmousedown="startRapidFloor(-1)" ontouchstart="startRapidFloor(-1)" onmouseup="stopRapid()" ontouchend="stopRapid()" onmouseleave="stopRapid()">－</div>
-                <div class="split-part split-center" onclick="inputSpecialText('${currentFloorLevel}F', event)">${currentFloorLevel}F</div>
-                <div class="split-part split-plus" onmousedown="startRapidFloor(1)" ontouchstart="startRapidFloor(1)" onmouseup="stopRapid()" ontouchend="stopRapid()" onmouseleave="stopRapid()">＋</div>
-            `;
+            floorBtn.className = `cam-chip target-floor ${editTarget === 'floor' ? 'selected' : ''}`;
+            floorBtn.innerText = currentFloorLevel + "F";
+            // ★修正：onclickのみで制御（1回目：選択、2回目：入力）
+            floorBtn.onclick = (e) => handleTargetClick('floor', currentFloorLevel + 'F', e);
             group.appendChild(floorBtn);
 
-            // --- ② 方位ボタン（スライダー起動付き） ---
+            // 2. [ 北 ] ボタン（方位）
             const dirBtn = document.createElement('div');
-            dirBtn.className = 'cam-chip split-btn';
-            const dirText = DIRECTIONS[currentDirIndex];
-            const smallFont = dirText.length >= 3 ? 'style="font-size:0.85rem;"' : '';
+            dirBtn.className = `cam-chip target-dir ${editTarget === 'dir' ? 'selected' : ''}`;
+            dirBtn.innerText = DIRECTIONS[currentDirIndex];
+            if(DIRECTIONS[currentDirIndex].length >= 3) dirBtn.style.fontSize = '0.8rem';
             
-            // 真ん中ボタン：タップで入力、長押しでスライダー起動
-            dirBtn.innerHTML = `
-                <div class="split-part split-minus" onmousedown="startRapidDir(-1)" ontouchstart="startRapidDir(-1)" onmouseup="stopRapid()" ontouchend="stopRapid()" onmouseleave="stopRapid()">＜</div>
-                <div class="split-part split-center" id="dirCenterBtn" ${smallFont} 
-                     onmousedown="handleDirCenterStart(event)" ontouchstart="handleDirCenterStart(event)" 
-                     onmouseup="handleDirCenterEnd(event)" ontouchend="handleDirCenterEnd(event)">
-                     ${dirText}
-                </div>
-                <div class="split-part split-plus" onmousedown="startRapidDir(1)" ontouchstart="startRapidDir(1)" onmouseup="stopRapid()" ontouchend="stopRapid()" onmouseleave="stopRapid()">＞</div>
-            `;
+            // ★修正：onclickと長押しを明確に分離
+            // タップ（クリック）時の処理
+            dirBtn.onclick = (e) => {
+                // スライダー操作後などでなければクリック処理
+                if(!isSliderMode) handleTargetClick('dir', DIRECTIONS[currentDirIndex], e);
+            };
+            // 長押し（スライダー）用リスナー
+            dirBtn.addEventListener('touchstart', handleDirCenterStart, {passive: false});
+            dirBtn.addEventListener('touchend', handleDirCenterEnd);
+            dirBtn.addEventListener('mousedown', handleDirCenterStart);
+            dirBtn.addEventListener('mouseup', handleDirCenterEnd);
+            
             group.appendChild(dirBtn);
-        }
 
-        // 通常アイテム生成
-        const currentList = getCamItems(isCamLocationMode);
-        const maxCount = isCamLocationMode ? 9 : 11;
+            // 3. [ － ] ボタン
+            group.appendChild(createRepeatBtn('－', -1));
 
-        for(let i=0; i < maxCount; i++) {
-            const text = currentList[i] || '（空）';
-            const btn = document.createElement('div');
-            btn.className = 'cam-chip';
-            if(isCamLocationMode) btn.classList.add('mode-loc');
-            
-            // ★ currentProcess が定義されたので正常に動作
-            if(!isCamLocationMode && typeof currentProcess !== 'undefined' && currentProcess === text) {
-                btn.classList.add('active');
+            // 4. [ ＋ ] ボタン
+            group.appendChild(createRepeatBtn('＋', 1));
+
+            // --- 2行目以降：切替ボタン ＋ 通常アイテム ---
+            group.appendChild(switchBtn); // 5個目（2行目の先頭）に切替ボタン
+
+            const currentList = getCamItems(isCamLocationMode);
+            // 既に5枠使ったので、残りを埋める（最大11枠まで）
+            const maxCount = 11; 
+
+            for(let i=0; i < maxCount; i++) {
+                const text = currentList[i] || '（空）';
+                const btn = document.createElement('div');
+                btn.className = 'cam-chip';
+                if(isCamLocationMode) btn.classList.add('mode-loc');
+                
+                btn.innerHTML = `<span style="pointer-events:none;">${text}</span><div class="chip-bar"></div>`;
+                setupCamBtnEvents(btn, i, text);
+                group.appendChild(btn);
             }
 
-            btn.innerHTML = `<span style="pointer-events:none;">${text}</span><div class="chip-bar"></div>`;
-            setupCamBtnEvents(btn, i, text);
-            group.appendChild(btn);
+        } else {
+            // --- 部位モード（通常通り） ---
+            group.appendChild(switchBtn);
+            const currentList = getCamItems(isCamLocationMode);
+            for(let i=0; i < 11; i++) {
+                const text = currentList[i] || '（空）';
+                const btn = document.createElement('div');
+                btn.className = 'cam-chip';
+                if(typeof currentProcess !== 'undefined' && currentProcess === text) btn.classList.add('active');
+                
+                btn.innerHTML = `<span style="pointer-events:none;">${text}</span><div class="chip-bar"></div>`;
+                setupCamBtnEvents(btn, i, text);
+                group.appendChild(btn);
+            }
         }
     }
 
-    // --- ★ここから特殊操作ロジック ---
+    // ★追加：連打ボタンを作るヘルパー関数
+    function createRepeatBtn(label, delta) {
+        const btn = document.createElement('div');
+        btn.className = 'cam-chip op-btn';
+        btn.innerText = label;
+        
+        // スマホでの連打・PCでのクリック両対応（重複発火防止）
+        const start = (e) => { 
+            if(e.cancelable) e.preventDefault(); // これでダブルタップ拡大などを防止
+            startRapidOp(delta); 
+        };
+        const end = (e) => { 
+            if(e.cancelable) e.preventDefault(); 
+            stopRapid(); 
+        };
 
-    // 1. 連打（早送り）機能
-    function startRapidFloor(delta) {
-        changeFloor(delta); // まず1回
-        // 0.5秒後に高速連打開始
+        btn.addEventListener('touchstart', start, {passive: false});
+        btn.addEventListener('touchend', end);
+        btn.addEventListener('mousedown', start);
+        btn.addEventListener('mouseup', end);
+        btn.addEventListener('mouseleave', end);
+        
+        return btn;
+    }
+
+    // ★修正：ターゲット選択時の挙動（1回目選択、2回目入力）
+    function handleTargetClick(target, text, e) {
+        if (editTarget !== target) {
+            // 違うものを選択していたなら、ターゲットを切り替えるだけ（入力しない）
+            editTarget = target;
+            renderCameraButtons();
+            if(navigator.vibrate) navigator.vibrate(30);
+        } else {
+            // 既に選択中なら、入力する
+            inputSpecialText(text, e);
+        }
+    }
+
+    // 操作ロジック（＋－ボタン用）
+    function operate(delta) {
+        if (editTarget === 'floor') {
+            changeFloor(delta);
+        } else {
+            changeDirection(delta);
+        }
+        renderCameraButtons();
+    }
+
+    // 連打用タイマー
+    function startRapidOp(delta) {
+        operate(delta); // 即座に1回実行
+        // 0.4秒後に連打開始
         rapidFireTimer = setTimeout(() => {
-            rapidFireTimer = setInterval(() => changeFloor(delta), 100);
+            rapidFireTimer = setInterval(() => operate(delta), 100);
         }, 400);
     }
-    function startRapidDir(delta) {
-        changeDirection(delta);
-        rapidFireTimer = setTimeout(() => {
-            rapidFireTimer = setInterval(() => changeDirection(delta), 100);
-        }, 400);
-    }
+    
     function stopRapid() {
-        if(rapidFireTimer) { clearTimeout(rapidFireTimer); clearInterval(rapidFireTimer); rapidFireTimer = null; }
+        if(rapidFireTimer) {
+            clearTimeout(rapidFireTimer);
+            clearInterval(rapidFireTimer);
+            rapidFireTimer = null;
+        }
     }
 
+    // 階数変更
     function changeFloor(delta) {
         currentFloorLevel += delta;
         if(currentFloorLevel < 1) currentFloorLevel = 1;
         localStorage.setItem('dx_last_floor', currentFloorLevel);
-        // 部分更新
-        const btns = document.querySelectorAll('.split-center');
-        if(btns.length > 0) btns[0].innerText = currentFloorLevel + "F";
+
     }
 
+    // 方位変更
     function changeDirection(delta) {
         currentDirIndex += delta;
         if (currentDirIndex >= DIRECTIONS.length) currentDirIndex = 0;
         if (currentDirIndex < 0) currentDirIndex = DIRECTIONS.length - 1;
         localStorage.setItem('dx_last_dir', currentDirIndex);
-        
-        const txt = DIRECTIONS[currentDirIndex];
-        const btn = document.getElementById('dirCenterBtn');
-        if(btn) {
-            btn.innerText = txt;
-            if(txt.length>=3) btn.style.fontSize='0.85rem'; else btn.style.fontSize='';
-        }
+
     }
 
-    // 2. 方位スライダー起動ロジック
+
+    // スライダー用イベント（競合防止版）
     let dirCenterTimer = null;
     let isSliderMode = false;
 
     function handleDirCenterStart(e) {
-        e.preventDefault(); 
+        // クリックイベントとの競合を防ぐためここでは preventDefault しない
+        // 長押し判定だけ行う
         isSliderMode = false;
-        const btn = e.currentTarget;
-        btn.style.backgroundColor = '#e0f7fa'; // 押した色
+        
 
-        // 0.5秒長押しでスライダー起動
+
         dirCenterTimer = setTimeout(() => {
-            isSliderMode = true;
+            isSliderMode = true; // スライダーモード発動
             if(navigator.vibrate) navigator.vibrate(50);
             
-            // スライダーを表示
+
             const overlay = document.getElementById('dirSliderOverlay');
             const range = document.getElementById('dirRange');
             const label = document.getElementById('dirSliderLabel');
@@ -764,29 +860,30 @@
             range.value = currentDirIndex;
             label.innerText = DIRECTIONS[currentDirIndex];
             overlay.classList.add('show');
-            
-        }, 500);
+        }, 600); // 少し長めに設定（誤爆防止）
     }
 
     function handleDirCenterEnd(e) {
-        e.preventDefault();
-        if(dirCenterTimer) clearTimeout(dirCenterTimer);
-        e.currentTarget.style.backgroundColor = '';
 
-        // 長押しじゃなかった（ただのタップ）なら、文字を入力
-        if (!isSliderMode) {
-            inputSpecialText(DIRECTIONS[currentDirIndex], e);
-        }
+        if(dirCenterTimer) clearTimeout(dirCenterTimer);
+        // スライダーモードだった場合、ここで終了処理などは不要（スライダー側のイベントで処理）
+        // isSliderModeフラグは onclick 側で参照される
     }
 
     function inputSpecialText(text, e) {
         const detailBox = document.getElementById('photoDetail');
         detailBox.value = detailBox.value + (detailBox.value ? ' ' : '') + text;
         drawBoard();
+        
+        // 押した演出（ボタン要素を探して色を変える）
         if(e && e.target) {
-            const t = e.target;
-            t.style.backgroundColor = '#c8e6c9';
-            setTimeout(() => t.style.backgroundColor = '', 150);
+            // クラス名が含まれる要素を探す（spanをクリックした場合などの対策）
+            const target = e.target.classList.contains('cam-chip') ? e.target : e.target.closest('.cam-chip');
+            if(target) {
+                const originalColor = target.style.backgroundColor;
+                target.style.backgroundColor = '#c8e6c9'; // 緑に光る
+                setTimeout(() => target.style.backgroundColor = originalColor, 150);
+            }
         }
     }
     // --- 既存のボタンイベント設定（全角スペース除去版） ---
@@ -1003,6 +1100,14 @@
         btn.addEventListener('mouseup', end);
         btn.addEventListener('mouseleave', () => { clearTimeout(pressTimer); btn.classList.remove('pressing'); });
         btn.addEventListener('touchmove', () => { clearTimeout(pressTimer); btn.classList.remove('pressing'); });
+    }
+    // ★追加：施工箇所のクリア機能
+    function clearLocation() {
+        const input = document.getElementById('photoDetail');
+        if(input) {
+            input.value = ""; // 文字を空にする
+            drawBoard();      // 黒板を書き直す
+        }
     }
 </script>
 </body>
