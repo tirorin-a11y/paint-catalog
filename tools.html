@@ -229,14 +229,8 @@
         <label>会社名</label>
         <input type="text" id="companyName" placeholder="会社名を入力" oninput="drawBoard(); saveCameraSettings()">
 
-        <label>工程 (固定)</label>
-        <div class="process-btns">
-            <button class="proc-btn active" onclick="setProcess(this, '施工前')">施工前</button>
-            <button class="proc-btn" onclick="setProcess(this, '下塗り')">下塗り</button>
-            <button class="proc-btn" onclick="setProcess(this, '中塗り')">中塗り</button>
-            <button class="proc-btn" onclick="setProcess(this, '上塗り')">上塗り</button>
-            <button class="proc-btn" onclick="setProcess(this, '完了')">完了</button>
-        </div>
+        <label>工程 (固定) <span style="font-size:0.8rem; font-weight:normal; color:#888;">(長押しで編集)</span></label>
+        <div class="process-btns"></div>
         
         <div class="custom-btn-area">
             <label style="margin-bottom:5px; display:block;">任意ボタン <span style="font-size:0.8rem; font-weight:normal; color:#888;">(長押しで編集)</span></label>
@@ -325,8 +319,13 @@
     let currentSite = null;
     let sites = JSON.parse(localStorage.getItem('dx_sites')) || [];
     
-    // ★グローバル変数として定義
+    // --- 変数定義エリア（スクリプトの最初の方） ---
+    
+    // 現在選択中の工程（グローバル変数）
     let currentProcess = '施工前';
+
+    // ★追加：デフォルトの工程リスト
+    const DEFAULT_PROCESSES = ["施工前", "下塗り", "中塗り", "上塗り", "完了"];
     
     // 履歴読み込み
     let reportHistory;
@@ -345,16 +344,17 @@
     }
 
     window.onload = () => {
-        
+        // 会社名の読み込み
         const savedComp = localStorage.getItem('dx_company_name');
-        if (savedComp) {
-            document.getElementById('companyName').value = savedComp;
-        } 
-        else {
-            document.getElementById('companyName').value = "ペイントハウス"; 
-        }
+        document.getElementById('companyName').value = savedComp ? savedComp : "ペイントハウス";
 
+        // ★追加：工程ボタン（編集可能版）を生成
+        renderProcessButtons(); 
+        
+        // 任意ボタン（階数・方位）を生成
         renderCameraButtons(); 
+        
+        // 黒板描画と履歴読み込み
         if(document.getElementById('boardCanvas')) drawBoard(); 
         if(siteId) renderReportHistory();
     };
@@ -820,6 +820,104 @@
             alert(`コピーを作成しました。\n新案件No: ${newId}`);
             window.location.href = 'navi.html';
         }
+    }
+
+    // --- ★ここから追加：工程ボタン（編集可能）の生成ロジック ---
+
+    function renderProcessButtons() {
+        // HTML側のコンテナを取得
+        const container = document.querySelector('.process-btns');
+        if(!container) return;
+        
+        // 一旦空にする（重複防止）
+        container.innerHTML = '';
+        
+        // 保存されたリストがあればそれを、なければデフォルトを使う
+        const list = JSON.parse(localStorage.getItem('dx_process_list')) || DEFAULT_PROCESSES;
+        
+        list.forEach((text, index) => {
+            const btn = document.createElement('button');
+            btn.className = 'proc-btn';
+            
+            // 現在選択中なら色をつける
+            if (currentProcess === text) btn.classList.add('active');
+            
+            // ボタンの文字
+            btn.innerText = text;
+            
+            // 長押し演出用のバーを追加
+            const bar = document.createElement('div');
+            bar.className = 'chip-bar';
+            btn.appendChild(bar);
+
+            // 長押しイベントなどを設定
+            setupProcessBtnEvents(btn, index, text);
+            
+            // 画面に追加
+            container.appendChild(btn);
+        });
+    }
+
+    function setupProcessBtnEvents(btn, index, text) {
+        let isLongPress = false;
+        let pressTimer = null;
+
+        // 押したとき
+        const start = (e) => {
+            if (e.type === 'mousedown' && e.button !== 0) return;
+            isLongPress = false;
+            btn.classList.add('pressing');
+            
+            // 0.8秒長押しで名前変更
+            pressTimer = setTimeout(() => {
+                isLongPress = true;
+                btn.classList.remove('pressing');
+                if(navigator.vibrate) navigator.vibrate(100);
+                
+                const newName = prompt(`工程名の変更\n（現在の設定：${text}）`, text);
+                if(newName !== null && newName.trim() !== "") {
+                    // 保存処理
+                    const list = JSON.parse(localStorage.getItem('dx_process_list')) || DEFAULT_PROCESSES;
+                    list[index] = newName;
+                    localStorage.setItem('dx_process_list', JSON.stringify(list));
+                    
+                    // もし選択中だったなら、選択中の名前も更新
+                    if(currentProcess === text) currentProcess = newName;
+                    
+                    // 再描画
+                    renderProcessButtons();
+                    drawBoard();
+                }
+            }, 800);
+        };
+
+        // 離したとき
+        const end = (e) => {
+            if(pressTimer) clearTimeout(pressTimer);
+            btn.classList.remove('pressing');
+            
+            // 長押しじゃなかったら「選択」
+            if(!isLongPress) {
+                // 既存の setProcess 関数を呼ぶのではなく、直接処理を書く（エラー回避のため）
+                if (btn.classList.contains('active')) {
+                    btn.classList.remove('active'); 
+                    currentProcess = '';
+                } else {
+                    document.querySelectorAll('.proc-btn').forEach(b => b.classList.remove('active'));
+                    btn.classList.add('active'); 
+                    currentProcess = text;
+                }
+                drawBoard();
+            }
+        };
+
+        // イベント登録
+        btn.addEventListener('touchstart', start, {passive: true});
+        btn.addEventListener('touchend', end);
+        btn.addEventListener('mousedown', start);
+        btn.addEventListener('mouseup', end);
+        btn.addEventListener('mouseleave', () => { clearTimeout(pressTimer); btn.classList.remove('pressing'); });
+        btn.addEventListener('touchmove', () => { clearTimeout(pressTimer); btn.classList.remove('pressing'); });
     }
 </script>
 </body>
