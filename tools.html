@@ -455,15 +455,100 @@
     const canvas = document.getElementById('boardCanvas'), ctx = canvas ? canvas.getContext('2d') : null;
     function setProcess(btn, text) { if (btn.classList.contains('active')) { btn.classList.remove('active'); currentProcess = ''; } else { document.querySelectorAll('.proc-btn').forEach(b => b.classList.remove('active')); btn.classList.add('active'); currentProcess = text; } drawBoard(); }
     
+    // ★修正版：黒板描画（3行対応・自動縮小ロジック付き）
     function drawBoard() {
         if(!canvas) return;
-        const siteName = currentSite ? currentSite.name : "（現場名未定）", company = document.getElementById('companyName').value || "", location = document.getElementById('photoDetail').value || "";
-        const d = new Date(), dateStr = `${d.getFullYear()}/${d.getMonth()+1}/${d.getDate()}`;
-        ctx.fillStyle = '#004d40'; ctx.fillRect(0, 0, canvas.width, canvas.height); ctx.strokeStyle = 'white'; ctx.lineWidth = 5; ctx.strokeRect(5, 5, canvas.width - 10, canvas.height - 10);
-        ctx.lineWidth = 2; ctx.beginPath(); ctx.moveTo(10, 80); ctx.lineTo(390, 80); ctx.moveTo(10, 150); ctx.lineTo(390, 150); ctx.stroke();
-        ctx.fillStyle = 'white'; ctx.textAlign = 'left'; ctx.textBaseline = 'middle'; ctx.font = 'bold 20px sans-serif'; ctx.fillText("工事名", 20, 30); ctx.font = 'bold 24px sans-serif'; ctx.fillText(siteName, 20, 55); ctx.font = 'bold 20px sans-serif'; ctx.fillText("工種 / 施工内容", 20, 100); ctx.font = 'bold 26px sans-serif'; ctx.fillText(currentProcess || "（選択なし）", 40, 125); ctx.font = 'bold 20px sans-serif'; ctx.fillText("施工箇所", 20, 175);
-        ctx.font = 'bold 24px sans-serif'; const maxWidth = 340; let line1 = location, line2 = ""; if (ctx.measureText(location).width > maxWidth) { for (let i = 1; i < location.length; i++) { if (ctx.measureText(location.substring(0, i)).width > maxWidth) { line1 = location.substring(0, i-1); line2 = location.substring(i-1); break; } } } if(line2) { ctx.fillText(line1, 40, 200); ctx.fillText(line2, 40, 228); } else { ctx.fillText(line1, 40, 210); }
-        ctx.textAlign = 'right'; ctx.font = 'bold 24px sans-serif'; ctx.fillText(dateStr, 380, 270); ctx.textAlign = 'left'; ctx.font = '16px sans-serif'; ctx.fillStyle = '#ccc'; ctx.fillText(company, 20, 270);
+        const siteName = currentSite ? currentSite.name : "（現場名未定）";
+        const company = document.getElementById('companyName').value || "";
+        const location = document.getElementById('photoDetail').value || "";
+        const d = new Date();
+        const dateStr = `${d.getFullYear()}/${d.getMonth()+1}/${d.getDate()}`;
+
+        // 背景と枠線
+        ctx.fillStyle = '#004d40'; ctx.fillRect(0, 0, canvas.width, canvas.height); 
+        ctx.strokeStyle = 'white'; ctx.lineWidth = 5; ctx.strokeRect(5, 5, canvas.width - 10, canvas.height - 10);
+        
+        // 仕切り線
+        ctx.lineWidth = 2; 
+        ctx.beginPath(); 
+        ctx.moveTo(10, 80); ctx.lineTo(390, 80); 
+        ctx.moveTo(10, 150); ctx.lineTo(390, 150); 
+        ctx.stroke();
+
+        // 固定ラベルと内容（工事名・工種）
+        ctx.fillStyle = 'white'; ctx.textAlign = 'left'; ctx.textBaseline = 'middle'; 
+        ctx.font = 'bold 20px sans-serif'; ctx.fillText("工事名", 20, 30); 
+        ctx.font = 'bold 24px sans-serif'; ctx.fillText(siteName, 20, 55); 
+        ctx.font = 'bold 20px sans-serif'; ctx.fillText("工種 / 施工内容", 20, 100); 
+        ctx.font = 'bold 26px sans-serif'; ctx.fillText(currentProcess || "（選択なし）", 40, 125); 
+        
+        // 施工箇所ラベル
+        ctx.font = 'bold 20px sans-serif'; ctx.fillText("施工箇所", 20, 175);
+
+        // --- ★ここから：3行自動調整ロジック ---
+        const maxWidth = 340;
+        
+        // 行分割計算用ヘルパー関数
+        const getLines = (ctx, text, max) => {
+            let words = text.split(''); 
+            let lines = [];
+            let currentLine = words[0] || "";
+            for (let i = 1; i < words.length; i++) {
+                let char = words[i];
+                if (ctx.measureText(currentLine + char).width < max) {
+                    currentLine += char;
+                } else {
+                    lines.push(currentLine);
+                    currentLine = char;
+                }
+            }
+            lines.push(currentLine);
+            return lines;
+        };
+
+        // ステップ1: 標準サイズ(24px)で試算
+        let fontSize = 24;
+        ctx.font = `bold ${fontSize}px sans-serif`;
+        let lines = getLines(ctx, location, maxWidth);
+
+        // ステップ2: 2行に収まらないなら少し小さく(20px)して再計算
+        if (lines.length > 2) {
+            fontSize = 20;
+            ctx.font = `bold ${fontSize}px sans-serif`;
+            lines = getLines(ctx, location, maxWidth);
+        }
+
+        // ステップ3: それでも3行を超えるなら、さらに小さく(17px)して3行に強制
+        if (lines.length > 3) {
+            fontSize = 17;
+            ctx.font = `bold ${fontSize}px sans-serif`;
+            lines = getLines(ctx, location, maxWidth);
+            
+            // それでも溢れる場合は3行目で切って「…」をつける
+            if(lines.length > 3) {
+                lines = lines.slice(0, 3);
+                lines[2] = lines[2].substring(0, lines[2].length - 1) + "…";
+            }
+        }
+
+        // 描画（行数に応じて高さを調整）
+        const startX = 40;
+        if (lines.length === 1) {
+            ctx.fillText(lines[0], startX, 210);
+        } else if (lines.length === 2) {
+            ctx.fillText(lines[0], startX, 200);
+            ctx.fillText(lines[1], startX, 228);
+        } else {
+            // 3行の場合（少し詰めて表示）
+            ctx.fillText(lines[0], startX, 195);
+            ctx.fillText(lines[1], startX, 215);
+            ctx.fillText(lines[2], startX, 235);
+        }
+        // --- ここまで ---
+
+        // 日付・会社名
+        ctx.textAlign = 'right'; ctx.font = 'bold 24px sans-serif'; ctx.fillText(dateStr, 380, 270); 
+        ctx.textAlign = 'left'; ctx.font = '16px sans-serif'; ctx.fillStyle = '#ccc'; ctx.fillText(company, 20, 270);
     }
     let photoFile = null;
     function handlePhotoSelect(input) { if (input.files && input.files[0]) { photoFile = input.files[0]; const reader = new FileReader(); reader.onload = function(e) { document.getElementById('previewImage').src = e.target.result; document.getElementById('overlayBoard').src = canvas.toDataURL('image/png'); document.getElementById('cameraSetup').style.display = 'none'; document.getElementById('photoPreviewArea').style.display = 'flex'; const board = document.getElementById('overlayBoard'); board.style.top = '20px'; board.style.left = '20px'; board.style.bottom = ''; board.style.right = ''; }; reader.readAsDataURL(photoFile); } input.value = ''; }
