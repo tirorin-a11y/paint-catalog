@@ -886,23 +886,32 @@
             }
         }
     }
-    // --- 既存のボタンイベント設定（全角スペース除去版） ---
+    // ★修正版：施工箇所ボタンのイベント制御（スクロール誤作動・重複防止）
     function setupCamBtnEvents(btn, index, text) {
+        let pressTimer = null;
         let isLongPress = false;
-        
-        // --- 押したときの処理 ---
-        const start = (e) => {
+        let startX, startY;
+
+        const handleStart = (e) => {
             if (e.type === 'mousedown' && e.button !== 0) return;
             isLongPress = false;
+            
+            if(e.touches) {
+                startX = e.touches[0].clientX;
+                startY = e.touches[0].clientY;
+            } else {
+                startX = e.clientX;
+                startY = e.clientY;
+            }
+
             btn.classList.add('pressing');
             
-            // 長押しタイマー開始
-            btnPressTimer = setTimeout(() => {
+            pressTimer = setTimeout(() => {
                 isLongPress = true;
                 btn.classList.remove('pressing');
                 if(navigator.vibrate) navigator.vibrate(100);
                 
-                // 名前変更プロンプト
+
                 const newName = prompt(`ボタンの名称を変更します\n（現在の設定：${text}）`, text);
                 if (newName !== null) {
                     const list = getCamItems(isCamLocationMode);
@@ -913,45 +922,59 @@
             }, 800);
         };
 
-        // --- 離したときの処理 ---
-        const end = (e) => {
-            clearTimeout(btnPressTimer);
+        const handleEnd = (e) => {
+            clearTimeout(pressTimer);
             btn.classList.remove('pressing');
-            
-            if (!isLongPress) {
-                
-                if (text !== '（空）') {
-                    if (isCamLocationMode) {
-                        // 場所モード：文字を追加
-                        const detailBox = document.getElementById('photoDetail');
-                        detailBox.value = detailBox.value + (detailBox.value ? ' ' : '') + text;
-                        drawBoard();
-                    } else 
-                    {
-                        // 部位モード：選択状態を切り替え
-                        if (btn.classList.contains('active')) {
-                            btn.classList.remove('active'); 
-                            currentProcess = '';
-                        } 
-                        else {
-                            document.querySelectorAll('.proc-btn').forEach(b => b.classList.remove('active'));
-                            document.querySelectorAll('.cam-chip').forEach(b => b.classList.remove('active'));
-                            btn.classList.add('active'); 
-                            currentProcess = text;
-                        }
-                        drawBoard();
+
+            if (isLongPress) return;
+
+            // スクロール判定（10px以上の移動は無視）
+            let endX, endY;
+            if(e.changedTouches) {
+                endX = e.changedTouches[0].clientX;
+                endY = e.changedTouches[0].clientY;
+            } else {
+                endX = e.clientX;
+                endY = e.clientY;
+            }
+            if (Math.abs(endX - startX) > 10 || Math.abs(endY - startY) > 10) {
+                return;
+            }
+
+            // 重複防止（タッチの場合のみデフォルト動作を防ぐ）
+            if (e.type === 'touchend' && e.cancelable) e.preventDefault();
+
+            // 実行処理
+            if (text !== '（空）') {
+                if (isCamLocationMode) {
+                    // 場所モード：文字を追加
+                    const detailBox = document.getElementById('photoDetail');
+                    detailBox.value = detailBox.value + (detailBox.value ? ' ' : '') + text;
+                    drawBoard();
+                } else {
+                    // 部位モード：選択状態切り替え
+                    if (btn.classList.contains('active')) {
+                        btn.classList.remove('active'); 
+                        currentProcess = '';
+                    } else {
+                        document.querySelectorAll('.proc-btn').forEach(b => b.classList.remove('active'));
+                        document.querySelectorAll('.cam-chip').forEach(b => b.classList.remove('active'));
+                        btn.classList.add('active'); 
+                        currentProcess = text;
                     }
+                    drawBoard();
                 }
             }
         };
 
-        // イベントリスナー登録
-        btn.addEventListener('touchstart', start, {passive: true});
-        btn.addEventListener('touchend', end);
-        btn.addEventListener('mousedown', start);
-        btn.addEventListener('mouseup', end);
-        btn.addEventListener('touchmove', () => { clearTimeout(btnPressTimer); btn.classList.remove('pressing'); });
-        btn.addEventListener('mouseleave', () => { clearTimeout(btnPressTimer); btn.classList.remove('pressing'); });
+        btn.addEventListener('touchstart', handleStart, {passive: false});
+        btn.addEventListener('touchend', handleEnd, {passive: false});
+        btn.addEventListener('mousedown', handleStart);
+        btn.addEventListener('mouseup', handleEnd);
+        btn.addEventListener('mouseleave', () => { 
+            clearTimeout(pressTimer); 
+            btn.classList.remove('pressing'); 
+        });
     }
 
     /* 共通系・音声入力 */
@@ -1040,66 +1063,95 @@
         });
     }
 
+    // ★修正版：工程ボタンのイベント制御（スクロール誤作動・重複防止）
     function setupProcessBtnEvents(btn, index, text) {
-        let isLongPress = false;
-        let pressTimer = null;
 
-        // 押したとき
-        const start = (e) => {
+        let pressTimer = null;
+        let isLongPress = false;
+        let startX, startY;
+        
+        // タッチ開始
+        const handleStart = (e) => {
+            // 右クリック等は無視
             if (e.type === 'mousedown' && e.button !== 0) return;
+            
             isLongPress = false;
+            // タッチ位置を記録（スクロール判定用）
+            if(e.touches) {
+                startX = e.touches[0].clientX;
+                startY = e.touches[0].clientY;
+            } else {
+                startX = e.clientX;
+                startY = e.clientY;
+            }
+
             btn.classList.add('pressing');
             
-            // 0.8秒長押しで名前変更
+            // 長押しタイマー開始（0.8秒）
             pressTimer = setTimeout(() => {
                 isLongPress = true;
                 btn.classList.remove('pressing');
                 if(navigator.vibrate) navigator.vibrate(100);
                 
+                // 名前変更処理
                 const newName = prompt(`工程名の変更\n（現在の設定：${text}）`, text);
                 if(newName !== null && newName.trim() !== "") {
-                    // 保存処理
+
                     const list = JSON.parse(localStorage.getItem('dx_process_list')) || DEFAULT_PROCESSES;
                     list[index] = newName;
                     localStorage.setItem('dx_process_list', JSON.stringify(list));
-                    
-                    // もし選択中だったなら、選択中の名前も更新
+
                     if(currentProcess === text) currentProcess = newName;
+
                     
-                    // 再描画
                     renderProcessButtons();
                     drawBoard();
                 }
             }, 800);
         };
 
-        // 離したとき
-        const end = (e) => {
-            if(pressTimer) clearTimeout(pressTimer);
+        // タッチ終了
+        const handleEnd = (e) => {
+            clearTimeout(pressTimer);
             btn.classList.remove('pressing');
-            
-            // 長押しじゃなかったら「選択」
-            if(!isLongPress) {
-                // 既存の setProcess 関数を呼ぶのではなく、直接処理を書く（エラー回避のため）
-                if (btn.classList.contains('active')) {
-                    btn.classList.remove('active'); 
-                    currentProcess = '';
-                } else {
-                    document.querySelectorAll('.proc-btn').forEach(b => b.classList.remove('active'));
-                    btn.classList.add('active'); 
-                    currentProcess = text;
-                }
-                drawBoard();
+
+            // 長押し成立済みなら何もしない（処理済みだから）
+            if (isLongPress) return;
+
+            // スクロール判定（指が動いていたらクリックとみなさない）
+            let endX, endY;
+            if(e.changedTouches) {
+                endX = e.changedTouches[0].clientX;
+                endY = e.changedTouches[0].clientY;
+            } else {
+                endX = e.clientX;
+                endY = e.clientY;
             }
+            // 10px以上の移動はスクロールとみなす（許容範囲）
+            if (Math.abs(endX - startX) > 10 || Math.abs(endY - startY) > 10) {
+                return; // 何もしない
+            }
+
+            // ここまで来たら「正常なタップ」とみなす
+            // 重複防止のため、タッチイベントの場合はclickイベントをキャンセルする
+            if (e.type === 'touchend' && e.cancelable) e.preventDefault();
+
+            setProcess(btn, text);
         };
 
         // イベント登録
-        btn.addEventListener('touchstart', start, {passive: true});
-        btn.addEventListener('touchend', end);
-        btn.addEventListener('mousedown', start);
-        btn.addEventListener('mouseup', end);
-        btn.addEventListener('mouseleave', () => { clearTimeout(pressTimer); btn.classList.remove('pressing'); });
-        btn.addEventListener('touchmove', () => { clearTimeout(pressTimer); btn.classList.remove('pressing'); });
+        btn.addEventListener('touchstart', handleStart, {passive: false});
+        btn.addEventListener('touchend', handleEnd, {passive: false});
+        
+        // PC（マウス）用
+        btn.addEventListener('mousedown', handleStart);
+        btn.addEventListener('mouseup', handleEnd);
+        
+        // マウスが外れたらキャンセル
+        btn.addEventListener('mouseleave', () => { 
+            clearTimeout(pressTimer); 
+            btn.classList.remove('pressing'); 
+        });
     }
     // ★追加：施工箇所のクリア機能
     function clearLocation() {
