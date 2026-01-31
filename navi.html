@@ -325,10 +325,24 @@
 </div>
 
 <div class="fab-container">
-    <div style="display:flex; align-items:center;"><span class="fab-label">共有・バックアップ</span><button class="fab-btn share-fab" onclick="exportJSON()">📤</button></div>
+    <div style="display:flex; align-items:center;"><span class="fab-label">共有・バックアップ</span><button class="fab-btn share-fab" onclick="handleBackupClick()">📤</button>
     <div style="display:flex; align-items:center;"><button class="fab-btn add-fab" onclick="openForm('new')">＋</button></div>
 </div>
 <div id="notification" class="notification"></div>
+<div id="backupModal" class="modal-box" style="text-align:center; max-width:300px;">
+    <h3 style="margin-top:0;">📤 バックアップ</h3>
+    <p style="font-size:0.9rem; color:#666; margin-bottom:20px;">保存先を選んでください</p>
+    
+    <button onclick="syncAllDataToCloud(); closeAllModals();" style="width:100%; padding:15px; background:#2980b9; color:white; border:none; border-radius:8px; font-weight:bold; font-size:1rem; margin-bottom:10px; display:flex; align-items:center; justify-content:center; gap:10px;">
+        ☁️ クラウドに保存<br><span style="font-size:0.7rem; font-weight:normal;">(サーバーを上書き)</span>
+    </button>
+    
+    <button onclick="exportJSON(); closeAllModals();" style="width:100%; padding:15px; background:#f39c12; color:white; border:none; border-radius:8px; font-weight:bold; font-size:1rem; display:flex; align-items:center; justify-content:center; gap:10px;">
+        📂 ファイルに保存<br><span style="font-size:0.7rem; font-weight:normal;">(スマホ内にダウンロード)</span>
+    </button>
+    
+    <button class="btn-close" onclick="closeAllModals()" style="margin-top:15px;">キャンセル</button>
+</div>
 
 <script>
     let sites = JSON.parse(localStorage.getItem('dx_sites')) || [];
@@ -741,6 +755,20 @@
     function importJSON(input) { const f=input.files[0]; if(!f)return; const r=new FileReader(); r.onload=function(e){ try{ const d=JSON.parse(e.target.result); if(!Array.isArray(d)){alert('エラー');return;} let add=0,upd=0; d.forEach(n=>{ const i=sites.findIndex(s=>s.id===n.id); if(i!==-1){ if((n.updatedAt||0)>(sites[i].updatedAt||0)){sites[i]=n;upd++;} }else{sites.push(n);add++;} }); sites.sort((a,b)=>(a.id>b.id?-1:1)); localStorage.setItem('dx_sites',JSON.stringify(sites)); renderList(); closeAllModals(); showNotification(`復元: ${upd}件更新, ${add}件追加`); }catch(e){alert('読込失敗');} input.value=''; }; r.readAsText(f); }
     function deleteAllData() { if(confirm('本当に全削除しますか？')) { sites=[]; localStorage.setItem('dx_sites',JSON.stringify(sites)); renderList(); closeAllModals(); showNotification('🗑️ 全削除完了'); } }
     function showNotification(msg) { const el = document.getElementById('notification'); el.textContent = msg; el.classList.add('show'); setTimeout(() => el.classList.remove('show'), 2000); }
+    // ★追加：バックアップボタンの挙動制御
+    function handleBackupClick() {
+        const gasUrl = localStorage.getItem('dx_gas_url');
+        
+        // クラウド設定がある場合 → 選択画面を出す
+        if (gasUrl && gasUrl.trim() !== "") {
+            document.getElementById('overlay').classList.add('show');
+            document.getElementById('backupModal').classList.add('show');
+        } 
+        // クラウド設定がない場合 → いきなりJSON保存（今まで通り）
+        else {
+            exportJSON();
+        }
+    }
 </script>
 </body>
 </html>
