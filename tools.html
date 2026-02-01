@@ -739,70 +739,83 @@
         }
     }
 
-    // --- ドラッグ操作（グリッド吸着機能付き） ---
+    // ★修正版：黒板ドラッグ操作（10px単位のグリッドスナップ移動）
+
     const overlayBoard = document.getElementById('overlayBoard'); 
     let isDragging = false, dragStartX, dragStartY, initialLeft, initialTop;
+    const SNAP_SIZE = 10; // ★ここが「カクつき」の幅（10px）
 
-    overlayBoard.addEventListener('touchstart', (e) => { 
-        isDragging = true; 
-        const s = window.getComputedStyle(overlayBoard); 
-        initialLeft = parseInt(s.left) || 0; 
-        initialTop = parseInt(s.top) || 0; 
-        dragStartX = e.touches[0].clientX; 
-        dragStartY = e.touches[0].clientY; 
-        // 座標指定を top/left に統一して計算しやすくする
+    // --- 1. ドラッグ開始 ---
+    const handleDragStart = (e) => {
+        isDragging = true;
+        const s = window.getComputedStyle(overlayBoard);
+        initialLeft = parseInt(s.left) || 0;
+        initialTop = parseInt(s.top) || 0;
+        
+        if(e.touches) {
+            dragStartX = e.touches[0].clientX;
+            dragStartY = e.touches[0].clientY;
+        } else {
+            dragStartX = e.clientX;
+            dragStartY = e.clientY;
+        }
+
+        // 座標指定を統一
         overlayBoard.style.bottom = ''; 
         overlayBoard.style.right = ''; 
         overlayBoard.style.left = initialLeft + 'px'; 
-        overlayBoard.style.top = initialTop + 'px'; 
-        e.preventDefault(); 
-    }, {passive: false});
-
-    overlayBoard.addEventListener('touchmove', (e) => { 
-        if (!isDragging) return; 
-        const dx = e.touches[0].clientX - dragStartX;
-        const dy = e.touches[0].clientY - dragStartY;
-        overlayBoard.style.left = `${initialLeft + dx}px`; 
-        overlayBoard.style.top = `${initialTop + dy}px`; 
-        e.preventDefault(); 
-    }, {passive: false});
-
-    // ★追加：指を離したときに近くの四隅に吸着させる
-    overlayBoard.addEventListener('touchend', () => { 
-        isDragging = false;
+        overlayBoard.style.top = initialTop + 'px';
         
-        const board = overlayBoard;
-        const pImg = document.getElementById('previewImage');
-        const container = document.getElementById('photoPreviewArea');
-        const pRect = pImg.getBoundingClientRect();
-        const cRect = container.getBoundingClientRect();
-        const bRect = board.getBoundingClientRect();
+        // 移動中はアニメーションを切る（キビキビ動かすため）
+        overlayBoard.style.transition = 'none';
+        
+        if(e.cancelable && e.type === 'touchstart') e.preventDefault();
+    };
 
-        // 現在の黒板の中心座標
-        const bCenterX = bRect.left + bRect.width / 2;
-        const bCenterY = bRect.top + bRect.height / 2;
-
-        // 写真の中心座標
-        const pCenterX = pRect.left + pRect.width / 2;
-        const pCenterY = pRect.top + pRect.height / 2;
-
-        // どこに近いか判定
-        let pos = '';
-        if (bCenterY < pCenterY) { // 上半分
-            pos = (bCenterX < pCenterX) ? 'tl' : 'tr'; // 左か右か
-        } else { // 下半分
-            pos = (bCenterX < pCenterX) ? 'bl' : 'br';
+    // --- 2. ドラッグ中（カクカク動かす処理） ---
+    const handleDragMove = (e) => {
+        if (!isDragging) return;
+        
+        let clientX, clientY;
+        if(e.touches) {
+            clientX = e.touches[0].clientX;
+            clientY = e.touches[0].clientY;
+        } else {
+            clientX = e.clientX;
+            clientY = e.clientY;
         }
 
-        // 吸着実行（アニメーション付きで移動）
-        board.style.transition = 'top 0.2s ease-out, left 0.2s ease-out';
-        snapBoard(pos);
-        
-        // アニメーションが終わったらtransitionを消す（次のドラッグのため）
-        setTimeout(() => {
-            board.style.transition = '';
-        }, 200);
-    });
+        // 移動量を計算
+        const rawDx = clientX - dragStartX;
+        const rawDy = clientY - dragStartY;
+
+        // ★ここが魔法の計算式
+        // 移動量を 10 で割って四捨五入し、また 10 を掛ける
+        // これで「12px動いた」→「10px」、「18px動いた」→「20px」に変換されます
+        const snappedDx = Math.round(rawDx / SNAP_SIZE) * SNAP_SIZE;
+        const snappedDy = Math.round(rawDy / SNAP_SIZE) * SNAP_SIZE;
+
+        overlayBoard.style.left = `${initialLeft + snappedDx}px`;
+        overlayBoard.style.top = `${initialTop + snappedDy}px`;
+
+        if(e.cancelable) e.preventDefault();
+    };
+
+    // --- 3. ドラッグ終了 ---
+    const handleDragEnd = () => {
+        isDragging = false;
+        // 手動で動かしたあとは、自動吸着（9分割）はあえてOFFにします
+        // （微調整したいという意思を尊重するため）
+    };
+
+    // イベント登録（スマホ & PC両対応）
+    overlayBoard.addEventListener('touchstart', handleDragStart, {passive: false});
+    overlayBoard.addEventListener('touchmove', handleDragMove, {passive: false});
+    overlayBoard.addEventListener('touchend', handleDragEnd);
+
+    overlayBoard.addEventListener('mousedown', handleDragStart);
+    window.addEventListener('mousemove', handleDragMove); // 画面外れても追従するようにwindow
+    window.addEventListener('mouseup', handleDragEnd);
     // --- ★任意ボタン機能（スライダー＆長押し早送り対応版） ---
     
     const DX_CAM_PARTS = ["ケレン", "洗浄", "養生", "シーリング", "足場", "パターン調整", "下地処理", "吹付", "鉄部", "木部", "付帯部"];
