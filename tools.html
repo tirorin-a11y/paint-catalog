@@ -68,8 +68,21 @@
         .snap-controls { position: absolute; bottom: 80px; left: 50%; transform: translateX(-50%); display: flex; gap: 15px; z-index: 20; background: rgba(0,0,0,0.6); padding: 8px 15px; border-radius: 30px; }
         .snap-btn { background: rgba(255,255,255,0.2); color: white; border: 1px solid rgba(255,255,255,0.5); width: 44px; height: 44px; border-radius: 50%; font-size: 1.5rem; cursor: pointer; display: flex; justify-content: center; align-items: center; }
         .process-btns { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 15px; }
-        .proc-btn { flex: 1; min-width: 70px; padding: 12px 5px; font-size: 0.9rem; background: #f0f0f0; border: 1px solid #ccc; border-radius: 6px; cursor: pointer; white-space: nowrap; color: #555; font-weight: bold; }
+        /* 工程ボタン：改行を許可し、文字サイズを少し調整 */
+        .proc-btn { 
+            flex: 1; min-width: 70px; padding: 5px; /* パディングを少し減らす */
+            font-size: 0.9rem; line-height: 1.2; /* 行間を詰める */
+            background: #f0f0f0; border: 1px solid #ccc; border-radius: 6px; 
+            cursor: pointer; 
+            white-space: normal; /* ★重要：ここで改行を許可 */
+            word-break: break-all; /* 長い単語も折り返す */
+            color: #555; font-weight: bold; 
+            position: relative; overflow: hidden; 
+            display: flex; align-items: center; justify-content: center; text-align: center;
+            height: 50px; /*高さを揃える*/
+        }
         .proc-btn.active { background: #2c3e50; color: white; border-color: #2c3e50; }
+        
         .custom-btn-area { border-top: 1px dashed #ddd; padding-top: 15px; margin-top: 10px; }
         
         /* 任意ボタン用グリッドスタイル */
@@ -84,7 +97,13 @@
         .cam-chip.active { background: #2c3e50; color: white; border-color: #2c3e50; } /* 部位モード選択中 */
         .cam-chip.mode-loc { background: #e8f5e9; color: #2e7d32; border-color: #a5d6a7; } /* 場所モードのボタン色 */
         .cam-chip.btn-switch { background: #34495e; color: white; border: none; font-size: 0.75rem; } /* 切替ボタン */
-        .chip-bar { position: absolute; bottom: 0; left: 0; height: 3px; background: #f39c12; width: 0%; transition: width 0s; }
+        /* ゲージのアニメーション定義（JSで時間を制御するためCSSからはtransitionを削除） */
+        .chip-bar { 
+            position: absolute; bottom: 0; left: 0; 
+            height: 4px; background: #f39c12; 
+            width: 0%; 
+            pointer-events: none; /* タップの邪魔をしない */
+        }
         .pressing .chip-bar { width: 100%; transition: width 0.8s linear; }
 
         /* 階数カウンターボタン（3分割）用 */
@@ -886,16 +905,18 @@
             }
         }
     }
-    // ★修正版：施工箇所ボタンのイベント制御（スクロール誤作動・重複防止）
+    // 2. 施工箇所ボタン（任意）のイベント制御（スクロール対策＋ゲージ同期版）
     function setupCamBtnEvents(btn, index, text) {
         let pressTimer = null;
         let isLongPress = false;
         let startX, startY;
+        const bar = btn.querySelector('.chip-bar'); // ★追加：ゲージ要素を取得
 
         const handleStart = (e) => {
             if (e.type === 'mousedown' && e.button !== 0) return;
             isLongPress = false;
             
+            // タッチ位置を記録
             if(e.touches) {
                 startX = e.touches[0].clientX;
                 startY = e.touches[0].clientY;
@@ -904,14 +925,23 @@
                 startY = e.clientY;
             }
 
+            // ★追加：ゲージのアニメーション開始（JSで時間を同期）
+            if(bar) {
+                bar.style.transition = `width ${LONG_PRESS_MS}ms linear`;
+                bar.style.width = '100%';
+            }
             btn.classList.add('pressing');
             
+            // 長押しタイマー
             pressTimer = setTimeout(() => {
                 isLongPress = true;
                 btn.classList.remove('pressing');
+                
+                // ★追加：編集モードに入るのでゲージはリセット
+                if(bar) { bar.style.transition = 'none'; bar.style.width = '0%'; }
+
                 if(navigator.vibrate) navigator.vibrate(100);
                 
-
                 const newName = prompt(`ボタンの名称を変更します\n（現在の設定：${text}）`, text);
                 if (newName !== null) {
                     const list = getCamItems(isCamLocationMode);
@@ -919,12 +949,18 @@
                     saveCamItems(isCamLocationMode, list);
                     renderCameraButtons();
                 }
-            }, 1500);
+            }, LONG_PRESS_MS); // ★修正：固定値1500ではなく設定値を使う
         };
 
         const handleEnd = (e) => {
             clearTimeout(pressTimer);
             btn.classList.remove('pressing');
+            
+            // ★追加：指を離したらゲージを即リセット
+            if(bar) {
+                bar.style.transition = 'width 0.1s linear';
+                bar.style.width = '0%';
+            }
 
             if (isLongPress) return;
 
@@ -941,10 +977,10 @@
                 return;
             }
 
-            // 重複防止（タッチの場合のみデフォルト動作を防ぐ）
+            // 重複防止
             if (e.type === 'touchend' && e.cancelable) e.preventDefault();
 
-            // 実行処理
+            // 実行処理（短押し）
             if (text !== '（空）') {
                 if (isCamLocationMode) {
                     // 場所モード：文字を追加
@@ -967,13 +1003,17 @@
             }
         };
 
+        // イベント登録
         btn.addEventListener('touchstart', handleStart, {passive: false});
         btn.addEventListener('touchend', handleEnd, {passive: false});
         btn.addEventListener('mousedown', handleStart);
         btn.addEventListener('mouseup', handleEnd);
+        
+        // マウスアウト時の処理（ゲージリセット追加）
         btn.addEventListener('mouseleave', () => { 
             clearTimeout(pressTimer); 
             btn.classList.remove('pressing'); 
+            if(bar) { bar.style.transition = 'none'; bar.style.width = '0%'; }
         });
     }
 
@@ -1063,20 +1103,22 @@
         });
     }
 
-    // ★修正版：工程ボタンのイベント制御（スクロール誤作動・重複防止）
-    function setupProcessBtnEvents(btn, index, text) {
+    // ★設定：長押し判定の時間（ミリ秒）
+    const LONG_PRESS_MS = 1500; // ここを変えるだけでゲージも判定もすべて変わります
 
+    // 1. 工程ボタン（固定）のイベント制御（スクロール対策＋ゲージ同期）
+    function setupProcessBtnEvents(btn, index, text) {
         let pressTimer = null;
         let isLongPress = false;
         let startX, startY;
-        
+        const bar = btn.querySelector('.chip-bar'); // ゲージ要素を取得
+
         // タッチ開始
         const handleStart = (e) => {
-            // 右クリック等は無視
             if (e.type === 'mousedown' && e.button !== 0) return;
             
             isLongPress = false;
-            // タッチ位置を記録（スクロール判定用）
+            // タッチ位置を記録
             if(e.touches) {
                 startX = e.touches[0].clientX;
                 startY = e.touches[0].clientY;
@@ -1085,29 +1127,34 @@
                 startY = e.clientY;
             }
 
+            // ★追加：ゲージのアニメーション開始（JSで時間を同期）
+            if(bar) {
+                bar.style.transition = `width ${LONG_PRESS_MS}ms linear`;
+                bar.style.width = '100%';
+            }
             btn.classList.add('pressing');
             
-            // 長押しタイマー開始（0.8秒）
+            // 長押しタイマー開始
             pressTimer = setTimeout(() => {
                 isLongPress = true;
                 btn.classList.remove('pressing');
+                
+                // 編集モードに入るのでゲージは戻す
+                if(bar) { bar.style.transition = 'none'; bar.style.width = '0%'; }
+                
                 if(navigator.vibrate) navigator.vibrate(100);
                 
                 // 名前変更処理
                 const newName = prompt(`工程名の変更\n（現在の設定：${text}）`, text);
                 if(newName !== null && newName.trim() !== "") {
-
                     const list = JSON.parse(localStorage.getItem('dx_process_list')) || DEFAULT_PROCESSES;
                     list[index] = newName;
                     localStorage.setItem('dx_process_list', JSON.stringify(list));
-
                     if(currentProcess === text) currentProcess = newName;
-
-
                     renderProcessButtons();
                     drawBoard();
                 }
-            }, 1500);
+            }, LONG_PRESS_MS); // ★変数を使う
         };
 
         // タッチ終了
@@ -1115,10 +1162,15 @@
             clearTimeout(pressTimer);
             btn.classList.remove('pressing');
 
-            // 長押し成立済みなら何もしない（処理済みだから）
+            // ★指を離したらゲージを即リセット
+            if(bar) {
+                bar.style.transition = 'width 0.1s linear';
+                bar.style.width = '0%';
+            }
+
             if (isLongPress) return;
 
-            // スクロール判定（指が動いていたらクリックとみなさない）
+            // スクロール判定（10px以上の移動は無視）
             let endX, endY;
             if(e.changedTouches) {
                 endX = e.changedTouches[0].clientX;
@@ -1127,13 +1179,12 @@
                 endX = e.clientX;
                 endY = e.clientY;
             }
-            // 10px以上の移動はスクロールとみなす（許容範囲）
+
             if (Math.abs(endX - startX) > 10 || Math.abs(endY - startY) > 10) {
-                return; // 何もしない
+                return;
             }
 
-            // ここまで来たら「正常なタップ」とみなす
-            // 重複防止のため、タッチイベントの場合はclickイベントをキャンセルする
+            // 重複防止
             if (e.type === 'touchend' && e.cancelable) e.preventDefault();
 
             setProcess(btn, text);
@@ -1142,15 +1193,16 @@
         // イベント登録
         btn.addEventListener('touchstart', handleStart, {passive: false});
         btn.addEventListener('touchend', handleEnd, {passive: false});
-        
-        // PC（マウス）用
+
         btn.addEventListener('mousedown', handleStart);
+
         btn.addEventListener('mouseup', handleEnd);
         
-        // マウスが外れたらキャンセル
+        // マウスアウト（キャンセル扱い）
         btn.addEventListener('mouseleave', () => { 
             clearTimeout(pressTimer); 
             btn.classList.remove('pressing'); 
+            if(bar) { bar.style.transition = 'none'; bar.style.width = '0%'; }
         });
     }
     // ★追加：施工箇所のクリア機能

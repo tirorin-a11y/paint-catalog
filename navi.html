@@ -325,8 +325,14 @@
 </div>
 
 <div class="fab-container">
-    <div style="display:flex; align-items:center;"><span class="fab-label">共有・バックアップ</span><button class="fab-btn share-fab" onclick="handleBackupClick()">📤</button>
-    <div style="display:flex; align-items:center;"><button class="fab-btn add-fab" onclick="openForm('new')">＋</button></div>
+    <div style="display:flex; align-items:center;">
+        <button class="fab-btn add-fab" onclick="openForm('new')">＋</button>
+    </div>
+    
+    <div style="display:flex; align-items:center;">
+        <span class="fab-label">共有・バックアップ</span>
+        <button class="fab-btn share-fab" onclick="handleBackupClick()">📤</button>
+    </div>
 </div>
 <div id="notification" class="notification"></div>
 <div id="backupModal" class="modal-box" style="text-align:center; max-width:300px;">
