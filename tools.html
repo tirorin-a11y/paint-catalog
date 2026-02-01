@@ -653,8 +653,44 @@
         ctx.textAlign = 'left'; ctx.font = `16px ${fontFamily}`; ctx.fillStyle = '#ccc'; ctx.fillText(company, 20, 270);
     }
     let photoFile = null;
-    function handlePhotoSelect(input) { if (input.files && input.files[0]) { photoFile = input.files[0]; const reader = new FileReader(); reader.onload = function(e) { document.getElementById('previewImage').src = e.target.result; document.getElementById('overlayBoard').src = canvas.toDataURL('image/png'); document.getElementById('cameraSetup').style.display = 'none'; document.getElementById('photoPreviewArea').style.display = 'flex'; const board = document.getElementById('overlayBoard'); board.style.top = '20px'; board.style.left = '20px'; board.style.bottom = ''; board.style.right = ''; }; reader.readAsDataURL(photoFile); } input.value = ''; }
-    function retakePhoto() { document.getElementById('photoPreviewArea').style.display = 'none'; document.getElementById('cameraSetup').style.display = 'flex'; photoFile = null; }
+
+    // ★修正版：写真選択時の処理（黒板画像の生成漏れを修正）
+    function handlePhotoSelect(input) {
+        if (input.files && input.files[0]) {
+            photoFile = input.files[0];
+            const reader = new FileReader();
+
+            reader.onload = function(e) {
+                // 1. 撮影した写真をプレビューにセット
+                const previewImg = document.getElementById('previewImage');
+                previewImg.src = e.target.result;
+
+                // 2. ★重要：現在のキャンバス（黒板）を画像データに変換してセット
+                // これがないと黒板が表示されません
+                drawBoard(); // 念のため最新の状態を描画
+                const boardImg = document.getElementById('overlayBoard');
+                const canvas = document.getElementById('boardCanvas');
+                boardImg.src = canvas.toDataURL('image/png');
+
+                // 3. 画面切り替え（設定画面を隠して、プレビュー画面を出す）
+                document.getElementById('cameraSetup').style.display = 'none';
+                document.getElementById('photoPreviewArea').style.display = 'flex';
+
+                // 4. 黒板の初期位置をリセット（左上に配置）
+                boardImg.style.top = '20px';
+                boardImg.style.left = '20px';
+                boardImg.style.bottom = '';
+                boardImg.style.right = '';
+                
+                // 5. スマホでスクロールできなくする（操作しやすくするため）
+                document.body.style.overflow = 'hidden';
+            };
+
+            reader.readAsDataURL(photoFile);
+        }
+        // 同じファイルを再選択できるようにリセット
+        input.value = '';
+    }function retakePhoto() { document.getElementById('photoPreviewArea').style.display = 'none'; document.getElementById('cameraSetup').style.display = 'flex'; photoFile = null; }
     function saveCompositePhoto() { if(!photoFile) return; const pImg = document.getElementById('previewImage'), bImg = document.getElementById('overlayBoard'), c = document.createElement('canvas'); c.width = pImg.naturalWidth; c.height = pImg.naturalHeight; const cx = c.getContext('2d'); cx.drawImage(pImg, 0, 0); const pRect = pImg.getBoundingClientRect(), bRect = bImg.getBoundingClientRect(), s = pImg.naturalWidth / pRect.width; cx.drawImage(bImg, (bRect.left - pRect.left) * s, (bRect.top - pRect.top) * s, bRect.width * s, bRect.height * s); const link = document.createElement('a'); link.href = c.toDataURL('image/jpeg', 0.9); link.download = `${currentSite?currentSite.name:'現場'}_${currentProcess}_${Date.now()}.jpg`; document.body.appendChild(link); link.click(); document.body.removeChild(link); retakePhoto(); closeAllModals(); }
     function snapBoard(pos) { const b = document.getElementById('overlayBoard'); b.style.top = b.style.bottom = b.style.left = b.style.right = 'auto'; if(pos=='tl'){b.style.top='10px';b.style.left='10px';}else if(pos=='tr'){b.style.top='10px';b.style.right='10px';}else if(pos=='bl'){b.style.bottom='10px';b.style.left='10px';}else if(pos=='br'){b.style.bottom='10px';b.style.right='10px';} }
     const overlayBoard = document.getElementById('overlayBoard'); let isDragging = false, startX, startY, initialLeft, initialTop;
