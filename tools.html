@@ -505,14 +505,24 @@
     const canvas = document.getElementById('boardCanvas'), ctx = canvas ? canvas.getContext('2d') : null;
     function setProcess(btn, text) { if (btn.classList.contains('active')) { btn.classList.remove('active'); currentProcess = ''; } else { document.querySelectorAll('.proc-btn').forEach(b => b.classList.remove('active')); btn.classList.add('active'); currentProcess = text; } drawBoard(); }
     
-    // ★修正版：黒板描画（3行対応・自動縮小ロジック付き）
+    // ★修正版：黒板描画（メイリオ対応・高画質フォント指定版）
     function drawBoard() {
         if(!canvas) return;
+        
+        // データの取得
         const siteName = currentSite ? currentSite.name : "（現場名未定）";
         const company = document.getElementById('companyName').value || "";
         const location = document.getElementById('photoDetail').value || "";
+        const process = currentProcess || "（選択なし）";
         const d = new Date();
         const dateStr = `${d.getFullYear()}/${d.getMonth()+1}/${d.getDate()}`;
+
+        // ★ここがポイント：見やすいフォントの優先順位リスト
+        // 1. UDデジタル教科書体（Windows10以降にある、黒板に最適で見やすいフォント）
+        // 2. メイリオ (Windowsの定番)
+        // 3. ヒラギノ角ゴ (iPhone/Macの定番)
+        // 4. sans-serif (その他の標準)
+        const fontFamily = '"UD Digi Kyokasho NK-B", "UD Digi Kyokasho N-B", "Meiryo", "Hiragino Kaku Gothic ProN", "Hiragino Sans", sans-serif';
 
         // 背景と枠線
         ctx.fillStyle = '#004d40'; ctx.fillRect(0, 0, canvas.width, canvas.height); 
@@ -525,23 +535,16 @@
         ctx.moveTo(10, 150); ctx.lineTo(390, 150); 
         ctx.stroke();
 
-        // 固定ラベルと内容（工事名・工種）
-        ctx.fillStyle = 'white'; ctx.textAlign = 'left'; ctx.textBaseline = 'middle'; 
-        ctx.font = 'bold 20px sans-serif'; ctx.fillText("工事名", 20, 30); 
-        ctx.font = 'bold 24px sans-serif'; ctx.fillText(siteName, 20, 55); 
-        ctx.font = 'bold 20px sans-serif'; ctx.fillText("工種 / 施工内容", 20, 100); 
-        ctx.font = 'bold 26px sans-serif'; ctx.fillText(currentProcess || "（選択なし）", 40, 125); 
-        
-        // 施工箇所ラベル
-        ctx.font = 'bold 20px sans-serif'; ctx.fillText("施工箇所", 20, 175);
+        // 共通設定
+        ctx.fillStyle = 'white'; 
+        ctx.textAlign = 'left'; 
+        ctx.textBaseline = 'middle'; 
+        const maxWidth = 340; 
 
-        // --- ★ここから：3行自動調整ロジック ---
-        const maxWidth = 340;
-        
-        // 行分割計算用ヘルパー関数
+        // --- ヘルパー関数：行分割計算 ---
         const getLines = (ctx, text, max) => {
             let words = text.split(''); 
-            let lines = [];
+            let lines = []; 
             let currentLine = words[0] || "";
             for (let i = 1; i < words.length; i++) {
                 let char = words[i];
@@ -552,53 +555,95 @@
                     currentLine = char;
                 }
             }
-            lines.push(currentLine);
+            lines.push(currentLine); 
             return lines;
         };
 
-        // ステップ1: 標準サイズ(24px)で試算
-        let fontSize = 24;
-        ctx.font = `bold ${fontSize}px sans-serif`;
-        let lines = getLines(ctx, location, maxWidth);
+        // ==========================================
+        // 1. 工事名
+        // ==========================================
+        // ★修正：フォント指定に fontFamily 変数を使うように変更
+        ctx.font = `bold 20px ${fontFamily}`; ctx.fillText("工事名", 20, 30);
+        
+        let siteFontSize = 24;
+        ctx.font = `bold ${siteFontSize}px ${fontFamily}`; // ★修正
+        let siteLines = getLines(ctx, siteName, maxWidth);
 
-        // ステップ2: 2行に収まらないなら少し小さく(20px)して再計算
-        if (lines.length > 2) {
-            fontSize = 20;
-            ctx.font = `bold ${fontSize}px sans-serif`;
-            lines = getLines(ctx, location, maxWidth);
+        if (siteLines.length > 1) {
+            siteFontSize = 18; 
+            ctx.font = `bold ${siteFontSize}px ${fontFamily}`; // ★修正
+            siteLines = getLines(ctx, siteName, maxWidth);
+            if(siteLines.length > 2) { siteLines = siteLines.slice(0, 2); siteLines[1] = siteLines[1].substring(0, siteLines[1].length - 1) + "…"; }
         }
 
-        // ステップ3: それでも3行を超えるなら、さらに小さく(17px)して3行に強制
-        if (lines.length > 3) {
-            fontSize = 17;
-            ctx.font = `bold ${fontSize}px sans-serif`;
-            lines = getLines(ctx, location, maxWidth);
-            
-            // それでも溢れる場合は3行目で切って「…」をつける
-            if(lines.length > 3) {
-                lines = lines.slice(0, 3);
-                lines[2] = lines[2].substring(0, lines[2].length - 1) + "…";
-            }
-        }
-
-        // 描画（行数に応じて高さを調整）
-        const startX = 40;
-        if (lines.length === 1) {
-            ctx.fillText(lines[0], startX, 210);
-        } else if (lines.length === 2) {
-            ctx.fillText(lines[0], startX, 200);
-            ctx.fillText(lines[1], startX, 228);
+        if (siteLines.length === 1) {
+            ctx.fillText(siteLines[0], 20, 55);
         } else {
-            // 3行の場合（少し詰めて表示）
-            ctx.fillText(lines[0], startX, 195);
-            ctx.fillText(lines[1], startX, 215);
-            ctx.fillText(lines[2], startX, 235);
+            ctx.fillText(siteLines[0], 20, 48);
+            ctx.fillText(siteLines[1], 20, 68);
         }
-        // --- ここまで ---
 
-        // 日付・会社名
-        ctx.textAlign = 'right'; ctx.font = 'bold 24px sans-serif'; ctx.fillText(dateStr, 380, 270); 
-        ctx.textAlign = 'left'; ctx.font = '16px sans-serif'; ctx.fillStyle = '#ccc'; ctx.fillText(company, 20, 270);
+        // ==========================================
+        // 2. 工種 / 施工内容
+        // ==========================================
+        ctx.font = `bold 20px ${fontFamily}`; ctx.fillText("工種 / 施工内容", 20, 100);
+
+        let procFontSize = 26;
+        ctx.font = `bold ${procFontSize}px ${fontFamily}`; // ★修正
+        let procLines = getLines(ctx, process, maxWidth);
+
+        if (procLines.length > 1) {
+            procFontSize = 20; 
+            ctx.font = `${procFontSize}px ${fontFamily}`; // ★修正
+            procLines = getLines(ctx, process, maxWidth);
+            if(procLines.length > 2) { procLines = procLines.slice(0, 2); procLines[1] = procLines[1].substring(0, procLines[1].length - 1) + "…"; }
+        }
+
+        if (procLines.length === 1) {
+            ctx.fillText(procLines[0], 40, 125);
+        } else {
+            ctx.fillText(procLines[0], 40, 118);
+            ctx.fillText(procLines[1], 40, 138);
+        }
+
+        // ==========================================
+        // 3. 施工箇所
+        // ==========================================
+        ctx.font = `bold 20px ${fontFamily}`; ctx.fillText("施工箇所", 20, 175);
+
+        let locFontSize = 24;
+        ctx.font = `bold ${locFontSize}px ${fontFamily}`; // ★修正
+        let locLines = getLines(ctx, location, maxWidth);
+
+        if (locLines.length > 2) {
+            locFontSize = 20; 
+            ctx.font = `bold ${locFontSize}px ${fontFamily}`; // ★修正
+            locLines = getLines(ctx, location, maxWidth);
+        }
+        if (locLines.length > 3) {
+            locFontSize = 17; 
+            ctx.font = `bold ${locFontSize}px ${fontFamily}`; // ★修正
+            locLines = getLines(ctx, location, maxWidth);
+            if(locLines.length > 3) { locLines = locLines.slice(0, 3); locLines[2] = locLines[2].substring(0, locLines[2].length - 1) + "…"; }
+        }
+
+        const locX = 40;
+        if (locLines.length === 1) {
+            ctx.fillText(locLines[0], locX, 210);
+        } else if (locLines.length === 2) {
+            ctx.fillText(locLines[0], locX, 200);
+            ctx.fillText(locLines[1], locX, 228);
+        } else {
+            ctx.fillText(locLines[0], locX, 195);
+            ctx.fillText(locLines[1], locX, 215);
+            ctx.fillText(locLines[2], locX, 235);
+        }
+
+        // ==========================================
+        // 4. フッター
+        // ==========================================
+        ctx.textAlign = 'right'; ctx.font = `bold 24px ${fontFamily}`; ctx.fillText(dateStr, 380, 270); 
+        ctx.textAlign = 'left'; ctx.font = `16px ${fontFamily}`; ctx.fillStyle = '#ccc'; ctx.fillText(company, 20, 270);
     }
     let photoFile = null;
     function handlePhotoSelect(input) { if (input.files && input.files[0]) { photoFile = input.files[0]; const reader = new FileReader(); reader.onload = function(e) { document.getElementById('previewImage').src = e.target.result; document.getElementById('overlayBoard').src = canvas.toDataURL('image/png'); document.getElementById('cameraSetup').style.display = 'none'; document.getElementById('photoPreviewArea').style.display = 'flex'; const board = document.getElementById('overlayBoard'); board.style.top = '20px'; board.style.left = '20px'; board.style.bottom = ''; board.style.right = ''; }; reader.readAsDataURL(photoFile); } input.value = ''; }
@@ -905,18 +950,19 @@
             }
         }
     }
-    // 2. 施工箇所ボタン（任意）のイベント制御（スクロール対策＋ゲージ同期版）
+    // 2. 施工箇所ボタン（任意）のイベント制御（工程ボタンと完全同一ロジック版）
     function setupCamBtnEvents(btn, index, text) {
         let pressTimer = null;
         let isLongPress = false;
         let startX, startY;
-        const bar = btn.querySelector('.chip-bar'); // ★追加：ゲージ要素を取得
+        const bar = btn.querySelector('.chip-bar'); // ゲージ要素を取得
 
+        // --- タッチ開始（反応のルール） ---
         const handleStart = (e) => {
             if (e.type === 'mousedown' && e.button !== 0) return;
-            isLongPress = false;
             
-            // タッチ位置を記録
+            isLongPress = false;
+            // タッチ位置を記録（スクロール判定用）
             if(e.touches) {
                 startX = e.touches[0].clientX;
                 startY = e.touches[0].clientY;
@@ -925,23 +971,24 @@
                 startY = e.clientY;
             }
 
-            // ★追加：ゲージのアニメーション開始（JSで時間を同期）
+            // ★ゲージのアニメーション開始（工程ボタンと同じ動き）
             if(bar) {
                 bar.style.transition = `width ${LONG_PRESS_MS}ms linear`;
                 bar.style.width = '100%';
             }
-            btn.classList.add('pressing');
+            btn.classList.add('pressing'); // 押した色にする
             
-            // 長押しタイマー
+            // 長押しタイマー開始
             pressTimer = setTimeout(() => {
                 isLongPress = true;
                 btn.classList.remove('pressing');
                 
-                // ★追加：編集モードに入るのでゲージはリセット
+                // 編集モードに入るのでゲージは消す
                 if(bar) { bar.style.transition = 'none'; bar.style.width = '0%'; }
 
                 if(navigator.vibrate) navigator.vibrate(100);
                 
+                // --- 名前変更処理 ---
                 const newName = prompt(`ボタンの名称を変更します\n（現在の設定：${text}）`, text);
                 if (newName !== null) {
                     const list = getCamItems(isCamLocationMode);
@@ -949,22 +996,24 @@
                     saveCamItems(isCamLocationMode, list);
                     renderCameraButtons();
                 }
-            }, LONG_PRESS_MS); // ★修正：固定値1500ではなく設定値を使う
+            }, LONG_PRESS_MS);
         };
 
+        // --- タッチ終了（フレームアウトのルール） ---
         const handleEnd = (e) => {
             clearTimeout(pressTimer);
-            btn.classList.remove('pressing');
+            btn.classList.remove('pressing'); // 色を戻す
             
-            // ★追加：指を離したらゲージを即リセット
+            // ★指を離したらゲージを「シュッ」と戻す（工程ボタンと同じ演出）
             if(bar) {
                 bar.style.transition = 'width 0.1s linear';
                 bar.style.width = '0%';
             }
 
+            // 長押し成立済みなら、タップ処理はしない
             if (isLongPress) return;
 
-            // スクロール判定（10px以上の移動は無視）
+            // --- スクロール判定（10px以上の移動は無視） ---
             let endX, endY;
             if(e.changedTouches) {
                 endX = e.changedTouches[0].clientX;
@@ -973,14 +1022,15 @@
                 endX = e.clientX;
                 endY = e.clientY;
             }
+            // ここが「フレームアウトのルール」です
             if (Math.abs(endX - startX) > 10 || Math.abs(endY - startY) > 10) {
-                return;
+                return; // スクロールとみなして終了
             }
 
-            // 重複防止
+            // 重複防止（タッチの時はクリックイベントを消す）
             if (e.type === 'touchend' && e.cancelable) e.preventDefault();
 
-            // 実行処理（短押し）
+            // --- 実行処理（短押し） ---
             if (text !== '（空）') {
                 if (isCamLocationMode) {
                     // 場所モード：文字を追加
@@ -1003,13 +1053,13 @@
             }
         };
 
-        // イベント登録
+        // イベント登録（工程ボタンと全く同じ構成）
         btn.addEventListener('touchstart', handleStart, {passive: false});
         btn.addEventListener('touchend', handleEnd, {passive: false});
         btn.addEventListener('mousedown', handleStart);
         btn.addEventListener('mouseup', handleEnd);
         
-        // マウスアウト時の処理（ゲージリセット追加）
+        // マウスが外れたらキャンセル
         btn.addEventListener('mouseleave', () => { 
             clearTimeout(pressTimer); 
             btn.classList.remove('pressing'); 
