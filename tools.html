@@ -692,12 +692,117 @@
         input.value = '';
     }function retakePhoto() { document.getElementById('photoPreviewArea').style.display = 'none'; document.getElementById('cameraSetup').style.display = 'flex'; photoFile = null; }
     function saveCompositePhoto() { if(!photoFile) return; const pImg = document.getElementById('previewImage'), bImg = document.getElementById('overlayBoard'), c = document.createElement('canvas'); c.width = pImg.naturalWidth; c.height = pImg.naturalHeight; const cx = c.getContext('2d'); cx.drawImage(pImg, 0, 0); const pRect = pImg.getBoundingClientRect(), bRect = bImg.getBoundingClientRect(), s = pImg.naturalWidth / pRect.width; cx.drawImage(bImg, (bRect.left - pRect.left) * s, (bRect.top - pRect.top) * s, bRect.width * s, bRect.height * s); const link = document.createElement('a'); link.href = c.toDataURL('image/jpeg', 0.9); link.download = `${currentSite?currentSite.name:'現場'}_${currentProcess}_${Date.now()}.jpg`; document.body.appendChild(link); link.click(); document.body.removeChild(link); retakePhoto(); closeAllModals(); }
-    function snapBoard(pos) { const b = document.getElementById('overlayBoard'); b.style.top = b.style.bottom = b.style.left = b.style.right = 'auto'; if(pos=='tl'){b.style.top='10px';b.style.left='10px';}else if(pos=='tr'){b.style.top='10px';b.style.right='10px';}else if(pos=='bl'){b.style.bottom='10px';b.style.left='10px';}else if(pos=='br'){b.style.bottom='10px';b.style.right='10px';} }
-    const overlayBoard = document.getElementById('overlayBoard'); let isDragging = false, startX, startY, initialLeft, initialTop;
-    overlayBoard.addEventListener('touchstart', (e) => { isDragging = true; const s = window.getComputedStyle(overlayBoard); initialLeft = parseInt(s.left)||0; initialTop = parseInt(s.top)||0; startX = e.touches[0].clientX; startY = e.touches[0].clientY; overlayBoard.style.bottom='auto'; overlayBoard.style.right='auto'; overlayBoard.style.left=initialLeft+'px'; overlayBoard.style.top=initialTop+'px'; e.preventDefault(); });
-    overlayBoard.addEventListener('touchmove', (e) => { if (!isDragging) return; overlayBoard.style.left = `${initialLeft + e.touches[0].clientX - startX}px`; overlayBoard.style.top = `${initialTop + e.touches[0].clientY - startY}px`; e.preventDefault(); });
-    overlayBoard.addEventListener('touchend', () => isDragging = false);
+    // ★修正版：黒板の配置制御（写真のサイズに合わせて吸着＆端切れ防止）
+    
+    // 配置のマージン（端から何ピクセル内側にするか）
+    // 30pxあれば白枠が切れることはありません
+    const BOARD_MARGIN = 30; 
 
+    function snapBoard(pos) {
+        const board = document.getElementById('overlayBoard');
+        const pImg = document.getElementById('previewImage');
+        const container = document.getElementById('photoPreviewArea');
+        
+        // 写真が実際に表示されている領域を取得
+        const pRect = pImg.getBoundingClientRect();
+        const cRect = container.getBoundingClientRect();
+
+        // コンテナ(画面全体)に対する写真の相対位置を計算
+        // これで「黒帯」の部分を除外して、写真の四隅を特定できます
+        const offsetTop = pRect.top - cRect.top;
+        const offsetLeft = pRect.left - cRect.left;
+        const pWidth = pRect.width;
+        const pHeight = pRect.height;
+        const bWidth = board.offsetWidth;
+        const bHeight = board.offsetHeight;
+
+        // いったんリセット
+        board.style.top = ''; board.style.bottom = ''; 
+        board.style.left = ''; board.style.right = '';
+
+        // 写真の四隅を基準に配置（マージン付き）
+        if (pos === 'tl') { // 左上
+            board.style.top = (offsetTop + BOARD_MARGIN) + 'px';
+            board.style.left = (offsetLeft + BOARD_MARGIN) + 'px';
+        } 
+        else if (pos === 'tr') { // 右上
+            board.style.top = (offsetTop + BOARD_MARGIN) + 'px';
+            board.style.left = (offsetLeft + pWidth - bWidth - BOARD_MARGIN) + 'px';
+        } 
+        else if (pos === 'bl') { // 左下
+            board.style.top = (offsetTop + pHeight - bHeight - BOARD_MARGIN) + 'px';
+            board.style.left = (offsetLeft + BOARD_MARGIN) + 'px';
+        } 
+        else if (pos === 'br') { // 右下
+            board.style.top = (offsetTop + pHeight - bHeight - BOARD_MARGIN) + 'px';
+            board.style.left = (offsetLeft + pWidth - bWidth - BOARD_MARGIN) + 'px';
+        }
+    }
+
+    // --- ドラッグ操作（グリッド吸着機能付き） ---
+    const overlayBoard = document.getElementById('overlayBoard'); 
+    let isDragging = false, dragStartX, dragStartY, initialLeft, initialTop;
+
+    overlayBoard.addEventListener('touchstart', (e) => { 
+        isDragging = true; 
+        const s = window.getComputedStyle(overlayBoard); 
+        initialLeft = parseInt(s.left) || 0; 
+        initialTop = parseInt(s.top) || 0; 
+        dragStartX = e.touches[0].clientX; 
+        dragStartY = e.touches[0].clientY; 
+        // 座標指定を top/left に統一して計算しやすくする
+        overlayBoard.style.bottom = ''; 
+        overlayBoard.style.right = ''; 
+        overlayBoard.style.left = initialLeft + 'px'; 
+        overlayBoard.style.top = initialTop + 'px'; 
+        e.preventDefault(); 
+    }, {passive: false});
+
+    overlayBoard.addEventListener('touchmove', (e) => { 
+        if (!isDragging) return; 
+        const dx = e.touches[0].clientX - dragStartX;
+        const dy = e.touches[0].clientY - dragStartY;
+        overlayBoard.style.left = `${initialLeft + dx}px`; 
+        overlayBoard.style.top = `${initialTop + dy}px`; 
+        e.preventDefault(); 
+    }, {passive: false});
+
+    // ★追加：指を離したときに近くの四隅に吸着させる
+    overlayBoard.addEventListener('touchend', () => { 
+        isDragging = false;
+        
+        const board = overlayBoard;
+        const pImg = document.getElementById('previewImage');
+        const container = document.getElementById('photoPreviewArea');
+        const pRect = pImg.getBoundingClientRect();
+        const cRect = container.getBoundingClientRect();
+        const bRect = board.getBoundingClientRect();
+
+        // 現在の黒板の中心座標
+        const bCenterX = bRect.left + bRect.width / 2;
+        const bCenterY = bRect.top + bRect.height / 2;
+
+        // 写真の中心座標
+        const pCenterX = pRect.left + pRect.width / 2;
+        const pCenterY = pRect.top + pRect.height / 2;
+
+        // どこに近いか判定
+        let pos = '';
+        if (bCenterY < pCenterY) { // 上半分
+            pos = (bCenterX < pCenterX) ? 'tl' : 'tr'; // 左か右か
+        } else { // 下半分
+            pos = (bCenterX < pCenterX) ? 'bl' : 'br';
+        }
+
+        // 吸着実行（アニメーション付きで移動）
+        board.style.transition = 'top 0.2s ease-out, left 0.2s ease-out';
+        snapBoard(pos);
+        
+        // アニメーションが終わったらtransitionを消す（次のドラッグのため）
+        setTimeout(() => {
+            board.style.transition = '';
+        }, 200);
+    });
     // --- ★任意ボタン機能（スライダー＆長押し早送り対応版） ---
     
     const DX_CAM_PARTS = ["ケレン", "洗浄", "養生", "シーリング", "足場", "パターン調整", "下地処理", "吹付", "鉄部", "木部", "付帯部"];
