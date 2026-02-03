@@ -300,6 +300,11 @@
                     <input type="text" id="gasUrl" onchange="saveSettings()">
                     <label>🔑 合言葉 (セキュリティ用)</label>
                     <input type="password" id="authKey" placeholder="GASに設定した合言葉" onchange="saveSettings()">
+                    <div style="margin-top:5px; font-size:0.9rem;">
+                        <label style="display:inline-flex; align-items:center; cursor:pointer;">
+                            <input type="checkbox" onclick="togglePasswordVisibility()"> 合言葉を表示する
+                        </label>
+                    </div>
                     <label>📅 カレンダーID</label>
                     <input type="text" id="calendarId" onchange="saveSettings()">
                 </div>
@@ -795,6 +800,14 @@
         else {
             exportJSON();
         }
+    }
+    function togglePasswordVisibility() {
+    const input = document.getElementById("authKey");
+    if (input.type === "password") {
+        input.type = "text"; // 見えるようにする
+    } else {
+        input.type = "password"; // 隠す
+    }
     }
 </script>
 </body>
