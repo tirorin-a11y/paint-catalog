@@ -1236,15 +1236,66 @@
             navigator.geolocation.getCurrentPosition(pos => { const url = `https://www.google.com/maps/search/ホームセンター/@${pos.coords.latitude},${pos.coords.longitude},14z`; window.open(url, '_blank'); }, () => { alert("位置情報が取得できません"); }); 
         } else { alert('位置情報が使えません'); } 
     }
-    let recognition; let isRecognizing = false; 
+    // --- ★修正版：音声入力（Android重複バグ対策版） ---
+    let recognition; 
+    let isRecognizing = false; 
+
     if ('webkitSpeechRecognition' in window) { 
-        recognition = new webkitSpeechRecognition(); recognition.continuous = true; recognition.interimResults = true; recognition.lang = 'ja-JP'; 
-        recognition.onresult = function(event) { let t = ''; for (let i = event.resultIndex; i < event.results.length; ++i) { if (event.results[i].isFinal) t += event.results[i][0].transcript; } if (t) document.getElementById('reportText').value += (document.getElementById('reportText').value ? '\n' : '') + t; }; 
-        recognition.onend = function() { isRecognizing = false; document.getElementById('micBtn').classList.remove('mic-active'); }; 
+        recognition = new webkitSpeechRecognition(); 
+        
+        // 続けて喋れるようにする
+        recognition.continuous = true; 
+        
+        // ★重要修正：途中経過（interim）を「無視」する設定に変更
+        // これで「作業時間... 作業時間1...」のような迷い言葉が入らなくなります
+        recognition.interimResults = false; 
+        
+        recognition.lang = 'ja-JP'; 
+
+        recognition.onresult = function(event) { 
+            let finalTranscript = ''; 
+            
+            // 確定した結果だけを抽出するループ
+            for (let i = event.resultIndex; i < event.results.length; ++i) { 
+                if (event.results[i].isFinal) { 
+                    finalTranscript += event.results[i][0].transcript; 
+                } 
+            } 
+
+            // テキストボックスに追加
+            if (finalTranscript) { 
+                const textBox = document.getElementById('reportText');
+                // 既に文字があれば改行を入れて追記、なければそのまま追記
+                textBox.value += (textBox.value ? '\n' : '') + finalTranscript;
+            } 
+        }; 
+
+        recognition.onend = function() { 
+            // Android等で勝手に止まった場合の見た目リセット
+            isRecognizing = false; 
+            document.getElementById('micBtn').classList.remove('mic-active'); 
+        }; 
     }
-    function toggleSpeech() { if (!recognition) { alert('このブラウザは音声入力非対応です。'); return; } if (isRecognizing) stopSpeech(); else { recognition.start(); isRecognizing = true; document.getElementById('micBtn').classList.add('mic-active'); } }
-    function stopSpeech() { if(recognition) recognition.stop(); isRecognizing = false; document.getElementById('micBtn').classList.remove('mic-active'); }
-    
+
+    function toggleSpeech() { 
+        if (!recognition) { 
+            alert('このブラウザは音声入力非対応です。'); 
+            return; 
+        } 
+        if (isRecognizing) {
+            stopSpeech(); 
+        } else { 
+            recognition.start(); 
+            isRecognizing = true; 
+            document.getElementById('micBtn').classList.add('mic-active'); 
+        } 
+    }
+
+    function stopSpeech() { 
+        if(recognition) recognition.stop(); 
+        isRecognizing = false; 
+        document.getElementById('micBtn').classList.remove('mic-active'); 
+    }
     function sendReportLine() { const text = document.getElementById('reportText').value; if(!text) return; const lineUrl = `https://line.me/R/msg/text/?【日報：${currentSite ? currentSite.name : '現場'}】%0A${encodeURIComponent(text)}`; window.open(lineUrl, '_blank'); }
     function sendReportMail() { const text = document.getElementById('reportText').value; if(!text) return; const mailTo = localStorage.getItem('dx_manager_email'); if(!mailTo) { alert("【設定エラー】\nナビ画面の「設定(⚙️)」から、管理者のメールアドレスを登録してください。"); return; } saveReportLocal(); const subject = `【日報】${currentSite ? currentSite.name : '現場'} (${new Date().toLocaleDateString()})`; const body = `${currentSite ? currentSite.name : '現場'}\n\n${text}\n\n--\nSent from 職人ギア`; const mailUrl = `mailto:${mailTo}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`; window.location.href = mailUrl; }
     function getNextNum(year) {
