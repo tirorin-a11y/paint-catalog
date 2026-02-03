@@ -110,14 +110,15 @@ function doPost(e) {
   } catch (err) {
     return createResponse({ result: "error", error: "JSON parse error" });
   }
-  
-  var MY_SECRET = "要変更"; 
-    if (json.authKey !== MY_SECRET) {
-      return createResponse({ result: "error", error: "⛔ 合言葉が違います。設定画面を確認してください。" });
+    var MY_SECRET_KEY = "要変更"; 
+  if (json.authKey !== MY_SECRET_KEY) {
+    return createResponse({ result: "error", error: "⛔ 合言葉が違います。設定を確認してください。" });
   }
-  
+
   var type = json.type;
   var ss = SpreadsheetApp.getActiveSpreadsheet();
+
+  
   if (type === "report") {
     var sheet = ss.getSheetByName("日報");
     if (!sheet) { 
@@ -130,18 +131,70 @@ function doPost(e) {
     sheet.appendRow([reportDate, json.id, json.siteName, json.address, reporter, json.content]);
     return createResponse({ result: "success" });
   }
+
+  
   else if (type === "sync") {
     var sheet = ss.getSheetByName("案件一覧");
     if (!sheet) { sheet = ss.insertSheet("案件一覧"); }
-    sheet.clear();
-    var header = ["案件No", "親案件No", "現場名", "住所", "ステータス", "ナビ回数", "工期開始", "工期終了", "最終更新日時", "JSONデータ"];
+
+    
+    var clientTime = json.clientTime || 0;
+    var lastUpdateCell = sheet.getRange("Z1"); 
+    var serverTime = lastUpdateCell.getValue();
+    if (serverTime === "") serverTime = 0;
+
+    if (serverTime > clientTime + 1000) {
+       var d = new Date(serverTime).toLocaleString();
+       return createResponse({ 
+         result: "error", 
+         error: "⛔ サーバーに新しいデータ(" + d + ")があります。\n保存を中止しました。\n先に「復元」ボタンを押してください。" 
+       });
+    }
+
+    var lastRow = sheet.getLastRow();
+    var savedData = {}; 
+    var lockedRows = {}; 
+
+    if (lastRow > 1) {
+      var oldValues = sheet.getRange(2, 1, lastRow - 1, 12).getValues();
+      for (var i = 0; i < oldValues.length; i++) {
+        var row = oldValues[i];
+        var id = String(row[0]); 
+        var price = row[10];     
+        var isLocked = row[11];  
+
+        if (id) {
+          savedData[id] = { price: price, lock: isLocked };
+          // L列がロックされていたら行データを丸ごと保存
+          if (isLocked === true || isLocked === "ロック" || isLocked === "TRUE") {
+            lockedRows[id] = row;
+          }
+        }
+      }
+    }
+
+    
+    sheet.clear(); 
+    var header = ["案件No", "親案件No", "現場名", "住所", "ステータス", "ナビ回数", "工期開始", "工期終了", "最終更新日時", "JSONデータ", "見積金額", "編集ロック"];
     sheet.appendRow(header);
+
     var sites = json.data;
     var rows = [];
     var stMap = { 'estimate':'見積中', 'contract':'契約済み', 'billing':'請求', 'complete':'完了', 'lost':'失注' };
+
     for (var i = 0; i < sites.length; i++) {
       var s = sites[i];
+      
+      
+      if (lockedRows[s.id]) {
+        rows.push(lockedRows[s.id]);
+        continue;
+      }
+
+      var savedPrice = (savedData[s.id]) ? savedData[s.id].price : "";
+      var savedLock = (savedData[s.id]) ? savedData[s.id].lock : false;
       var stLabel = stMap[s.status] || s.status;
+
       rows.push([
         s.id, 
         s.parentCaseNo||"", 
@@ -152,29 +205,39 @@ function doPost(e) {
         s.start||"", 
         s.end||"", 
         s.updatedAt ? new Date(s.updatedAt).toLocaleString() : "",
-        JSON.stringify(s) 
+        JSON.stringify(s),
+        savedPrice, 
+        savedLock   
       ]);
     }
-    if (rows.length > 0) { sheet.getRange(2, 1, rows.length, rows[0].length).setValues(rows); }
+
+    if (rows.length > 0) {
+      sheet.getRange(2, 1, rows.length, rows[0].length).setValues(rows);
+      sheet.getRange(2, 12, rows.length, 1).insertCheckboxes(); // L列にチェックボックス
+    }
+    
+    sheet.getRange("Z1").setValue(Date.now());
     return createResponse({ result: "success", msg: "保存完了" });
   }
+
+  
   else if (type === "calendar") {
     try {
       var calId = json.calendarId;
       var cal = CalendarApp.getCalendarById(calId);
-      if (!cal) throw new Error("カレンダーIDが見つかりません: " + calId);
-      var startStr = json.start || json.startDate || json.date;
-      if (!startStr) throw new Error("開始日がありません");
+      if (!cal) throw new Error("カレンダーIDなし: " + calId);
+      
+      var startStr = json.start || json.startDate;
+      if (!startStr) throw new Error("開始日なし");
       var startDate = new Date(startStr);
+      
       var endStr = json.end || json.endDate;
       var title = json.title || "現場予定";
-      var options = {
-        description: json.description || "登録: 職人ギア",
-        location: json.address || ""
-      };
+      var options = { description: json.description||"", location: json.address||"" };
+      
       if (endStr && endStr !== startStr) {
         var endDate = new Date(endStr);
-        endDate.setDate(endDate.getDate() + 1);
+        endDate.setDate(endDate.getDate() + 1); 
         cal.createAllDayEvent(title, startDate, endDate, options);
       } else {
         cal.createAllDayEvent(title, startDate, options);
@@ -184,39 +247,55 @@ function doPost(e) {
       return createResponse({ result: "error", error: error.toString() });
     }
   }
-  return createResponse({ result: "error", error: "不明なリクエストタイプ: " + type });
+
+  return createResponse({ result: "error", error: "不明なタイプ: " + type });
 }
+
 function createResponse(data) {
   return ContentService.createTextOutput(JSON.stringify(data)).setMimeType(ContentService.MimeType.JSON);
 }
+
 function doGet(e) {
   var type = e.parameter.type;
   var ss = SpreadsheetApp.getActiveSpreadsheet();
+  
   if (type === "getAll") {
     var sheet = ss.getSheetByName("案件一覧");
     if (!sheet) return createResponse([]);
     var rows = sheet.getDataRange().getValues();
     var data = [];
     var reverseStMap = { '見積中':'estimate', '契約済み':'contract', '請求':'billing', '完了':'complete', '失注':'lost' };
+    
     for (var i = 1; i < rows.length; i++) {
       var row = rows[i];
-      var siteData = {
-        id: String(row[0]), 
-        parentCaseNo: String(row[1]),
-        name: String(row[2]), 
-        address: String(row[3]), 
-        status: reverseStMap[row[4]] || 'estimate', 
-        naviCount: Number(row[5]), 
-        start: row[6] ? formatYMD(row[6]) : "", 
-        end: row[7] ? formatYMD(row[7]) : "", 
-        updatedAt: row[8] ? new Date(row[8]).getTime() : 0 
-      };
+      // JSONデータ列(I列=index9)があればそれを優先、なければセルから復元
+      var rawJson = row[9];
+      var siteData = null;
+      
+      if (rawJson && rawJson.startsWith("{")) {
+        try { siteData = JSON.parse(rawJson); } catch(e){}
+      }
+      
+      if (!siteData) {
+        siteData = {
+          id: String(row[0]), 
+          parentCaseNo: String(row[1]),
+          name: String(row[2]), 
+          address: String(row[3]), 
+          status: reverseStMap[row[4]] || 'estimate', 
+          naviCount: Number(row[5]), 
+          start: row[6] ? formatYMD(row[6]) : "", 
+          end: row[7] ? formatYMD(row[7]) : "", 
+          updatedAt: row[8] ? new Date(row[8]).getTime() : 0 
+        };
+      }
       if(siteData.id) { data.push(siteData); }
     }
     return createResponse(data);
   }
   return createResponse({msg:"ready"});
 }
+
 function formatYMD(val) {
   if (!val) return "";
   var d = new Date(val);
@@ -226,13 +305,15 @@ function formatYMD(val) {
   var da = ("0" + d.getDate()).slice(-2);
   return y + "-" + m + "-" + da;
 }
+
 function onEdit(e) {
   var sheet = e.source.getActiveSheet();
   if (sheet.getName() !== "案件一覧") return;
   var row = e.range.getRow();
   var col = e.range.getColumn();
-  if (row < 2 || col === 9) return;
-  sheet.getRange(row, 9).setValue(new Date());
+  if (row < 2 || col === 9 || col === 26) return; 
+  // Z1(26)やJSON列(9)以外の変更時に最終更新日時を更新
+  sheet.getRange("Z1").setValue(new Date());
 }
             </textarea>
             <button class="btn-copy" onclick="copyCode()">📋 コードをコピー</button>
