@@ -110,6 +110,12 @@ function doPost(e) {
   } catch (err) {
     return createResponse({ result: "error", error: "JSON parse error" });
   }
+  
+  var MY_SECRET = "要変更"; 
+    if (json.authKey !== MY_SECRET) {
+      return createResponse({ result: "error", error: "⛔ 合言葉が違います。設定画面を確認してください。" });
+  }
+  
   var type = json.type;
   var ss = SpreadsheetApp.getActiveSpreadsheet();
   if (type === "report") {

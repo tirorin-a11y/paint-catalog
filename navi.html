@@ -298,6 +298,8 @@
                     <p style="font-size:0.8rem; color:#e67e22; margin-top:0;">※ここを変更すると連携が動かなくなる場合があります。</p>
                     <label>☁️ GAS URL</label>
                     <input type="text" id="gasUrl" onchange="saveSettings()">
+                    <label>🔑 合言葉 (セキュリティ用)</label>
+                    <input type="password" id="authKey" placeholder="GASに設定した合言葉" onchange="saveSettings()">
                     <label>📅 カレンダーID</label>
                     <input type="text" id="calendarId" onchange="saveSettings()">
                 </div>
@@ -368,6 +370,9 @@
         if(localStorage.getItem('dx_manager_email')) document.getElementById('managerEmail').value = localStorage.getItem('dx_manager_email');
         if(localStorage.getItem('dx_gas_url')) document.getElementById('gasUrl').value = localStorage.getItem('dx_gas_url');
         if(localStorage.getItem('dx_calendar_id')) document.getElementById('calendarId').value = localStorage.getItem('dx_calendar_id');
+        if(localStorage.getItem('dx_auth_key')) {
+    document.getElementById('authKey').value = localStorage.getItem('dx_auth_key');
+        }
         checkAutoLost();
         
         // --- ★ここから自動更新ロジック ---
@@ -409,8 +414,10 @@
         localStorage.setItem('dx_manager_email', document.getElementById('managerEmail').value);
         localStorage.setItem('dx_gas_url', document.getElementById('gasUrl').value);
         localStorage.setItem('dx_calendar_id', document.getElementById('calendarId').value);
+        // ★ここを追加！
+        localStorage.setItem('dx_auth_key', document.getElementById('authKey').value);
         showNotification('⚙️ 設定を保存しました');
-    }
+        }
 
     function setFilter(status, btn) {
         currentFilter = status;
@@ -664,6 +671,10 @@
         if(!confirm("現在スマホにあるデータで、クラウドを上書き保存しますか？")) return;
         const targetUrl = localStorage.getItem('dx_gas_url');
         if(!targetUrl || targetUrl.includes("script.google.com") === false) { alert("GAS URLを設定してください"); return false; }
+        
+        // 合言葉を取得（なければ空文字）
+        const authKey = localStorage.getItem('dx_auth_key') || "";
+
         showNotification("☁️ クラウド確認中...");
         try {
             const checkRes = await fetch(targetUrl + "?type=getAll");
@@ -678,7 +689,17 @@
         
         try {
             showNotification("☁️ 送信中...");
-            const response = await fetch(targetUrl, { method: 'POST', headers: { 'Content-Type': 'text/plain' }, body: JSON.stringify({ type: "sync", data: sites, reporter: localStorage.getItem('dx_reporter_name') || "職人" }) });
+            // ★ここが変わりました：bodyの中に authKey を追加しています
+            const response = await fetch(targetUrl, { 
+                method: 'POST', 
+                headers: { 'Content-Type': 'text/plain' }, 
+                body: JSON.stringify({ 
+                    type: "sync", 
+                    data: sites, 
+                    reporter: localStorage.getItem('dx_reporter_name') || "職人",
+                    authKey: authKey // ← これを追加しました！
+                }) 
+            });
             const resText = await response.text(); const resJson = JSON.parse(resText);   
             if (resJson.result === "success") { showNotification("✅ 送信完了"); alert("クラウドに保存しました！"); return true; } else { throw new Error("GASエラー"); }
         } catch(e) { alert("送信失敗: " + e); return false; }

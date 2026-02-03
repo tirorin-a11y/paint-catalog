@@ -469,11 +469,25 @@
         const item = reportHistory[targetId][index];
         if (!item) return;
         if (item.submitted) { if(!confirm("✅ 既に提出済みです。\nそれでも再送しますか？")) return; } else { if (!confirm(`📅 ${item.date} の日報として\nクラウドに提出しますか？`)) return; }
+        
         const gasUrl = localStorage.getItem('dx_gas_url');
         if (!gasUrl) { alert("【設定エラー】\nナビ画面の設定から「GAS URL」を登録してください。"); return; }
+        
         const reporterName = localStorage.getItem('dx_reporter_name') || "職人";
         const btn = event.target; const originalText = btn.innerHTML; btn.innerHTML = "⏳ 送信中..."; btn.disabled = true;
-        const sendData = { type: "report", id: currentSite ? currentSite.id : "", siteName: currentSite ? currentSite.name : "未定", address: currentSite ? currentSite.address : "", reporter: reporterName, content: item.content, timestamp: item.timestamp || new Date(item.date).getTime() };
+        
+        // ★修正箇所：timestampの後ろにカンマ「,」を追加しました
+        const sendData = { 
+            type: "report", 
+            id: currentSite ? currentSite.id : "", 
+            siteName: currentSite ? currentSite.name : "未定", 
+            address: currentSite ? currentSite.address : "", 
+            reporter: reporterName, 
+            content: item.content, 
+            timestamp: item.timestamp || new Date(item.date).getTime(), // ←ここにカンマが必要でした
+            authKey: localStorage.getItem('dx_auth_key') || "" 
+        };
+
         try {
             const response = await fetch(gasUrl, { method: 'POST', headers: { 'Content-Type': 'text/plain' }, body: JSON.stringify(sendData) });
             const resText = await response.text(); const resJson = JSON.parse(resText);
@@ -494,17 +508,54 @@
     function openPersonalCalendar() { let stLabel = '現調予定'; if(currentSite && (currentSite.status === 'contract' || currentSite.status === 'active')) stLabel = '施工中'; const text = encodeURIComponent(`【${stLabel}】${currentSite?currentSite.name:''}`); const location = encodeURIComponent(currentSite?currentSite.address:''); const url = `https://www.google.com/calendar/render?action=TEMPLATE&text=${text}&location=${location}`; window.open(url, '_blank'); closeAllModals(); }
     function registerSharedCalendar() {
         if (!currentSite) return;
+        
         const today = new Date().toISOString().split('T')[0];
         const targetDate = currentSite.start || today;
         const targetEndDate = currentSite.end || targetDate; 
         const dateMsg = currentSite.start ? `期間: ${targetDate} 〜 ${targetEndDate}` : `日付: ${targetDate} (本日)`;
+        
         if(!confirm(`共有カレンダーに登録しますか？\n\n${dateMsg}\n現場: ${currentSite.name}`)) return;
+        
         const calId = localStorage.getItem('dx_calendar_id');
         const gasUrl = localStorage.getItem('dx_gas_url');
+        
         if(!gasUrl) { alert("GAS URL設定がありません。ナビ画面の設定から入力してください。"); return; }
         if(!calId) { alert("共有カレンダーIDが設定されていません。個人カレンダー機能を使用してください。"); return; }
-        const data = { type: "calendar", calendarId: calId, id: currentSite.id, title: `【${getStatusLabel(currentSite.status)}】${currentSite.name}`, description: `住所: ${currentSite.address}\n状況: ${getStatusLabel(currentSite.status)}\n案件No: ${currentSite.id}`, address: currentSite.address, status: currentSite.status, date: targetDate, start: targetDate, startDate: targetDate, end: targetEndDate, endDate: targetEndDate, startTime: targetDate, endTime: targetEndDate };
-        fetch(gasUrl, { method: 'POST', headers: { 'Content-Type': 'text/plain' }, body: JSON.stringify(data) }).then(response => response.text()).then(text => { try { const res = JSON.parse(text); if(res.result === 'success') { alert("✅ カレンダーに登録しました！"); } else { alert("⚠️ 登録エラー: " + (res.error || "GAS側でエラーが発生しました")); } } catch(e) { console.error(text); alert("⚠️ 通信エラー: サーバーからの応答が不正です。\n（工期未入力などが原因の可能性がありますが、今回は今日の日付で送信しました）"); } }).catch(err => { alert("通信失敗: " + err); });
+        
+        const data = { 
+            type: "calendar", 
+            calendarId: calId, 
+            id: currentSite.id, 
+            title: `【${getStatusLabel(currentSite.status)}】${currentSite.name}`, 
+            description: `住所: ${currentSite.address}\n状況: ${getStatusLabel(currentSite.status)}\n案件No: ${currentSite.id}`, 
+            address: currentSite.address, 
+            status: currentSite.status, 
+            date: targetDate, 
+            start: targetDate, 
+            startDate: targetDate, 
+            end: targetEndDate, 
+            endDate: targetEndDate, 
+            startTime: targetDate, 
+            endTime: targetEndDate,
+            authKey: localStorage.getItem('dx_auth_key') || "" 
+        }; // ← ここで閉じカッコが正しく認識されるようになります
+
+        fetch(gasUrl, { method: 'POST', headers: { 'Content-Type': 'text/plain' }, body: JSON.stringify(data) })
+            .then(response => response.text())
+            .then(text => { 
+                try { 
+                    const res = JSON.parse(text); 
+                    if(res.result === 'success') { 
+                        alert("✅ カレンダーに登録しました！"); 
+                    } else { 
+                        alert("⚠️ 登録エラー: " + (res.error || "GAS側でエラーが発生しました")); 
+                    } 
+                } catch(e) { 
+                    console.error(text); 
+                    alert("⚠️ 通信エラー: サーバーからの応答が不正です。\n（工期未入力などが原因の可能性がありますが、今回は今日の日付で送信しました）"); 
+                } 
+            })
+            .catch(err => { alert("通信失敗: " + err); });
     }
     function getStatusLabel(st) { const map = { 'estimate':'見積', 'contract':'施工', 'billing':'請求', 'complete':'完了', 'lost':'失注' }; return map[st] || '予定'; }
 
