@@ -33,44 +33,48 @@
         
         .alert-box { background: #fff3e0; border: 1px solid #ffe0b2; padding: 15px; border-radius: 6px; color: #e65100; font-size: 0.95rem; margin-top: 10px; }
 
-        /* 追加：お問い合わせエリア用のスタイル */
-        .contact-area { margin-top: 40px; padding: 20px; background: #e8f5e9; border-radius: 12px; }
-        .contact-area h3 { text-align: center; margin-top: 0; color: #2e7d32; border: none; padding: 0; }
-        .contact-msg { font-size: 0.9rem; color: #444; margin-bottom: 20px; text-align: center; background: white; padding: 15px; border-radius: 8px; border: 1px dashed #a5d6a7; }
-        .form-wrapper iframe { width: 100%; height: 600px; border: none; border-radius: 8px; background: white; }
-        /* --- お問い合わせエリアの修正 --- */
-        .contact-area {
-            background: white;       /* アコーディオンと同じ白背景にする */
-            padding: 20px;           /* 内側に余白を作る */
-            border-radius: 8px;      /* 角を丸くする */
-            box-shadow: 0 2px 5px rgba(0,0,0,0.05); /* 影をつける */
-            margin-top: 30px;        /* 上のアコーディオンとの間隔 */
+        /* --- 修正：お問い合わせエリア（アコーディオンとデザイン統一） --- */
+        .contact-area { 
+            margin-top: 30px; 
+            background: white;          /* 背景を白に統一 */
+            border-radius: 8px;         /* 角丸を統一 */
+            box-shadow: 0 2px 5px rgba(0,0,0,0.05); /* アコーディオンと同じ影 */
+            overflow: hidden;           /* はみ出し防止 */
+            padding: 0;                 /* コンテナ自体の余白をなくす */
         }
 
-        .contact-area h3 {
-            margin-top: 0;
-            border-bottom: 2px solid #f0f2f5;
-            padding-bottom: 10px;
-            font-size: 1.2rem;
+        /* 見出しをアコーディオンの閉じた状態と同じ見た目にする */
+        .contact-area h3 { 
+            margin: 0; 
+            padding: 15px 20px;         /* summaryタグと同じ余白 */
+            background: #fff; 
+            color: #2c3e50; 
+            font-size: 1.1rem; 
+            border-bottom: 1px solid #eee; /* 区切り線 */
+            text-align: left;           /* 左寄せ */
         }
 
-        .contact-msg {
-            margin-bottom: 20px;
-            font-size: 0.95rem;
-            color: #555;
+        /* メッセージエリアの「内側の枠」を消して広げる */
+        .contact-msg { 
+            font-size: 0.9rem; 
+            color: #444; 
+            padding: 20px 20px 0 20px;  /* 左右の余白を確保 */
+            margin-bottom: 10px; 
+            text-align: left;           /* 読みやすく左寄せ */
+            background: transparent;    /* 背景色なし */
+            border: none;               /* 枠線なし */
+            border-radius: 0; 
         }
 
-        /* Googleフォームを横幅いっぱいに広げる */
+        /* フォーム周りの調整 */
         .form-wrapper {
-            width: 100%;
-            overflow: hidden; /* はみ出し防止 */
+            padding: 0 20px 20px 20px;  /* 左右と下の余白 */
         }
-
-        .form-wrapper iframe {
-            width: 100% !important; /* 強制的に幅100% */
-            height: 800px;          /* 高さを十分に確保（スクロールバー対策） */
-            border: none;           /* 枠線を消す */
-            display: block;
+        
+        .form-wrapper iframe { 
+            width: 100%; 
+            height: 600px; 
+            border: none; 
         }
     </style>
 </head>
