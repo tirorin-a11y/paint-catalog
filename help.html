@@ -38,6 +38,40 @@
         .contact-area h3 { text-align: center; margin-top: 0; color: #2e7d32; border: none; padding: 0; }
         .contact-msg { font-size: 0.9rem; color: #444; margin-bottom: 20px; text-align: center; background: white; padding: 15px; border-radius: 8px; border: 1px dashed #a5d6a7; }
         .form-wrapper iframe { width: 100%; height: 600px; border: none; border-radius: 8px; background: white; }
+        /* --- お問い合わせエリアの修正 --- */
+        .contact-area {
+            background: white;       /* アコーディオンと同じ白背景にする */
+            padding: 20px;           /* 内側に余白を作る */
+            border-radius: 8px;      /* 角を丸くする */
+            box-shadow: 0 2px 5px rgba(0,0,0,0.05); /* 影をつける */
+            margin-top: 30px;        /* 上のアコーディオンとの間隔 */
+        }
+
+        .contact-area h3 {
+            margin-top: 0;
+            border-bottom: 2px solid #f0f2f5;
+            padding-bottom: 10px;
+            font-size: 1.2rem;
+        }
+
+        .contact-msg {
+            margin-bottom: 20px;
+            font-size: 0.95rem;
+            color: #555;
+        }
+
+        /* Googleフォームを横幅いっぱいに広げる */
+        .form-wrapper {
+            width: 100%;
+            overflow: hidden; /* はみ出し防止 */
+        }
+
+        .form-wrapper iframe {
+            width: 100% !important; /* 強制的に幅100% */
+            height: 800px;          /* 高さを十分に確保（スクロールバー対策） */
+            border: none;           /* 枠線を消す */
+            display: block;
+        }
     </style>
 </head>
 <body>
@@ -256,6 +290,12 @@ function createResponse(data) {
 }
 
 function doGet(e) {
+  var MY_SECRET_KEY = "要変更"; 
+  
+  if (!e.parameter.authKey || e.parameter.authKey !== MY_SECRET_KEY) {
+    return createResponse([]);
+  }
+
   var type = e.parameter.type;
   var ss = SpreadsheetApp.getActiveSpreadsheet();
   
@@ -268,7 +308,6 @@ function doGet(e) {
     
     for (var i = 1; i < rows.length; i++) {
       var row = rows[i];
-      // JSONデータ列(I列=index9)があればそれを優先、なければセルから復元
       var rawJson = row[9];
       var siteData = null;
       
