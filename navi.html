@@ -298,9 +298,9 @@
                     <p style="font-size:0.8rem; color:#e67e22; margin-top:0;">※ここを変更すると連携が動かなくなる場合があります。</p>
                     <label>☁️ GAS URL</label>
                     <input type="text" id="gasUrl" onchange="saveSettings()">
-                    <label>🔑 合言葉 (セキュリティ用)</label>
-                    <input type="password" id="authKey" placeholder="GASに設定した合言葉" onchange="saveSettings()">
-                    <div style="margin-top:5px; font-size:0.9rem;">
+                    <label>🔑 合言葉 (GASと同じにする)</label>
+                        <input type="text" id="authKey" placeholder="設定した合言葉を入力" onchange="saveSettings()">
+                        <div style="margin-top:5px; font-size:0.9rem;">
                         <label style="display:inline-flex; align-items:center; cursor:pointer;">
                             <input type="checkbox" onclick="togglePasswordVisibility()"> 合言葉を表示する
                         </label>
@@ -682,7 +682,8 @@
 
         showNotification("☁️ クラウド確認中...");
         try {
-            const checkRes = await fetch(targetUrl + "?type=getAll");
+            // URLの後ろに &authKey=合言葉 をくっつけて送る
+            const checkRes = await fetch(targetUrl + "?type=getAll&authKey=" + authKey);
             const text = await checkRes.text(); const cloudData = JSON.parse(text);      
             const localMax = sites.length > 0 ? Math.max(...sites.map(s => s.updatedAt || 0)) : 0;
             const cloudMax = Array.isArray(cloudData) && cloudData.length > 0 ? Math.max(...cloudData.map(s => s.updatedAt || 0)) : 0;
