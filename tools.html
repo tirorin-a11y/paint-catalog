@@ -1347,9 +1347,79 @@
         isRecognizing = false; 
         document.getElementById('micBtn').classList.remove('mic-active'); 
     }
-    function sendReportLine() { const text = document.getElementById('reportText').value; if(!text) return; const lineUrl = `https://line.me/R/msg/text/?【日報：${currentSite ? currentSite.name : '現場'}】%0A${encodeURIComponent(text)}`; window.open(lineUrl, '_blank'); }
-    function sendReportMail() { const text = document.getElementById('reportText').value; if(!text) return; const mailTo = localStorage.getItem('dx_manager_email'); if(!mailTo) { alert("【設定エラー】\nナビ画面の「設定(⚙️)」から、管理者のメールアドレスを登録してください。"); return; } saveReportLocal(); const subject = `【日報】${currentSite ? currentSite.name : '現場'} (${new Date().toLocaleDateString()})`; const body = `${currentSite ? currentSite.name : '現場'}\n\n${text}\n\n--\nSent from 職人ギア`; const mailUrl = `mailto:${mailTo}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`; window.location.href = mailUrl; }
-    function getNextNum(year) {
+    // ★修正版：LINE送信（入力があればそれだけ、なければ履歴を一括送信）
+    function sendReportLine() {
+        const textBox = document.getElementById('reportText');
+        let text = textBox.value;
+        let subjectHeader = "";
+
+        // 1. 入力欄が空なら「履歴モード」
+        if (!text) {
+            const targetId = siteId || 'preview';
+            const list = reportHistory[targetId];
+            
+            if (!list || list.length === 0) {
+                alert("送信する内容も、履歴もありません。");
+                return;
+            }
+            
+            if(!confirm("入力欄が空のため、\n「履歴をまとめて」LINEで送りますか？")) return;
+
+            // 履歴を結合してテキストを作る
+            subjectHeader = "【一括日報】";
+            text = list.map(item => `📅 ${item.date}\n${item.content}`).join('\n\n--------------------\n\n');
+        } 
+        // 2. 入力欄に文字があれば「単発モード」
+        else {
+            // そのまま送信
+            subjectHeader = "【日報】";
+        }
+
+        const siteName = currentSite ? currentSite.name : '現場';
+        const lineUrl = `https://line.me/R/msg/text/?${encodeURIComponent(subjectHeader + siteName + "\n\n" + text)}`;
+        window.open(lineUrl, '_blank');
+    }
+
+    // ★修正版：メール送信（入力があればそれだけ、なければ履歴を一括送信）
+    function sendReportMail() {
+        const textBox = document.getElementById('reportText');
+        let text = textBox.value;
+        let subject = "";
+        
+        const mailTo = localStorage.getItem('dx_manager_email');
+        if(!mailTo) { 
+            alert("【設定エラー】\nナビ画面の「設定(⚙️)」から、管理者のメールアドレスを登録してください。"); 
+            return; 
+        }
+
+        // 1. 入力欄が空なら「履歴モード」
+        if (!text) {
+            const targetId = siteId || 'preview';
+            const list = reportHistory[targetId];
+
+            if (!list || list.length === 0) {
+                alert("送信する内容も、履歴もありません。");
+                return;
+            }
+
+            if(!confirm("入力欄が空のため、\n「履歴をまとめて」メールで送りますか？")) return;
+
+            // 履歴を結合
+            subject = `【一括日報】${currentSite ? currentSite.name : '現場'} (${list.length}件)`;
+            text = list.map(item => `📅 ${item.date}\n${item.content}`).join('\n--------------------\n');
+        } 
+        // 2. 入力欄に文字があれば「単発モード」
+        else {
+            // 先にローカル保存してから送る（安全のため）
+            saveReportLocal(); 
+            // ※saveReportLocal内でテキストボックスがクリアされるため、変数のtextを使います
+            subject = `【日報】${currentSite ? currentSite.name : '現場'} (${new Date().toLocaleDateString()})`;
+        }
+
+        const body = `${currentSite ? currentSite.name : '現場'}\n\n${text}\n\n--\nSent from 職人ギア`;
+        const mailUrl = `mailto:${mailTo}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+        window.location.href = mailUrl;
+    }    function getNextNum(year) {
         let max = 0;
         sites.forEach(s => {
             if (s.id && s.id.startsWith(year + '-')) {
