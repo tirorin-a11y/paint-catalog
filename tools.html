@@ -1367,7 +1367,7 @@
 
             // 履歴を結合してテキストを作る
             subjectHeader = "【一括日報】";
-            text = list.map(item => `📅 ${item.date}\n${item.content}`).join('\n\n--------------------\n\n');
+            text = list.map(item => `${item.date}\n${item.content}`).join('\n\n--------------------\n\n');
         } 
         // 2. 入力欄に文字があれば「単発モード」
         else {
@@ -1406,7 +1406,7 @@
 
             // 履歴を結合
             subject = `【一括日報】${currentSite ? currentSite.name : '現場'} (${list.length}件)`;
-            text = list.map(item => `📅 ${item.date}\n${item.content}`).join('\n--------------------\n');
+            text = list.map(item => `${item.date}\n${item.content}`).join('\n--------------------\n');
         } 
         // 2. 入力欄に文字があれば「単発モード」
         else {
