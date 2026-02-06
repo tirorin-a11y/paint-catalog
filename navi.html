@@ -676,6 +676,9 @@
         // 合言葉を取得（なければ空文字）
         const authKey = localStorage.getItem('dx_auth_key') || "";
 
+        // ▼テスト用：送信前に画面に表示してみる！
+    alert("これから送る合言葉はコレです！\n\n" + authKey);
+
         showNotification("☁️ クラウド確認中...");
         try {
             // URLの後ろに &authKey=合言葉 をくっつけて送る
