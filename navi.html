@@ -772,22 +772,40 @@
 
     async function downloadFromCloud() {
         const gasUrl = localStorage.getItem('dx_gas_url');
+        const authKey = localStorage.getItem('dx_auth_key') || ""; // 合言葉も忘れずに
         if(!gasUrl) { alert("GAS URL設定なし"); return; }
+        
         if(!confirm("クラウドデータで上書き復元しますか？")) return;
         showNotification('📥 取得中...');
+        
         try {
-            const res = await fetch(gasUrl + "?type=getAll");
-            const text = await res.text(); const data = JSON.parse(text);       
-            if(Array.isArray(data)) {
-                sites = data; sites.sort((a, b) => (a.id > b.id ? -1 : 1));
+            const res = await fetch(gasUrl + "?type=getAll&authKey=" + authKey + "&t=" + Date.now());
+            const text = await res.text(); 
+            const responseData = JSON.parse(text);       
+            
+            let finalData = [];
+
+            // ★新しい形式に対応
+            if (responseData.items) {
+                finalData = responseData.items;
+            } else if (Array.isArray(responseData)) {
+                finalData = responseData;
+            } else {
+                alert("データ形式エラー"); return;
+            }
+
+            if(Array.isArray(finalData)) {
+                sites = finalData; 
+                sites.sort((a, b) => (a.id > b.id ? -1 : 1));
                 localStorage.setItem('dx_sites', JSON.stringify(sites));
-                // ★ここに追加してください！
-                localStorage.setItem('dx_sync_time', Date.now());
+                
+                // 時間更新
+                localStorage.setItem('dx_sync_time', Date.now()); 
+
                 renderList(); closeAllModals(); showNotification(`✅ 復元完了 (${sites.length}件)`);
-            } else { alert("データ形式エラー"); }
+            }
         } catch(e) { alert("取得エラー: " + e); }
     }
-
     // ★修正版：自動更新チェック（視覚効果付き）
 
      
