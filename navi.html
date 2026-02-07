@@ -343,17 +343,16 @@
     <p style="font-size:0.9rem; color:#666; margin-bottom:20px;">保存先を選んでください</p>
     
     <div id="backupModal" class="modal-box" style="text-align:center; max-width:300px;">
-    <button onclick="syncAllDataToCloud()" style="width:100%; padding:15px; background:#2980b9; color:white; border:none; border-radius:8px; font-weight:bold; font-size:1rem; margin-bottom:10px; display:flex; align-items:center; justify-content:center; gap:10px;">
-        ☁️ クラウドに保存<br><span style="font-size:0.7rem; font-weight:normal;">(サーバーを上書き)</span>
-    </button>
-    
+        <button onclick="syncAllDataToCloud()" style="width:100%; padding:15px; background:#2980b9; color:white; border:none; border-radius:8px; font-weight:bold; font-size:1rem; margin-bottom:10px; display:flex; align-items:center; justify-content:center; gap:10px;">
+            ☁️ クラウドに保存<br><span style="font-size:0.7rem; font-weight:normal;">(サーバーを上書き)</span>
+        </button>
+        
+        <button onclick="exportJSON(); closeAllModals();" style="width:100%; padding:15px; background:#f39c12; color:white; border:none; border-radius:8px; font-weight:bold; font-size:1rem; display:flex; align-items:center; justify-content:center; gap:10px;">
+            📂 ファイルに保存<br><span style="font-size:0.7rem; font-weight:normal;">(スマホ内にダウンロード)</span>
+        </button>
+        
+        <button class="btn-close" onclick="closeAllModals()" style="margin-top:15px;">キャンセル</button>
     </div>
-    
-    <button onclick="exportJSON(); closeAllModals();" style="width:100%; padding:15px; background:#f39c12; color:white; border:none; border-radius:8px; font-weight:bold; font-size:1rem; display:flex; align-items:center; justify-content:center; gap:10px;">
-        📂 ファイルに保存<br><span style="font-size:0.7rem; font-weight:normal;">(スマホ内にダウンロード)</span>
-    </button>
-    
-    <button class="btn-close" onclick="closeAllModals()" style="margin-top:15px;">キャンセル</button>
 </div>
 
 <script>
