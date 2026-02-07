@@ -791,7 +791,8 @@
 
         // 連打ガード（10秒）
         const now = Date.now();
-        if (now - lastCheckTime < 10000) {
+        // lastCheckTime が定義されていない場合のエラー防止
+        if (typeof lastCheckTime !== 'undefined' && now - lastCheckTime < 10000) {
             console.log("短時間の連打のためスキップしました");
             return;
         }
@@ -804,12 +805,18 @@
             indicator.classList.add('sync-spinner');  // 回す
         }
 
+        // ★追加1：合言葉を取得
+        const authKey = localStorage.getItem('dx_auth_key') || "";
+
         try {
-            const res = await fetch(targetUrl + "?type=getAll");
+            // ★追加2：URLの後ろに合言葉をくっつける (&authKey=...)
+            const res = await fetch(targetUrl + "?type=getAll&authKey=" + authKey);
+            
             const text = await res.text(); 
             const cloudData = JSON.parse(text);
             
             if (Array.isArray(cloudData)) {
+                // 配列が空の場合のエラー防止策として || 0 を追加
                 const localMax = sites.length > 0 ? Math.max(...sites.map(s => s.updatedAt || 0)) : 0;
                 const cloudMax = cloudData.length > 0 ? Math.max(...cloudData.map(s => s.updatedAt || 0)) : 0;
                 
@@ -819,8 +826,10 @@
                         cloudData.sort((a, b) => (a.id > b.id ? -1 : 1));
                         sites = cloudData; 
                         localStorage.setItem('dx_sites', JSON.stringify(sites));
-                        // ★ここに追加してください！
+                        
+                        // ★ここ、バッチリ合ってます！
                         localStorage.setItem('dx_sync_time', Date.now());
+
                         alert("✅ 最新データを反映しました！"); 
                         location.reload();
                     }
