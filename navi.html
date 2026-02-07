@@ -807,101 +807,78 @@
         } catch(e) { alert("取得エラー: " + e); }
     }
     
-    async function checkForCloudUpdates() {
-        // ★診断用：開始を知らせる（これがでなければ、ボタンの紐付けミス）
-        // alert("通信開始..."); 
+     
 
+    async function checkForCloudUpdates() {
         const targetUrl = localStorage.getItem('dx_gas_url');
         const authKey = localStorage.getItem('dx_auth_key') || "";
-        
-        if(!targetUrl) {
-            alert("❌ GASのURLが設定されていません");
-            return;
-        }
+        if(!targetUrl) return;
 
-        // 連打ガード（診断中は邪魔なのでコメントアウトします）
-        // const now = Date.now();
-        // if (typeof lastCheckTime !== 'undefined' && now - lastCheckTime < 10000) return;
-        // lastCheckTime = now;
+        // 連打ガード（10秒）
+        const now = Date.now();
+        if (typeof lastCheckTime !== 'undefined' && now - lastCheckTime < 10000) return;
+        lastCheckTime = now;
 
         // アイコン回す
         const indicator = document.getElementById('syncIndicator');
         if(indicator) { indicator.style.display = 'inline-block'; indicator.classList.add('sync-spinner'); }
 
         try {
-            // URL作成
+            // キャッシュ無視のおまじない付きでアクセス
             const fetchUrl = targetUrl + "?type=getAll&authKey=" + authKey + "&t=" + Date.now();
-            
-            // ★ここが一番の関門
             const res = await fetch(fetchUrl);
             const text = await res.text(); 
             
-            // レスポンスの中身をチラ見せ（デバッグ用）
-            // alert("GASからの返事:\n" + text.substring(0, 100) + "...");
+            // エラーなら静かに終了（ログだけ残す）
+            if (text.includes('"result":"error"')) { console.warn("Check Skip: Error"); return; }
 
-            // エラーチェック
-            if (text.includes("error") || text.includes("Exception")) {
-                alert("⛔ GAS側でエラー発生:\n" + text);
-                return;
-            }
+            const responseData = JSON.parse(text);
 
-            // JSON変換（ここで失敗することが多い）
-            let responseData;
-            try {
-                responseData = JSON.parse(text);
-            } catch (e) {
-                alert("❌ JSON変換失敗！\nGASが変なデータを返しています。\n" + text);
-                return;
-            }
-
-            // データ解析
+            // Z1（サーバー時間）とデータを取得
             let cloudTime = 0;
             let cloudData = [];
-            let serverType = "不明";
 
             if (responseData.serverTime) {
-                serverType = "新方式(Z1)";
                 cloudTime = Number(responseData.serverTime);
                 cloudData = responseData.items;
             } else if (Array.isArray(responseData)) {
-                serverType = "旧方式(配列)";
+                // 旧方式への保険
                 cloudData = responseData;
                 cloudTime = cloudData.length > 0 ? Math.max(...cloudData.map(s => s.updatedAt ? new Date(s.updatedAt).getTime() : 0)) : 0;
-            } else {
-                alert("❌ データの形式がおかしいです\n" + JSON.stringify(responseData));
-                return;
             }
 
+            // スマホの前回同期時間
             const localSyncTime = Number(localStorage.getItem('dx_sync_time') || 0);
+            
+            // ログ（F12で見れます）
+            console.log(`Cloud: ${cloudTime} / Local: ${localSyncTime}`);
 
-            // ★強制診断レポート
-            alert(
-                "🏥 診断レポート\n" +
-                "------------------\n" +
-                "通信方式: " + serverType + "\n" +
-                "クラウド時刻: " + cloudTime + "\n" +
-                "スマホ同期時刻: " + localSyncTime + "\n" +
-                "判定: " + (cloudTime > localSyncTime ? "【更新あり！】" : "なし")
-            );
-
-            // 更新処理
+            // ★判定：サーバーの方が新しければ通知！
             if (cloudTime > localSyncTime) {
                 if (confirm(`🔄 クラウドに新しいデータがあります！\n取り込みますか？`)) {
+                    // ID順に整列
                     cloudData.sort((a, b) => (a.id > b.id ? -1 : 1));
                     sites = cloudData; 
+                    
+                    // 保存＆時間更新
                     localStorage.setItem('dx_sites', JSON.stringify(sites));
                     localStorage.setItem('dx_sync_time', Date.now()); 
+
                     alert("✅ 最新データを反映しました！"); 
                     location.reload();
                 }
             }
 
         } catch (e) { 
-            // ★ここが重要！エラーを隠さずに表示する
-            alert("⚠️ 致命的なエラー: " + e); 
-            console.error(e);
+            console.warn("更新チェック失敗（オフライン等）:", e); 
         } finally {
-            if(indicator) { setTimeout(() => { indicator.classList.remove('sync-spinner'); indicator.style.display = 'none'; }, 500); }
+            // アイコンを止める
+            if(indicator) { 
+                setTimeout(() => { 
+                    indicator.classList.remove('sync-spinner'); 
+                    indicator.style.display = 'none'; 
+                }, 500); 
+            }
         }
     }
     async function exportCSV() { showNotification('📤 準備中...'); let c = "\uFEFF案件No,親案件No,現場名,住所,ステータス,開始,終了\n"; sites.forEach(s => { c += `"${s.id}","${s.parentCaseNo||''}","${s.name}","${s.address}","${getStatusText(s.status)}","${s.start||''}","${s.end||''}"\n`; }); const f = new File([c], `現場リスト_${getNowStr()}.csv`, { type: "text/csv" }); if (navigator.share && navigator.canShare({ files: [f] })) { try { await navigator.share({ files: [f] }); } catch (e) { forceDL(f); } } else { forceDL(f); } }
