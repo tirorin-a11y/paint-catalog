@@ -790,49 +790,52 @@
     }
 
     // ★修正版：自動更新チェック（視覚効果付き）
+    
+
     async function checkForCloudUpdates() {
         const targetUrl = localStorage.getItem('dx_gas_url');
         if(!targetUrl) return;
 
-        // 連打ガード（10秒）
+        // 連打ガード（エラー防止付き）
         const now = Date.now();
-        // lastCheckTime が定義されていない場合のエラー防止
         if (typeof lastCheckTime !== 'undefined' && now - lastCheckTime < 10000) {
-            console.log("短時間の連打のためスキップしました");
-            return;
+            return; // 10秒以内なら静かに終了
         }
         lastCheckTime = now;
 
-        // ★視覚効果：アイコンを表示して回す
+        // ★視覚効果：アイコンを回す
         const indicator = document.getElementById('syncIndicator');
         if(indicator) {
-            indicator.style.display = 'inline-block'; // 表示
-            indicator.classList.add('sync-spinner');  // 回す
+            indicator.style.display = 'inline-block'; 
+            indicator.classList.add('sync-spinner');  
         }
 
-        // ★追加1：合言葉を取得
+        // ★合言葉を取得（これを忘れていました！）
         const authKey = localStorage.getItem('dx_auth_key') || "";
 
         try {
-            // ★追加2：URLの後ろに合言葉をくっつける (&authKey=...)
+            // ★URLの後ろに合言葉をくっつける！ (?type=getAll&authKey=...)
             const res = await fetch(targetUrl + "?type=getAll&authKey=" + authKey);
             
             const text = await res.text(); 
             const cloudData = JSON.parse(text);
             
             if (Array.isArray(cloudData)) {
-                // 配列が空の場合のエラー防止策として || 0 を追加
+                // 日付の比較
                 const localMax = sites.length > 0 ? Math.max(...sites.map(s => s.updatedAt || 0)) : 0;
                 const cloudMax = cloudData.length > 0 ? Math.max(...cloudData.map(s => s.updatedAt || 0)) : 0;
                 
+                // クラウドの方が新しければ...
                 if (cloudMax > localMax) {
-                    // 更新があった場合
+                    // ここでポップアップが出るはずです！
                     if (confirm(`🔄 クラウドに新しいデータがあります！\n取り込みますか？`)) {
+                        
+                        // データを更新
                         cloudData.sort((a, b) => (a.id > b.id ? -1 : 1));
                         sites = cloudData; 
                         localStorage.setItem('dx_sites', JSON.stringify(sites));
                         
-                        // ★ここ、バッチリ合ってます！
+                        // ★同期時間も更新
                         localStorage.setItem('dx_sync_time', Date.now());
 
                         alert("✅ 最新データを反映しました！"); 
@@ -841,19 +844,17 @@
                 }
             }
         } catch (e) { 
-            console.log("更新チェック失敗（オフラインの可能性）:", e); 
+            console.log("更新チェック失敗:", e); 
         } finally {
-            // ★重要：成功しても失敗しても、最後に必ずアイコンを消す
+            // アイコンを消す
             if(indicator) {
-                // 一瞬で消えると見逃すので、0.5秒だけ余韻を残して消す
                 setTimeout(() => {
-                    indicator.classList.remove('sync-spinner'); // 止める
-                    indicator.style.display = 'none';           // 隠す
+                    indicator.classList.remove('sync-spinner');
+                    indicator.style.display = 'none';
                 }, 500);
             }
         }
     }
-
     async function exportCSV() { showNotification('📤 準備中...'); let c = "\uFEFF案件No,親案件No,現場名,住所,ステータス,開始,終了\n"; sites.forEach(s => { c += `"${s.id}","${s.parentCaseNo||''}","${s.name}","${s.address}","${getStatusText(s.status)}","${s.start||''}","${s.end||''}"\n`; }); const f = new File([c], `現場リスト_${getNowStr()}.csv`, { type: "text/csv" }); if (navigator.share && navigator.canShare({ files: [f] })) { try { await navigator.share({ files: [f] }); } catch (e) { forceDL(f); } } else { forceDL(f); } }
     function forceDL(f) { const u = URL.createObjectURL(f); const a = document.createElement("a"); a.href=u; a.download=f.name; document.body.appendChild(a); a.click(); document.body.removeChild(a); showNotification('📥 保存しました'); }
     function copyToClipboard() { let t = ""; sites.forEach(s => { t += `${s.id}\t${s.parentCaseNo||''}\t${s.name}\t${s.address}\t${getStatusText(s.status)}\t${s.start||''}\t${s.end||''}\n`; }); navigator.clipboard.writeText(t).then(()=>showNotification('📋 コピーしました')); }
