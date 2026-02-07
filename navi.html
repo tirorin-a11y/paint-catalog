@@ -809,6 +809,7 @@
     
      
 
+    
     async function checkForCloudUpdates() {
         const targetUrl = localStorage.getItem('dx_gas_url');
         const authKey = localStorage.getItem('dx_auth_key') || "";
@@ -819,7 +820,7 @@
         if (typeof lastCheckTime !== 'undefined' && now - lastCheckTime < 10000) return;
         lastCheckTime = now;
 
-        // アイコン回す
+        // アイコン回す（控えめに）
         const indicator = document.getElementById('syncIndicator');
         if(indicator) { indicator.style.display = 'inline-block'; indicator.classList.add('sync-spinner'); }
 
@@ -834,7 +835,7 @@
 
             const responseData = JSON.parse(text);
 
-            // Z1（サーバー時間）とデータを取得
+            // データ解析
             let cloudTime = 0;
             let cloudData = [];
 
@@ -842,7 +843,6 @@
                 cloudTime = Number(responseData.serverTime);
                 cloudData = responseData.items;
             } else if (Array.isArray(responseData)) {
-                // 旧方式への保険
                 cloudData = responseData;
                 cloudTime = cloudData.length > 0 ? Math.max(...cloudData.map(s => s.updatedAt ? new Date(s.updatedAt).getTime() : 0)) : 0;
             }
@@ -850,9 +850,6 @@
             // スマホの前回同期時間
             const localSyncTime = Number(localStorage.getItem('dx_sync_time') || 0);
             
-            // ログ（F12で見れます）
-            console.log(`Cloud: ${cloudTime} / Local: ${localSyncTime}`);
-
             // ★判定：サーバーの方が新しければ通知！
             if (cloudTime > localSyncTime) {
                 if (confirm(`🔄 クラウドに新しいデータがあります！\n取り込みますか？`)) {
@@ -870,7 +867,10 @@
             }
 
         } catch (e) { 
-            console.warn("更新チェック失敗（オフライン等）:", e); 
+            // ★★★ ここを修正しました！ ★★★
+            // alert（ポップアップ）を消して、console.warn（裏側の記録）だけにしました。
+            // これで放置しても画面には何も出ません。
+            console.warn("更新チェック失敗（スルーします）:", e); 
         } finally {
             // アイコンを止める
             if(indicator) { 
