@@ -789,52 +789,62 @@
     }
 
     // ★修正版：自動更新チェック（視覚効果付き）
-    
 
     async function checkForCloudUpdates() {
         const targetUrl = localStorage.getItem('dx_gas_url');
         if(!targetUrl) return;
 
-        // 連打ガード（エラー防止付き）
+        // 連打ガード（10秒）
         const now = Date.now();
-        if (typeof lastCheckTime !== 'undefined' && now - lastCheckTime < 10000) {
-            return; // 10秒以内なら静かに終了
-        }
+        if (typeof lastCheckTime !== 'undefined' && now - lastCheckTime < 10000) return;
         lastCheckTime = now;
 
-        // ★視覚効果：アイコンを回す
         const indicator = document.getElementById('syncIndicator');
         if(indicator) {
             indicator.style.display = 'inline-block'; 
             indicator.classList.add('sync-spinner');  
         }
 
-        // ★合言葉を取得（これを忘れていました！）
         const authKey = localStorage.getItem('dx_auth_key') || "";
 
         try {
-            // ★URLの後ろに合言葉をくっつける！ (?type=getAll&authKey=...)
+            // 合言葉付きでデータを取得
             const res = await fetch(targetUrl + "?type=getAll&authKey=" + authKey);
-            
             const text = await res.text(); 
+            
+            // エラーチェック（合言葉違いなど）
+            if (text.includes('"result":"error"')) {
+                console.log("更新チェック除外: エラー");
+                return;
+            }
+
             const cloudData = JSON.parse(text);
             
             if (Array.isArray(cloudData)) {
-                // 日付の比較
-                const localMax = sites.length > 0 ? Math.max(...sites.map(s => s.updatedAt ? new Date(s.updatedAt).getTime() : 0)) : 0;
-                const cloudMax = cloudData.length > 0 ? Math.max(...cloudData.map(s => s.updatedAt ? new Date(s.updatedAt).getTime() : 0)) : 0;
+                // ★★★【ここが修正のキモ！】★★★
+                // 日付（文字）を new Date(...).getTime() で「数値」に変換して比較します
                 
-                // クラウドの方が新しければ...
+                // スマホ内の最新日付
+                const localMax = sites.length > 0 ? Math.max(...sites.map(s => {
+                    return s.updatedAt ? new Date(s.updatedAt).getTime() : 0;
+                })) : 0;
+                
+                // クラウド側の最新日付
+                const cloudMax = cloudData.length > 0 ? Math.max(...cloudData.map(s => {
+                    return s.updatedAt ? new Date(s.updatedAt).getTime() : 0;
+                })) : 0;
+                
+                // デバッグ用（もし動かなかったら、この下の行の // を消すと原因がわかります）
+                // alert(`スマホ: ${localMax}\nクラウド: ${cloudMax}`);
+
+                // 数値同士なら、正しく「どっちが大きいか」判断できます
                 if (cloudMax > localMax) {
-                    // ここでポップアップが出るはずです！
                     if (confirm(`🔄 クラウドに新しいデータがあります！\n取り込みますか？`)) {
-                        
-                        // データを更新
                         cloudData.sort((a, b) => (a.id > b.id ? -1 : 1));
                         sites = cloudData; 
                         localStorage.setItem('dx_sites', JSON.stringify(sites));
                         
-                        // ★同期時間も更新
+                        // 同期時間を更新
                         localStorage.setItem('dx_sync_time', Date.now());
 
                         alert("✅ 最新データを反映しました！"); 
@@ -845,7 +855,6 @@
         } catch (e) { 
             console.log("更新チェック失敗:", e); 
         } finally {
-            // アイコンを消す
             if(indicator) {
                 setTimeout(() => {
                     indicator.classList.remove('sync-spinner');
