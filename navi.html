@@ -790,77 +790,83 @@
 
     // ★修正版：自動更新チェック（視覚効果付き）
 
+     
+
     async function checkForCloudUpdates() {
         const targetUrl = localStorage.getItem('dx_gas_url');
+        const authKey = localStorage.getItem('dx_auth_key') || "";
         if(!targetUrl) return;
 
-        // 連打ガード（10秒）
+        // 連打ガード（診断中は邪魔なので一旦コメントアウトしてもいいですが、残しておきます）
         const now = Date.now();
         if (typeof lastCheckTime !== 'undefined' && now - lastCheckTime < 10000) return;
         lastCheckTime = now;
 
+        // アイコン回す
         const indicator = document.getElementById('syncIndicator');
-        if(indicator) {
-            indicator.style.display = 'inline-block'; 
-            indicator.classList.add('sync-spinner');  
-        }
-
-        const authKey = localStorage.getItem('dx_auth_key') || "";
+        if(indicator) { indicator.style.display = 'inline-block'; indicator.classList.add('sync-spinner'); }
 
         try {
-            // 合言葉付きでデータを取得
-            const res = await fetch(targetUrl + "?type=getAll&authKey=" + authKey);
+            // ★【対策1】キャッシュ無視のおまじない (&t=...) を追加
+            // これがないと、ブラウザが「さっきと同じでしょ？」と古いデータを使い回すことがあります
+            const fetchUrl = targetUrl + "?type=getAll&authKey=" + authKey + "&t=" + now;
+            
+            const res = await fetch(fetchUrl);
             const text = await res.text(); 
             
-            // エラーチェック（合言葉違いなど）
+            // エラーチェック
             if (text.includes('"result":"error"')) {
-                console.log("更新チェック除外: エラー");
+                alert("⛔ GASエラー: " + text); // エラーなら内容を表示
                 return;
             }
 
             const cloudData = JSON.parse(text);
             
-            if (Array.isArray(cloudData)) {
-                // ★★★【ここが修正のキモ！】★★★
-                // 日付（文字）を new Date(...).getTime() で「数値」に変換して比較します
+            if (Array.isArray(cloudData) && cloudData.length > 0) {
                 
-                // スマホ内の最新日付
-                const localMax = sites.length > 0 ? Math.max(...sites.map(s => {
-                    return s.updatedAt ? new Date(s.updatedAt).getTime() : 0;
-                })) : 0;
+                // --- 🏥 診断ロジック（ここが重要） ---
                 
-                // クラウド側の最新日付
-                const cloudMax = cloudData.length > 0 ? Math.max(...cloudData.map(s => {
-                    return s.updatedAt ? new Date(s.updatedAt).getTime() : 0;
-                })) : 0;
-                
-                // デバッグ用（もし動かなかったら、この下の行の // を消すと原因がわかります）
-                // alert(`スマホ: ${localMax}\nクラウド: ${cloudMax}`);
+                // 1. クラウドのデータの日付（文字列）を1つ見てみる
+                const sampleDate = cloudData[0].updatedAt; 
 
-                // 数値同士なら、正しく「どっちが大きいか」判断できます
+                // 2. 数値に変換してみる
+                const localMax = sites.length > 0 ? Math.max(...sites.map(s => s.updatedAt ? new Date(s.updatedAt).getTime() : 0)) : 0;
+                
+                const cloudMax = cloudData.length > 0 ? Math.max(...cloudData.map(s => s.updatedAt ? new Date(s.updatedAt).getTime() : 0)) : 0;
+
+                // 3. ★診断結果を強制表示（原因特定用）★
+                // このポップアップの内容を教えてください！
+                alert(
+                    "🏥 診断レポート\n" +
+                    "------------------\n" +
+                    "☁️ クラウドの日付(元): " + sampleDate + "\n" +
+                    "☁️ クラウドの数値: " + cloudMax + "\n" +
+                    "📱 スマホの数値: " + localMax + "\n" +
+                    "------------------\n" +
+                    "判定: " + (cloudMax > localMax ? "更新あり！" : "更新なし...")
+                );
+
+                // --- 診断ここまで ---
+
                 if (cloudMax > localMax) {
                     if (confirm(`🔄 クラウドに新しいデータがあります！\n取り込みますか？`)) {
                         cloudData.sort((a, b) => (a.id > b.id ? -1 : 1));
                         sites = cloudData; 
                         localStorage.setItem('dx_sites', JSON.stringify(sites));
-                        
-                        // 同期時間を更新
                         localStorage.setItem('dx_sync_time', Date.now());
-
                         alert("✅ 最新データを反映しました！"); 
                         location.reload();
                     }
                 }
+            } else {
+                 // データが空の場合
+                 console.log("クラウドのデータが空、または取得形式ミス");
             }
+
         } catch (e) { 
-            console.log("更新チェック失敗:", e); 
+            alert("⚠️ 通信または処理エラー: " + e); // エラー内容を表示
         } finally {
-            if(indicator) {
-                setTimeout(() => {
-                    indicator.classList.remove('sync-spinner');
-                    indicator.style.display = 'none';
-                }, 500);
-            }
+            if(indicator) { setTimeout(() => { indicator.classList.remove('sync-spinner'); indicator.style.display = 'none'; }, 500); }
         }
     }
     async function exportCSV() { showNotification('📤 準備中...'); let c = "\uFEFF案件No,親案件No,現場名,住所,ステータス,開始,終了\n"; sites.forEach(s => { c += `"${s.id}","${s.parentCaseNo||''}","${s.name}","${s.address}","${getStatusText(s.status)}","${s.start||''}","${s.end||''}"\n`; }); const f = new File([c], `現場リスト_${getNowStr()}.csv`, { type: "text/csv" }); if (navigator.share && navigator.canShare({ files: [f] })) { try { await navigator.share({ files: [f] }); } catch (e) { forceDL(f); } } else { forceDL(f); } }
