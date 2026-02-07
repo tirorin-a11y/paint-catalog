@@ -699,8 +699,8 @@
                     type: "sync", 
                     data: sites, 
                     reporter: localStorage.getItem('dx_reporter_name') || "職人",
-                    clientTime: Date.now(),  // 👈★【重要】この行を追加してください！
-                    authKey: authKey
+                    // ★ここを正しいコードで追加！
+                    clientTime: Number(localStorage.getItem('dx_sync_time') || 0),authKey: authKey
                 })
             });
             const resText = await response.text(); const resJson = JSON.parse(resText);   
@@ -719,6 +719,8 @@
             if(Array.isArray(data)) {
                 sites = data; sites.sort((a, b) => (a.id > b.id ? -1 : 1));
                 localStorage.setItem('dx_sites', JSON.stringify(sites));
+                // ★ここに追加してください！
+                localStorage.setItem('dx_sync_time', Date.now());
                 renderList(); closeAllModals(); showNotification(`✅ 復元完了 (${sites.length}件)`);
             } else { alert("データ形式エラー"); }
         } catch(e) { alert("取得エラー: " + e); }
@@ -759,6 +761,8 @@
                         cloudData.sort((a, b) => (a.id > b.id ? -1 : 1));
                         sites = cloudData; 
                         localStorage.setItem('dx_sites', JSON.stringify(sites));
+                        // ★ここに追加してください！
+                        localStorage.setItem('dx_sync_time', Date.now());
                         alert("✅ 最新データを反映しました！"); 
                         location.reload();
                     }
