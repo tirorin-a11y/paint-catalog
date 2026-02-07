@@ -342,7 +342,7 @@
     <h3 style="margin-top:0;">📤 バックアップ</h3>
     <p style="font-size:0.9rem; color:#666; margin-bottom:20px;">保存先を選んでください</p>
     
-    <div id="backupModal" class="modal-box" style="text-align:center; max-width:300px;">
+    
         <button onclick="syncAllDataToCloud()" style="width:100%; padding:15px; background:#2980b9; color:white; border:none; border-radius:8px; font-weight:bold; font-size:1rem; margin-bottom:10px; display:flex; align-items:center; justify-content:center; gap:10px;">
             ☁️ クラウドに保存<br><span style="font-size:0.7rem; font-weight:normal;">(サーバーを上書き)</span>
         </button>
@@ -352,7 +352,7 @@
         </button>
         
         <button class="btn-close" onclick="closeAllModals()" style="margin-top:15px;">キャンセル</button>
-    </div>
+    
 </div>
 
 <script>
@@ -821,8 +821,8 @@
             
             if (Array.isArray(cloudData)) {
                 // 日付の比較
-                const localMax = sites.length > 0 ? Math.max(...sites.map(s => s.updatedAt || 0)) : 0;
-                const cloudMax = cloudData.length > 0 ? Math.max(...cloudData.map(s => s.updatedAt || 0)) : 0;
+                const localMax = sites.length > 0 ? Math.max(...sites.map(s => s.updatedAt ? new Date(s.updatedAt).getTime() : 0)) : 0;
+                const cloudMax = cloudData.length > 0 ? Math.max(...cloudData.map(s => s.updatedAt ? new Date(s.updatedAt).getTime() : 0)) : 0;
                 
                 // クラウドの方が新しければ...
                 if (cloudMax > localMax) {
