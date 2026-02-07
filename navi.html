@@ -676,9 +676,6 @@
         // 合言葉を取得（なければ空文字）
         const authKey = localStorage.getItem('dx_auth_key') || "";
 
-        // ▼テスト用：送信前に画面に表示してみる！
-    alert("これから送る合言葉はコレです！\n\n" + authKey);
-
         showNotification("☁️ クラウド確認中...");
         try {
             // URLの後ろに &authKey=合言葉 をくっつけて送る
@@ -702,8 +699,9 @@
                     type: "sync", 
                     data: sites, 
                     reporter: localStorage.getItem('dx_reporter_name') || "職人",
-                    authKey: authKey // ← これを追加しました！
-                }) 
+                    clientTime: Date.now(),  // 👈★【重要】この行を追加してください！
+                    authKey: authKey
+                })
             });
             const resText = await response.text(); const resJson = JSON.parse(resText);   
             if (resJson.result === "success") { showNotification("✅ 送信完了"); alert("クラウドに保存しました！"); return true; } else { throw new Error("GASエラー"); }
