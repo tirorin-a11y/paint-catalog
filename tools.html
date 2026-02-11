@@ -228,16 +228,20 @@
 <div class="container">
     <div id="sec-record" class="section-header section-record">📝 記録・報告</div>
     <div class="tool-grid rec">
-        <div class="tool-btn" onclick="openCameraModal()">
-            <div class="btn-icon">📸</div>
-            <div class="btn-text"><h3>電子黒板カメラ</h3><p>高画質撮影＆黒板合成</p></div>
-            <span style="font-size:1.5rem; color:#a5d6a7;">＞</span>
+    <a href="camera.html" class="tool-btn" style="text-decoration: none; color: inherit;">
+        <div class="btn-icon">📸</div>
+        <div class="btn-text">
+            <h3>電子黒板カメラ</h3>
+            <p>現場名や工程を入れた写真を撮影</p>
         </div>
-        <div class="tool-btn" onclick="openModal('report')">
-            <div class="btn-icon">🎙️</div>
-            <div class="btn-text"><h3>しゃべる日報</h3><p>声で入力、履歴から送信</p></div>
-            <span style="font-size:1.5rem; color:#a5d6a7;">＞</span>
-        </div>
+        <span style="font-size:1.5rem; color:#a5d6a7;">＞</span>
+    </a>
+
+    <div class="tool-btn" onclick="openModal('report')">
+        <div class="btn-icon">🎙️</div>
+        <div class="btn-text"><h3>しゃべる日報</h3><p>声で入力、履歴から送信</p></div>
+        <span style="font-size:1.5rem; color:#a5d6a7;">＞</span>
+    </div>
     </div>
 
     <div id="sec-support" class="section-header section-support">🧰 現場サポート</div>

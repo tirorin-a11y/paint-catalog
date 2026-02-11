@@ -3,426 +3,584 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>高画質・電子小黒板</title>
+    <title>電子黒板カメラ - 職人ギア</title>
     <style>
-        /* --- デザイン --- */
-        body { margin: 0; padding: 0; background: #f0f2f5; color: #333; font-family: sans-serif; display: flex; flex-direction: column; min-height: 100vh; touch-action: manipulation; }
+        /* tools.html のスタイルをベースに、モード切替用スタイルを追加 */
+        body { font-family: -apple-system, BlinkMacSystemFont, "Helvetica Neue", "Yu Gothic", sans-serif; background-color: #000; margin: 0; padding: 0; color: #333; height: 100vh; overflow: hidden; display: flex; flex-direction: column; }
         
-        .header { background: #2c3e50; color: white; padding: 15px; text-align: center; font-weight: bold; }
-        .container { padding: 15px; flex: 1; display: flex; flex-direction: column; gap: 15px; max-width: 600px; margin: 0 auto; width: 100%; box-sizing: border-box; }
-
-        /* 入力エリア */
-        .input-card { background: white; padding: 20px; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); }
-        label { display: block; font-weight: bold; font-size: 0.9rem; margin-bottom: 5px; color: #555; }
-        select, input { width: 100%; padding: 12px; font-size: 1rem; border: 1px solid #ddd; border-radius: 6px; box-sizing: border-box; margin-bottom: 15px; }
-
-        /* 編集エリア */
-        .edit-area { display: none; flex-direction: column; gap: 10px; }
+        /* ヘッダー */
+        .site-header { background: #2c3e50; color: white; padding: 15px; text-align: center; box-shadow: 0 4px 10px rgba(0,0,0,0.1); position: sticky; top: 0; z-index: 100; flex-shrink: 0; }
+        .site-title { margin: 0; font-size: 1.2rem; font-weight: bold; }
         
-        /* モード選択ラジオボタン */
-        .mode-select {
-            display: flex; justify-content: center; gap: 10px;
-            background: rgba(0,0,0,0.05); padding: 10px; border-radius: 8px; margin-bottom: 5px;
-        }
-        .mode-label {
-            font-weight: bold; cursor: pointer; display: flex; align-items: center; gap: 5px; font-size: 0.9rem;
-        }
-        .mode-label input { width: auto; margin: 0; }
-
-        .photo-frame { 
-            position: relative; width: 100%; overflow: hidden; 
-            border-radius: 8px; box-shadow: 0 4px 10px rgba(0,0,0,0.2); 
-            background: #000; touch-action: none; 
-        }
-        #previewImg { width: 100%; display: block; }
+        /* メインエリア */
+        #cameraContainer { flex: 1; display: flex; flex-direction: column; background: #fff; overflow: hidden; position: relative; }
         
-        /* ドラッグ要素（黒板または日付） */
-        #draggableBoard { 
-            position: absolute; top: 10px; left: 10px; 
-            /* widthはJSで制御しますが、初期値として */
-            width: 35%; 
-            cursor: grab; 
-            /* 黒板モード用の影（日付モードではJSで消すことも可能だが残しても良い） */
-            filter: drop-shadow(0 4px 6px rgba(0,0,0,0.5)); 
-        }
-
-        /* ボタン類 */
-        .camera-btn-label {
-            display: block; width: 100%; padding: 15px; background: #00C853; color: white; 
-            font-weight: bold; font-size: 1.2rem; text-align: center; border-radius: 8px; 
-            cursor: pointer; box-shadow: 0 4px 6px rgba(0,200,83,0.3); margin-top: 10px;
-        }
-        .camera-btn-label:active { transform: translateY(2px); }
-        #cameraInput { display: none; }
-
-        #saveBtn {
-            width: 100%; padding: 15px; background: #2980b9; color: white; 
-            font-weight: bold; font-size: 1.2rem; border: none; border-radius: 8px; 
-            cursor: pointer; margin-top: 10px;
-        }
-
-        .back-link { text-align: center; margin-top: 20px; }
-        .back-link a { color: #007bff; text-decoration: none; }
+        /* 設定エリア */
+        #cameraSetup { padding: 15px; background: #fff; color: #333; overflow-y: auto; flex: 1; display: flex; flex-direction: column; }
         
-        #loading { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(255,255,255,0.8); z-index: 999; text-align: center; padding-top: 50vh; font-weight: bold; font-size: 1.2rem; }
-        .retake-btn { background: #95a5a6; color: white; border: none; padding: 10px; border-radius: 6px; width: 100%; font-weight: bold; margin-top: 5px; cursor: pointer; }
+        /* ★モード切替スイッチ */
+        .mode-switch-container { display: flex; background: #f0f0f0; border-radius: 8px; padding: 4px; margin-bottom: 15px; flex-shrink: 0; }
+        .mode-btn { flex: 1; border: none; background: transparent; padding: 8px; font-weight: bold; color: #7f8c8d; cursor: pointer; border-radius: 6px; transition: 0.2s; font-size: 0.9rem; }
+        .mode-btn.active { background: #fff; color: #2c3e50; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
+        .mode-btn.active-date { color: #e67e22; } /* 日付モード時はオレンジ文字 */
+
+        /* プレビューエリア */
+        .preview-canvas-wrapper { text-align: center; margin-bottom: 10px; background: #333; padding: 10px; border-radius: 8px; flex-shrink: 0; min-height: 200px; display: flex; align-items: center; justify-content: center; }
+        #boardCanvas { max-width: 100%; height: auto; box-shadow: 0 4px 8px rgba(0,0,0,0.3); }
+        
+        /* 黒板入力エリア（日付モードの時は隠す用） */
+        #boardInputGroup { display: block; transition: opacity 0.3s; }
+        #boardInputGroup.hidden { display: none; }
+
+        label { margin-top: 10px; display: block; font-weight: bold; font-size: 0.9rem; color: #2c3e50; }
+        input[type="text"] { width: 100%; padding: 10px; margin-top: 5px; border: 1px solid #ccc; border-radius: 6px; font-size: 1rem; box-sizing: border-box; background: #f9f9f9; }
+        
+        /* 工程ボタン */
+        .process-btns { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 10px; margin-top: 5px; }
+        .proc-btn { flex: 1; min-width: 70px; padding: 5px; font-size: 0.9rem; line-height: 1.2; background: #f0f0f0; border: 1px solid #ccc; border-radius: 6px; cursor: pointer; white-space: normal; word-break: break-all; color: #555; font-weight: bold; position: relative; overflow: hidden; display: flex; align-items: center; justify-content: center; text-align: center; height: 45px; }
+        .proc-btn.active { background: #2c3e50; color: white; border-color: #2c3e50; }
+        
+        /* 任意ボタン */
+        .custom-btn-area { border-top: 1px dashed #ddd; padding-top: 10px; margin-top: 10px; }
+        .input-grid-cam { display: grid; grid-template-columns: repeat(4, 1fr); gap: 5px; margin-top: 5px; }
+        .cam-chip { background: #f0f0f0; border: 1px solid #ccc; border-radius: 6px; font-size: 0.8rem; height: 40px; display: flex; align-items: center; justify-content: center; cursor: pointer; position: relative; overflow: hidden; font-weight: bold; color: #555; user-select: none; padding: 0 2px; text-align: center; }
+        .cam-chip:active { transform: scale(0.96); }
+        .cam-chip.active { background: #2c3e50; color: white; border-color: #2c3e50; }
+        .cam-chip.mode-loc { background: #e8f5e9; color: #2e7d32; border-color: #a5d6a7; }
+        .cam-chip.btn-switch { background: #34495e; color: white; border: none; font-size: 0.75rem; }
+        
+        .chip-bar { position: absolute; bottom: 0; left: 0; height: 4px; background: #f39c12; width: 0%; pointer-events: none; }
+        .pressing .chip-bar { width: 100%; transition: width 0.8s linear; }
+        
+        .input-wrapper { display: flex; align-items: center; margin-top: 5px; gap: 5px; }
+        .btn-clear-left { width: 40px; height: 40px; border-radius: 6px; border: 1px solid #ccc; background: #ffebee; color: #c62828; font-weight: bold; font-size: 1.2rem; cursor: pointer; flex-shrink: 0; }
+        .input-wrapper input { flex: 1; margin-top: 0; }
+
+        /* フッター */
+        .footer-actions { padding: 15px; background: #fff; border-top: 1px solid #eee; display: flex; gap: 10px; flex-shrink: 0; }
+        .btn-close { background-color: #95a5a6; color: white; padding: 12px; border: none; border-radius: 8px; font-weight: bold; cursor: pointer; flex: 1; }
+        .save-btn { background-color: #00C853; color: white; padding: 12px; border: none; border-radius: 8px; font-weight: bold; cursor: pointer; flex: 2; font-size: 1.1rem; }
+
+        /* 撮影後プレビュー */
+        #photoPreviewArea { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #000; z-index: 200; flex-direction: column; justify-content: center; align-items: center; }
+        #previewImage { max-width: 100%; max-height: 100%; object-fit: contain; flex: 1; }
+        #overlayBoard { position: absolute; top: 20px; left: 20px; width: 200px; cursor: grab; z-index: 210; touch-action: none; }
+        
+        .snap-controls { position: absolute; bottom: 90px; left: 50%; transform: translateX(-50%); display: flex; gap: 15px; z-index: 220; background: rgba(0,0,0,0.6); padding: 8px 15px; border-radius: 30px; }
+        .snap-btn { background: rgba(255,255,255,0.2); color: white; border: 1px solid rgba(255,255,255,0.5); width: 44px; height: 44px; border-radius: 50%; font-size: 1.5rem; cursor: pointer; display: flex; justify-content: center; align-items: center; }
+        
+        .camera-controls-area { position: absolute; bottom: 0; width: 100%; padding: 20px; background: rgba(0,0,0,0.8); display: flex; justify-content: space-between; align-items: center; box-sizing: border-box; z-index: 220; }
+        .btn-cam-action { padding: 12px 25px; border-radius: 30px; font-weight: bold; cursor: pointer; border: none; font-size: 1rem; }
+        .btn-retake { background: #e74c3c; color: white; }
+        .btn-save-photo { background: #00C853; color: white; padding: 12px 40px; font-size: 1.1rem; }
+
+        /* スライダーポップアップ */
+        .slider-overlay { position: fixed; bottom: 100px; left: 50%; transform: translateX(-50%); width: 85%; max-width: 400px; background: rgba(44, 62, 80, 0.95); padding: 20px; border-radius: 15px; box-shadow: 0 10px 25px rgba(0,0,0,0.5); z-index: 300; display: none; text-align: center; color: white; backdrop-filter: blur(5px); }
+        .slider-overlay.show { display: block; animation: popUp 0.2s ease-out; }
+        @keyframes popUp { from { transform: translate(-50%, 20px); opacity: 0; } to { transform: translate(-50%, 0); opacity: 1; } }
+        .slider-label { font-size: 2.5rem; font-weight: bold; margin-bottom: 10px; color: #f39c12; }
+        .slider-sub { font-size: 0.9rem; color: #bdc3c7; margin-bottom: 15px; }
+        
+        input[type=range] { -webkit-appearance: none; appearance: none; width: 100%; height: 10px; border-radius: 5px; background: #555; outline: none; }
+        input[type=range]::-webkit-slider-thumb { -webkit-appearance: none; appearance: none; width: 30px; height: 30px; border-radius: 50%; background: #f39c12; cursor: pointer; border: 3px solid white; box-shadow: 0 2px 5px rgba(0,0,0,0.3); }
+
+        .cam-chip.target-floor.selected { background-color: #2196F3; color: white; border-color: #1976D2; }
+        .cam-chip.target-dir.selected { background-color: #FFEB3B; color: #333; border-color: #FBC02D; }
+        .cam-chip.op-btn { background-color: #eceff1; color: #333; font-size: 1.4rem; font-weight: 900; }
+        .cam-chip.op-btn:active { background-color: #cfd8dc; }
     </style>
 </head>
 <body>
 
-    <div class="header">📸 高画質・電子小黒板</div>
+<div class="site-header">
+    <h2 class="site-title">📸 電子黒板カメラ</h2>
+</div>
 
-    <div class="container">
-        <div id="step1" class="input-card">
-            <label>現場名 (DX手帳連携)</label>
-            <select id="siteSelect">
-                <option value="">(選択してください)</option>
-            </select>
-
-            <label>工種 / 作業内容</label>
-            <select id="processSelect">
-                <option value="施工前">施工前</option>
-                <option value="ケレン・清掃">ケレン・清掃</option>
-                <option value="高圧洗浄">高圧洗浄</option>
-                <option value="養生">養生</option>
-                <option value="下塗り">下塗り</option>
-                <option value="中塗り">中塗り</option>
-                <option value="上塗り">上塗り</option>
-                <option value="完了">完了</option>
-                <option value="自主検査">自主検査</option>
-            </select>
-
-            <label>施工箇所 (任意)</label>
-            <input type="text" id="locationInput" placeholder="例：外壁 東面">
-
-            <label for="cameraInput" class="camera-btn-label">📸 標準カメラで撮影</label>
-            <input type="file" id="cameraInput" accept="image/*" capture="environment" onchange="handlePhoto(this)">
+<div id="cameraContainer">
+    <div id="cameraSetup">
+        
+        <div class="mode-switch-container">
+            <button class="mode-btn active" onclick="switchMode('board')" id="btn-mode-board">📋 黒板</button>
+            <button class="mode-btn" onclick="switchMode('date')" id="btn-mode-date">📅 日付</button>
+            <button class="mode-btn" onclick="switchMode('datetime')" id="btn-mode-datetime">🕒 日時</button>
         </div>
 
-        <div id="step2" class="edit-area">
-            <div class="mode-select">
-                <label class="mode-label">
-                    <input type="radio" name="cameraMode" value="board" checked onchange="changeMode()"> 📋 黒板
-                </label>
-                <label class="mode-label" style="color:#e67e22;">
-                    <input type="radio" name="cameraMode" value="dateOnly" onchange="changeMode()"> 📅 日付
-                </label>
-                <label class="mode-label" style="color:#e67e22;">
-                    <input type="radio" name="cameraMode" value="dateTime" onchange="changeMode()"> 🕒 日時
-                </label>
-            </div>
+        <div class="preview-canvas-wrapper">
+            <canvas id="boardCanvas" width="400" height="300"></canvas>
+        </div>
+        
+        <div id="boardInputGroup">
+            <label>会社名</label>
+            <input type="text" id="companyName" placeholder="会社名を入力" oninput="drawBoard(); saveCameraSettings()">
 
-            <p style="text-align:center; font-weight:bold; color:#666; margin:0; font-size:0.9rem;">👇 項目をドラッグして位置調整</p>
+            <label>工程 <span style="font-size:0.8rem; font-weight:normal; color:#888;">(長押しで編集)</span></label>
+            <div class="process-btns"></div>
             
-            <div class="photo-frame" id="photoFrame">
-                <img id="previewImg" src="" alt="撮影写真">
-                <canvas id="draggableBoard"></canvas>
+            <div class="custom-btn-area">
+                <label style="margin-bottom:5px; display:block;">任意ボタン <span style="font-size:0.8rem; font-weight:normal; color:#888;">(長押しで編集)</span></label>
+                <div id="customBtnGroup" class="input-grid-cam"></div>
             </div>
-
-            <button id="saveBtn" onclick="finalizeImage()">💾 この位置で保存！</button>
-            <button class="retake-btn" onclick="location.reload()">🔄 撮り直す</button>
+            
+            <label>施工箇所</label>
+            <div class="input-wrapper">
+                <button class="btn-clear-left" onclick="clearLocation()">×</button>
+                <input type="text" id="photoDetail" placeholder="例：北面、軒天など" oninput="drawBoard()">
+            </div>
         </div>
 
-        <div class="back-link"><a href="navi.html">↩️ DX手帳に戻る</a></div>
     </div>
 
-    <div id="loading">処理中...🎨</div>
-    <canvas id="finalCanvas" style="display:none;"></canvas>
+    <div class="footer-actions">
+        <button class="btn-close" onclick="location.href='tools.html'">閉じる</button>
+        <input type="file" id="nativeCameraInput" accept="image/*" capture="environment" style="display:none;" onchange="handlePhotoSelect(this)">
+        <button class="save-btn" onclick="document.getElementById('nativeCameraInput').click()">📸 カメラ起動</button>
+    </div>
+</div>
 
-    <script>
+<div id="photoPreviewArea">
+    <img id="previewImage" src="" alt="撮影写真">
+    <img id="overlayBoard" src="" alt="黒板">
+    
+    <div class="snap-controls">
+        <button class="snap-btn" onclick="snapBoard('tl')">↖️</button>
+        <button class="snap-btn" onclick="snapBoard('tr')">↗️</button>
+        <button class="snap-btn" onclick="snapBoard('bl')">↙️</button>
+        <button class="snap-btn" onclick="snapBoard('br')">↘️</button>
+    </div>
+    
+    <div class="camera-controls-area">
+        <button class="btn-cam-action btn-retake" onclick="retakePhoto()">やり直す</button>
+        <button class="btn-cam-action btn-save-photo" onclick="saveCompositePhoto()">💾 保存する</button>
+    </div>
+</div>
+
+<script>
+    // --- 変数定義 ---
+    let currentSite = null;
+    let currentMode = 'board'; // board | date | datetime
+
+    try {
+        const params = new URLSearchParams(window.location.search);
+        const siteId = params.get('id');
         const sites = JSON.parse(localStorage.getItem('dx_sites')) || [];
+        if (siteId) { currentSite = sites.find(s => s.id === siteId); }
+    } catch(e) { console.error(e); }
+
+    let currentProcess = '施工前';
+    const DEFAULT_PROCESSES = ["施工前", "下塗り", "中塗り", "上塗り", "完了"];
+    const LONG_PRESS_MS = 1500;
+
+    window.onload = () => {
+        const savedComp = localStorage.getItem('dx_company_name');
+        document.getElementById('companyName').value = savedComp ? savedComp : "ペイントハウス";
+        renderProcessButtons();
+        renderCameraButtons();
+        drawBoard();
+    };
+
+    function saveCameraSettings() {
+        const val = document.getElementById('companyName').value;
+        localStorage.setItem('dx_company_name', val);
+    }
+
+    // ★モード切替機能
+    function switchMode(mode) {
+        currentMode = mode;
         
-        const step1 = document.getElementById('step1');
-        const step2 = document.getElementById('step2');
-        const previewImg = document.getElementById('previewImg');
-        const boardCanvas = document.getElementById('draggableBoard');
-        const boardCtx = boardCanvas.getContext('2d');
-        const finalCanvas = document.getElementById('finalCanvas');
-        const finalCtx = finalCanvas.getContext('2d');
+        // ボタンの見た目更新
+        document.querySelectorAll('.mode-btn').forEach(b => {
+            b.classList.remove('active', 'active-date');
+        });
+        const activeBtn = document.getElementById(`btn-mode-${mode}`);
+        activeBtn.classList.add('active');
+        if(mode !== 'board') activeBtn.classList.add('active-date');
 
-        let isDragging = false;
-        let startX, startY, initLeft, initTop;
-        let originalImage = new Image();
-
-        window.onload = () => {
-            const select = document.getElementById('siteSelect');
-            const activeSites = sites.filter(s => s.status === 'active');
-            const otherSites = sites.filter(s => s.status !== 'active');
-            [...activeSites, ...otherSites].forEach(site => {
-                const opt = document.createElement('option');
-                opt.value = site.name;
-                opt.textContent = site.status === 'active' ? `【施工中】${site.name}` : site.name;
-                select.appendChild(opt);
-            });
-        };
-
-        function handlePhoto(input) {
-            if (input.files && input.files[0]) {
-                document.getElementById('loading').style.display = 'block';
-                const file = input.files[0];
-                const reader = new FileReader();
-                reader.onload = function(e) {
-                    originalImage.onload = function() {
-                        setupEditScreen();
-                    };
-                    originalImage.src = e.target.result;
-                };
-                reader.readAsDataURL(file);
-            }
+        // 入力エリアの表示切替
+        const inputGroup = document.getElementById('boardInputGroup');
+        if (mode === 'board') {
+            inputGroup.classList.remove('hidden');
+        } else {
+            inputGroup.classList.add('hidden');
         }
 
-        function setupEditScreen() {
-            previewImg.src = originalImage.src;
-            step1.style.display = 'none';
-            step2.style.display = 'flex';
-            document.getElementById('loading').style.display = 'none';
+        // キャンバス再描画
+        drawBoard();
+    }
 
-            // 初期モードで描画
-            changeMode();
-        }
+    // --- 描画ロジック ---
+    const canvas = document.getElementById('boardCanvas');
+    const ctx = canvas.getContext('2d');
 
-        // ★モード変更時の処理
-        function changeMode() {
-            const mode = document.querySelector('input[name="cameraMode"]:checked').value;
-            const frameW = document.getElementById('photoFrame').clientWidth;
-            const frameH = document.getElementById('photoFrame').clientHeight;
+    function drawBoard() {
+        if(!canvas) return;
+        
+        // 日付情報の作成
+        const d = new Date();
+        const dateStr = `${d.getFullYear()}/${d.getMonth()+1}/${d.getDate()}`;
+        const timeStr = `${('0'+d.getHours()).slice(-2)}:${('0'+d.getMinutes()).slice(-2)}`;
+        const fullDateTime = `${dateStr} ${timeStr}`;
 
-            // キャンバスサイズをリセット
-            boardCanvas.width = 400;
-            boardCanvas.height = 300;
+        // クリア
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-            // 描画実行
-            drawBoardContent(boardCtx, boardCanvas.width, boardCanvas.height);
+        // ★モード分岐
+        if (currentMode === 'board') {
+            // === 黒板モード ===
+            const siteName = currentSite ? currentSite.name : "（現場名未定）";
+            const company = document.getElementById('companyName').value || "";
+            const location = document.getElementById('photoDetail').value || "";
+            const process = currentProcess || "（選択なし）";
+            const fontFamily = '"Yu Gothic","Hiragino Kaku Gothic ProN", "Hiragino Sans", sans-serif';
 
-            // 位置の自動調整
-            if (mode === 'board') {
-                // 黒板ならやや右下に
-                boardCanvas.style.width = '35%'; // CSSで見た目の大きさを指定
-                boardCanvas.style.left = (frameW * 0.55) + 'px';
-                boardCanvas.style.top = (frameH * 0.6) + 'px';
-            } else {
-                // 日付/日時なら右下に配置
-                boardCanvas.style.width = '45%'; // 日付は見やすいように少し幅広に
-                boardCanvas.style.left = (frameW * 0.50) + 'px'; // 右寄せ
-                boardCanvas.style.top = (frameH * 0.85) + 'px'; // 下寄せ
-            }
-        }
-
-        // ★★★ 文字縮小の魔法の関数 ★★★
-        function drawTextFit(ctx, text, x, y, maxWidth, initialFontSize) {
-            ctx.textAlign = 'left';
-            ctx.textBaseline = 'middle';
-            let fontSize = initialFontSize;
-            ctx.font = `bold ${fontSize}px sans-serif`;
-            while (ctx.measureText(text).width > maxWidth && fontSize > 10) {
-                fontSize--;
-                ctx.font = `bold ${fontSize}px sans-serif`;
-            }
-            ctx.fillText(text, x, y);
-        }
-
-        // ★★★ 2行対応の賢い描画関数 ★★★
-        function drawSmartText(ctx, text, centerX, centerY, maxWidth, maxFontSize) {
-            ctx.textAlign = 'center';
-            ctx.textBaseline = 'middle';
-            ctx.fillStyle = 'white';
-            ctx.font = `bold ${maxFontSize}px sans-serif`;
-            const width = ctx.measureText(text).width;
-            if (width <= maxWidth) {
-                ctx.fillText(text, centerX, centerY);
-                return;
-            }
-            let fontSize = maxFontSize;
-            while (ctx.measureText(text).width > maxWidth && fontSize > maxFontSize * 0.7) {
-                fontSize--;
-                ctx.font = `bold ${fontSize}px sans-serif`;
-            }
-            if (ctx.measureText(text).width > maxWidth) {
-                const halfIndex = Math.ceil(text.length / 2);
-                const line1 = text.substring(0, halfIndex);
-                const line2 = text.substring(halfIndex);
-                const multiLineSize = maxFontSize * 0.8;
-                ctx.font = `bold ${multiLineSize}px sans-serif`;
-                const lineHeight = multiLineSize * 1.2;
-                ctx.fillText(line1, centerX, centerY - lineHeight * 0.35);
-                ctx.fillText(line2, centerX, centerY + lineHeight * 0.55);
-            } else {
-                ctx.fillText(text, centerX, centerY);
-            }
-        }
-
-        // --- 描画ロジック（黒板 vs 日付） ---
-        function drawBoardContent(ctx, w, h) {
-            // 現在のモードを取得
-            const mode = document.querySelector('input[name="cameraMode"]:checked').value;
+            // 背景
+            ctx.fillStyle = '#004d40'; ctx.fillRect(0, 0, canvas.width, canvas.height); 
+            ctx.strokeStyle = 'white'; ctx.lineWidth = 5; ctx.strokeRect(5, 5, canvas.width - 10, canvas.height - 10);
             
-            // 共通：日付文字列作成
-            const d = new Date();
-            const dateStr = `${d.getFullYear()}/${('0'+(d.getMonth()+1)).slice(-2)}/${('0'+d.getDate()).slice(-2)}`;
-            const timeStr = `${('0'+d.getHours()).slice(-2)}:${('0'+d.getMinutes()).slice(-2)}`;
+            // 罫線
+            ctx.lineWidth = 2; ctx.beginPath(); 
+            ctx.moveTo(10, 80); ctx.lineTo(390, 80); 
+            ctx.moveTo(10, 150); ctx.lineTo(390, 150); 
+            ctx.stroke();
 
-            // 画面を一旦クリア
-            ctx.clearRect(0, 0, w, h);
-
-            if (mode === 'board') {
-                // ==========================
-                // 📋 黒板モードの描画
-                // ==========================
-                const siteName = document.getElementById('siteSelect').value || "　";
-                const process = document.getElementById('processSelect').value;
-                const location = document.getElementById('locationInput').value || "";
-
-                // 背景と枠
-                ctx.fillStyle = '#004d40';
-                ctx.fillRect(0, 0, w, h);
-                
-                const border = w * 0.015;
-                ctx.strokeStyle = 'white';
-                ctx.lineWidth = border;
-                ctx.strokeRect(w*0.02, w*0.02, w*0.96, h*0.96);
-
-                // 罫線
-                ctx.lineWidth = w * 0.005;
-                ctx.beginPath();
-                const line1 = h * 0.28;
-                const line2 = h * 0.55;
-                const lineV = w * 0.72;
-                
-                ctx.moveTo(w*0.04, line1); ctx.lineTo(w*0.96, line1);
-                ctx.moveTo(w*0.04, line2); ctx.lineTo(w*0.96, line2);
-                ctx.moveTo(lineV, line2); ctx.lineTo(lineV, h*0.96);
-                ctx.stroke();
-
-                // 文字
-                const sizeS = w * 0.055;
-                const sizeL = w * 0.09;
-                
-                ctx.fillStyle = 'white';
-                ctx.textAlign = 'left';
-                ctx.textBaseline = 'middle';
-                ctx.font = `bold ${sizeS}px sans-serif`;
-                
-                ctx.fillText("工事名", w*0.05, h*0.12);
-                ctx.fillText("工種", w*0.05, h*0.38);
-                ctx.fillText("施工箇所", w*0.05, h*0.65);
-
-                const contentCenterX = w * 0.52;
-                const maxContentW = w * 0.85;
-                drawSmartText(ctx, siteName, contentCenterX, h*0.20, maxContentW, sizeL);
-                drawSmartText(ctx, process, w*0.58, h*0.46, w*0.75, sizeL);
-                drawSmartText(ctx, location, w*0.38, h*0.75, w*0.6, sizeL * 0.8);
-
-                // 日付（右下）
-                const dateCenterX = lineV + (w - lineV) / 2;
-                drawSmartText(ctx, dateStr, dateCenterX, h*0.75, (w - lineV)*0.9, sizeS);
-
-            } else {
-                // ==========================
-                // 📅 日付・日時モードの描画
-                // ==========================
-                let displayText = dateStr;
-                if (mode === 'dateTime') {
-                    displayText += " " + timeStr;
+            // 文字
+            ctx.fillStyle = 'white'; ctx.textAlign = 'left'; ctx.textBaseline = 'middle'; 
+            const maxWidth = 340; 
+            const getLines = (ctx, text, max) => {
+                let words = text.split(''); let lines = []; let currentLine = words[0] || "";
+                for (let i = 1; i < words.length; i++) {
+                    if (ctx.measureText(currentLine + words[i]).width < max) { currentLine += words[i]; } 
+                    else { lines.push(currentLine); currentLine = words[i]; }
                 }
+                lines.push(currentLine); return lines;
+            };
 
-                // 文字設定（オレンジ色・太字・右下）
-                const fontSize = w * 0.12; // 大きめに設定（400px幅に対して）
-                ctx.font = `bold ${fontSize}px sans-serif`;
-                ctx.textBaseline = 'bottom';
-                ctx.textAlign = 'right';
+            ctx.font = `bold 20px ${fontFamily}`; ctx.fillText("工事名", 20, 23);
+            let siteFontSize = 24; ctx.font = `bold ${siteFontSize}px ${fontFamily}`;
+            let siteLines = getLines(ctx, siteName, maxWidth);
+            if (siteLines.length > 1) { siteFontSize = 16; ctx.font = `bold ${siteFontSize}px ${fontFamily}`; siteLines = getLines(ctx, siteName, maxWidth); if(siteLines.length > 2) { siteLines = siteLines.slice(0, 2); siteLines[1] = siteLines[1].slice(0, -1) + "…"; } }
+            if (siteLines.length === 1) ctx.fillText(siteLines[0], 20, 55); else { ctx.fillText(siteLines[0], 20, 48); ctx.fillText(siteLines[1], 20, 68); }
 
-                // 影（黒い縁取り）
-                ctx.strokeStyle = 'black';
-                ctx.lineWidth = fontSize * 0.15; // 太めの縁取り
-                ctx.lineJoin = 'round';
-                ctx.miterLimit = 2;
+            ctx.font = `bold 20px ${fontFamily}`; ctx.fillText("工種 / 施工内容", 20, 95);
+            let procFontSize = 26; ctx.font = `bold ${procFontSize}px ${fontFamily}`;
+            let procLines = getLines(ctx, process, maxWidth);
+            if (procLines.length > 1) { procFontSize = 18; ctx.font = `bold ${procFontSize}px ${fontFamily}`; procLines = getLines(ctx, process, maxWidth); if(procLines.length > 2) { procLines = procLines.slice(0, 2); procLines[1] = procLines[1].slice(0, -1) + "…"; } }
+            if (procLines.length === 1) ctx.fillText(procLines[0], 40, 125); else { ctx.fillText(procLines[0], 40, 118); ctx.fillText(procLines[1], 40, 138); }
 
-                // 配置（キャンバスの右下いっぱい）
-                const x = w - 10;
-                const y = h - 10;
+            ctx.font = `bold 20px ${fontFamily}`; ctx.fillText("施工箇所", 20, 168);
+            let locFontSize = 24; ctx.font = `bold ${locFontSize}px ${fontFamily}`;
+            let locLines = getLines(ctx, location, maxWidth);
+            if (locLines.length > 2) { locFontSize = 20; ctx.font = `bold ${locFontSize}px ${fontFamily}`; locLines = getLines(ctx, location, maxWidth); }
+            if (locLines.length > 3) { locFontSize = 17; ctx.font = `bold ${locFontSize}px ${fontFamily}`; locLines = getLines(ctx, location, maxWidth); if(locLines.length > 3) { locLines = locLines.slice(0, 3); locLines[2] = locLines[2].slice(0, -1) + "…"; } }
+            const locX = 40;
+            if (locLines.length === 1) ctx.fillText(locLines[0], locX, 210);
+            else if (locLines.length === 2) { ctx.fillText(locLines[0], locX, 200); ctx.fillText(locLines[1], locX, 228); }
+            else { ctx.fillText(locLines[0], locX, 195); ctx.fillText(locLines[1], locX, 215); ctx.fillText(locLines[2], locX, 235); }
 
-                // 描画（縁取り → 本体）
-                ctx.strokeText(displayText, x, y);
+            ctx.textAlign = 'right'; ctx.font = `bold 24px ${fontFamily}`; ctx.fillText(dateStr, 380, 270); 
+            ctx.textAlign = 'left'; ctx.font = `16px ${fontFamily}`; ctx.fillStyle = '#ccc'; ctx.fillText(company, 20, 270);
+
+        } else {
+            // === 日付・日時モード ===
+            const displayText = (currentMode === 'datetime') ? fullDateTime : dateStr;
+            
+            // 背景は透明（描かない）
+            
+            // 文字設定
+            const fontSize = 50; // 大きく
+            ctx.font = `bold ${fontSize}px sans-serif`;
+            ctx.textAlign = 'right';
+            ctx.textBaseline = 'bottom';
+            
+            // 縁取り（黒）
+            ctx.strokeStyle = 'black';
+            ctx.lineWidth = 6;
+            ctx.lineJoin = 'round';
+            ctx.strokeText(displayText, canvas.width - 10, canvas.height - 10);
+            
+            // 本体（オレンジ）
+            ctx.fillStyle = '#ff9f43';
+            ctx.fillText(displayText, canvas.width - 10, canvas.height - 10);
+        }
+    }
+
+    // --- 撮影・合成処理 ---
+    let photoFile = null;
+    function handlePhotoSelect(input) {
+        if (input.files && input.files[0]) {
+            photoFile = input.files[0];
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                const previewImg = document.getElementById('previewImage');
+                previewImg.src = e.target.result;
+                drawBoard(); // 最新化
+                const boardImg = document.getElementById('overlayBoard');
+                boardImg.src = canvas.toDataURL('image/png');
                 
-                ctx.fillStyle = '#ff9f43'; // オレンジ
-                ctx.fillText(displayText, x, y);
+                document.getElementById('photoPreviewArea').style.display = 'flex';
+                // 初期位置：黒板は左上、日付は右下にする？（とりあえず左上デフォルトでスナップ可能）
+                boardImg.style.top = '20px'; boardImg.style.left = '20px'; boardImg.style.bottom = ''; boardImg.style.right = '';
+                
+                // 日付モードなら自動で右下に配置
+                if (currentMode !== 'board') {
+                    snapBoard('br');
+                }
+            };
+            reader.readAsDataURL(photoFile);
+        }
+        input.value = '';
+    }
+    
+    function retakePhoto() {
+        document.getElementById('photoPreviewArea').style.display = 'none';
+        photoFile = null;
+    }
+
+    function saveCompositePhoto() {
+        if(!photoFile) return;
+        const pImg = document.getElementById('previewImage');
+        const bImg = document.getElementById('overlayBoard');
+        const c = document.createElement('canvas');
+        c.width = pImg.naturalWidth; c.height = pImg.naturalHeight;
+        const cx = c.getContext('2d');
+        
+        cx.drawImage(pImg, 0, 0);
+        const pRect = pImg.getBoundingClientRect();
+        const bRect = bImg.getBoundingClientRect();
+        const s = pImg.naturalWidth / pRect.width;
+        
+        // ★透明度対応（日付モードの透過PNGもこれでOK）
+        cx.drawImage(bImg, (bRect.left - pRect.left) * s, (bRect.top - pRect.top) * s, bRect.width * s, bRect.height * s);
+        
+        const link = document.createElement('a');
+        link.href = c.toDataURL('image/jpeg', 0.9);
+        const suffix = (currentMode === 'board') ? currentProcess : '日付';
+        link.download = `${currentSite?currentSite.name:'現場'}_${suffix}_${Date.now()}.jpg`;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        
+        retakePhoto();
+    }
+
+    // --- 黒板移動・スナップ・ボタン関連ロジック（以下 tools.htmlと同じ） ---
+    const BOARD_MARGIN = 30;
+    function snapBoard(pos) {
+        const board = document.getElementById('overlayBoard');
+        const pImg = document.getElementById('previewImage');
+        const container = document.getElementById('photoPreviewArea');
+        const pRect = pImg.getBoundingClientRect();
+        const cRect = container.getBoundingClientRect();
+        const offsetTop = pRect.top - cRect.top;
+        const offsetLeft = pRect.left - cRect.left;
+        const pWidth = pRect.width; const pHeight = pRect.height;
+        const bWidth = board.offsetWidth; const bHeight = board.offsetHeight;
+
+        board.style.top = ''; board.style.bottom = ''; board.style.left = ''; board.style.right = '';
+        if (pos === 'tl') { board.style.top = (offsetTop + BOARD_MARGIN)+'px'; board.style.left = (offsetLeft + BOARD_MARGIN)+'px'; } 
+        else if (pos === 'tr') { board.style.top = (offsetTop + BOARD_MARGIN)+'px'; board.style.left = (offsetLeft + pWidth - bWidth - BOARD_MARGIN)+'px'; } 
+        else if (pos === 'bl') { board.style.top = (offsetTop + pHeight - bHeight - BOARD_MARGIN)+'px'; board.style.left = (offsetLeft + BOARD_MARGIN)+'px'; } 
+        else if (pos === 'br') { board.style.top = (offsetTop + pHeight - bHeight - BOARD_MARGIN)+'px'; board.style.left = (offsetLeft + pWidth - bWidth - BOARD_MARGIN)+'px'; }
+    }
+
+    // ドラッグ処理
+    const overlayBoard = document.getElementById('overlayBoard'); 
+    let isDragging = false, dragStartX, dragStartY, initialLeft, initialTop;
+    const SNAP_SIZE = 10;
+    
+    const handleDragStart = (e) => {
+        isDragging = true;
+        const s = window.getComputedStyle(overlayBoard);
+        initialLeft = parseInt(s.left) || 0; initialTop = parseInt(s.top) || 0;
+        if(e.touches) { dragStartX = e.touches[0].clientX; dragStartY = e.touches[0].clientY; } 
+        else { dragStartX = e.clientX; dragStartY = e.clientY; }
+        overlayBoard.style.bottom = ''; overlayBoard.style.right = ''; overlayBoard.style.left = initialLeft + 'px'; overlayBoard.style.top = initialTop + 'px';
+        overlayBoard.style.transition = 'none';
+        if(e.cancelable && e.type === 'touchstart') e.preventDefault();
+    };
+    const handleDragMove = (e) => {
+        if (!isDragging) return;
+        let clientX, clientY;
+        if(e.touches) { clientX = e.touches[0].clientX; clientY = e.touches[0].clientY; } 
+        else { clientX = e.clientX; clientY = e.clientY; }
+        const snappedDx = Math.round((clientX - dragStartX) / SNAP_SIZE) * SNAP_SIZE;
+        const snappedDy = Math.round((clientY - dragStartY) / SNAP_SIZE) * SNAP_SIZE;
+        overlayBoard.style.left = `${initialLeft + snappedDx}px`;
+        overlayBoard.style.top = `${initialTop + snappedDy}px`;
+        if(e.cancelable) e.preventDefault();
+    };
+    const handleDragEnd = () => { isDragging = false; };
+    overlayBoard.addEventListener('touchstart', handleDragStart, {passive: false});
+    overlayBoard.addEventListener('touchmove', handleDragMove, {passive: false});
+    overlayBoard.addEventListener('touchend', handleDragEnd);
+    overlayBoard.addEventListener('mousedown', handleDragStart);
+    window.addEventListener('mousemove', handleDragMove);
+    window.addEventListener('mouseup', handleDragEnd);
+
+    // ボタンロジック（tools.html準拠）
+    const DX_CAM_PARTS = ["ケレン", "洗浄", "養生", "シーリング", "足場", "パターン調整", "下地処理", "吹付", "鉄部", "木部", "付帯部"];
+    const DX_CAM_LOCS  = ["ベランダ", "共用廊下", "階段", "屋上", "玄関廻り", "エントランス", "妻面", "詳細"];
+    const DIRECTIONS = ["北面", "北北東面", "北東面", "東北東面", "東面", "東南東面", "南東面", "南南東面", "南面", "南南西面", "南西面", "西南西面", "西面", "西北西面", "北西面", "北北西面"];
+
+    let isCamLocationMode = false;
+    let currentFloorLevel = parseInt(localStorage.getItem('dx_last_floor')) || 1; 
+    let currentDirIndex = parseInt(localStorage.getItem('dx_last_dir')) || 0;
+    let editTarget = 'floor';
+
+    document.addEventListener('DOMContentLoaded', () => {
+        if(document.getElementById('dirSliderOverlay')) return;
+        const sliderHTML = `<div id="dirSliderOverlay" class="slider-overlay"><div class="slider-sub">指をスライドして方位を決定</div><div id="dirSliderLabel" class="slider-label">北</div><input type="range" id="dirRange" min="0" max="15" value="0" step="1"></div>`;
+        document.body.insertAdjacentHTML('beforeend', sliderHTML);
+        const range = document.getElementById('dirRange');
+        range.addEventListener('input', (e) => { const idx = parseInt(e.target.value); document.getElementById('dirSliderLabel').innerText = DIRECTIONS[idx]; currentDirIndex = idx; });
+        range.addEventListener('change', () => { localStorage.setItem('dx_last_dir', currentDirIndex); document.getElementById('dirSliderOverlay').classList.remove('show'); renderCameraButtons(); });
+    });
+
+    function getCamItems(mode) { const key = mode ? 'dx_cam_locs' : 'dx_cam_parts'; const raw = localStorage.getItem(key); return raw ? JSON.parse(raw) : (mode ? [...DX_CAM_LOCS] : [...DX_CAM_PARTS]); }
+    function saveCamItems(mode, items) { const key = mode ? 'dx_cam_locs' : 'dx_cam_parts'; localStorage.setItem(key, JSON.stringify(items)); }
+
+    function renderCameraButtons() {
+        const group = document.getElementById('customBtnGroup'); if(!group) return; group.innerHTML = '';
+        const switchBtn = document.createElement('div'); switchBtn.className = 'cam-chip btn-switch'; switchBtn.innerHTML = isCamLocationMode ? '🔄 部位へ' : '🔄 場所へ';
+        switchBtn.onclick = (e) => { e.preventDefault(); isCamLocationMode = !isCamLocationMode; renderCameraButtons(); if(navigator.vibrate) navigator.vibrate(50); };
+
+        if (isCamLocationMode) {
+            const floorBtn = document.createElement('div'); floorBtn.className = `cam-chip target-floor ${editTarget === 'floor' ? 'selected' : ''}`; floorBtn.innerText = currentFloorLevel + "F";
+            floorBtn.onclick = (e) => handleTargetClick('floor', currentFloorLevel + 'F', e);
+            group.appendChild(floorBtn);
+            
+            const dirBtn = document.createElement('div'); dirBtn.className = `cam-chip target-dir ${editTarget === 'dir' ? 'selected' : ''}`; dirBtn.innerText = DIRECTIONS[currentDirIndex]; if(DIRECTIONS[currentDirIndex].length >= 3) dirBtn.style.fontSize = '0.8rem';
+            dirBtn.onclick = (e) => { if(!isSliderMode) handleTargetClick('dir', DIRECTIONS[currentDirIndex], e); };
+            dirBtn.addEventListener('touchstart', handleDirCenterStart, {passive: false});
+            dirBtn.addEventListener('touchend', handleDirCenterEnd);
+            dirBtn.addEventListener('mousedown', handleDirCenterStart);
+            dirBtn.addEventListener('mouseup', handleDirCenterEnd);
+            group.appendChild(dirBtn);
+
+            group.appendChild(createRepeatBtn('－', -1));
+            group.appendChild(createRepeatBtn('＋', 1));
+            group.appendChild(switchBtn);
+            
+            const currentList = getCamItems(isCamLocationMode);
+            for(let i=0; i < 11; i++) {
+                const text = currentList[i] || '（空）';
+                const btn = document.createElement('div'); btn.className = 'cam-chip mode-loc';
+                btn.innerHTML = `<span style="pointer-events:none;">${text}</span><div class="chip-bar"></div>`;
+                setupCamBtnEvents(btn, i, text); group.appendChild(btn);
+            }
+        } else {
+            group.appendChild(switchBtn);
+            const currentList = getCamItems(isCamLocationMode);
+            for(let i=0; i < 11; i++) {
+                const text = currentList[i] || '（空）';
+                const btn = document.createElement('div'); btn.className = 'cam-chip';
+                if(currentProcess === text) btn.classList.add('active');
+                btn.innerHTML = `<span style="pointer-events:none;">${text}</span><div class="chip-bar"></div>`;
+                setupCamBtnEvents(btn, i, text); group.appendChild(btn);
             }
         }
+    }
 
-        // --- ドラッグ処理 ---
-        boardCanvas.addEventListener('touchstart', startDrag, {passive: false});
-        boardCanvas.addEventListener('touchmove', moveDrag, {passive: false});
-        boardCanvas.addEventListener('touchend', endDrag);
-        boardCanvas.addEventListener('mousedown', (e) => { e.preventDefault(); startDrag(e.type === 'mousedown' ? e : e.touches[0]); });
-        window.addEventListener('mousemove', (e) => { if(isDragging) moveDrag(e.type === 'mousemove' ? e : e.touches[0]); });
-        window.addEventListener('mouseup', endDrag);
+    function createRepeatBtn(label, delta) {
+        const btn = document.createElement('div'); btn.className = 'cam-chip op-btn'; btn.innerText = label;
+        const start = (e) => { if(e.cancelable) e.preventDefault(); startRapidOp(delta); };
+        const end = (e) => { if(e.cancelable) e.preventDefault(); stopRapid(); };
+        btn.addEventListener('touchstart', start, {passive: false}); btn.addEventListener('touchend', end);
+        btn.addEventListener('mousedown', start); btn.addEventListener('mouseup', end); btn.addEventListener('mouseleave', end);
+        return btn;
+    }
 
-        function startDrag(e) {
-            isDragging = true;
-            const event = e.touches ? e.touches[0] : e;
-            startX = event.clientX;
-            startY = event.clientY;
-            initLeft = boardCanvas.offsetLeft;
-            initTop = boardCanvas.offsetTop;
-        }
-        function moveDrag(e) {
-            if (!isDragging) return;
-            e.preventDefault();
-            const event = e.touches ? e.touches[0] : e;
-            const dx = event.clientX - startX;
-            const dy = event.clientY - startY;
-            boardCanvas.style.left = `${initLeft + dx}px`;
-            boardCanvas.style.top = `${initTop + dy}px`;
-        }
-        function endDrag() { isDragging = false; }
+    function handleTargetClick(target, text, e) {
+        if (editTarget !== target) { editTarget = target; renderCameraButtons(); if(navigator.vibrate) navigator.vibrate(30); }
+        else { inputSpecialText(text, e); }
+    }
 
-        // --- 合成保存 ---
-        function finalizeImage() {
-            document.getElementById('loading').style.display = 'block';
-            
-            finalCanvas.width = originalImage.width;
-            finalCanvas.height = originalImage.height;
-            finalCtx.drawImage(originalImage, 0, 0);
+    let rapidFireTimer = null;
+    function startRapidOp(delta) { operate(delta); rapidFireTimer = setTimeout(() => { rapidFireTimer = setInterval(() => operate(delta), 100); }, 400); }
+    function stopRapid() { if(rapidFireTimer) { clearTimeout(rapidFireTimer); clearInterval(rapidFireTimer); rapidFireTimer = null; } }
+    function operate(delta) { if (editTarget === 'floor') changeFloor(delta); else changeDirection(delta); renderCameraButtons(); }
+    function changeFloor(delta) { currentFloorLevel += delta; if(currentFloorLevel < 1) currentFloorLevel = 1; localStorage.setItem('dx_last_floor', currentFloorLevel); }
+    function changeDirection(delta) { currentDirIndex += delta; if (currentDirIndex >= DIRECTIONS.length) currentDirIndex = 0; if (currentDirIndex < 0) currentDirIndex = DIRECTIONS.length - 1; localStorage.setItem('dx_last_dir', currentDirIndex); }
 
-            const frameW = document.getElementById('photoFrame').clientWidth;
-            const frameH = document.getElementById('photoFrame').clientHeight;
-            const scaleX = originalImage.width / frameW;
-            const scaleY = originalImage.height / frameH;
+    let dirCenterTimer = null, isSliderMode = false;
+    function handleDirCenterStart(e) { isSliderMode = false; dirCenterTimer = setTimeout(() => { isSliderMode = true; if(navigator.vibrate) navigator.vibrate(50); const overlay = document.getElementById('dirSliderOverlay'), range = document.getElementById('dirRange'), label = document.getElementById('dirSliderLabel'); range.value = currentDirIndex; label.innerText = DIRECTIONS[currentDirIndex]; overlay.classList.add('show'); }, 600); }
+    function handleDirCenterEnd(e) { if(dirCenterTimer) clearTimeout(dirCenterTimer); }
 
-            const boardStyle = window.getComputedStyle(boardCanvas);
-            const screenBoardLeft = parseFloat(boardCanvas.style.left);
-            const screenBoardTop = parseFloat(boardCanvas.style.top);
-            const screenBoardW = parseFloat(boardStyle.width);
-            const screenBoardH = parseFloat(boardStyle.height);
+    function inputSpecialText(text, e) {
+        const detailBox = document.getElementById('photoDetail');
+        detailBox.value = detailBox.value + (detailBox.value ? ' ' : '') + text;
+        drawBoard();
+        if(e && e.target) { const target = e.target.classList.contains('cam-chip') ? e.target : e.target.closest('.cam-chip'); if(target) { const org = target.style.backgroundColor; target.style.backgroundColor = '#c8e6c9'; setTimeout(() => target.style.backgroundColor = org, 150); } }
+    }
 
-            const finalX = screenBoardLeft * scaleX;
-            const finalY = screenBoardTop * scaleY;
-            const finalW = screenBoardW * scaleX;
-            const finalH = screenBoardH * scaleY;
+    function setupCamBtnEvents(btn, index, text) {
+        let pressTimer = null, isLongPress = false, startX, startY; const bar = btn.querySelector('.chip-bar');
+        const handleStart = (e) => {
+            if (e.type === 'mousedown' && e.button !== 0) return;
+            isLongPress = false; if(e.touches) { startX = e.touches[0].clientX; startY = e.touches[0].clientY; } else { startX = e.clientX; startY = e.clientY; }
+            if(bar) { bar.style.transition = `width ${LONG_PRESS_MS}ms linear`; bar.style.width = '100%'; } btn.classList.add('pressing');
+            pressTimer = setTimeout(() => {
+                isLongPress = true; btn.classList.remove('pressing'); if(bar) { bar.style.transition = 'none'; bar.style.width = '0%'; }
+                if(navigator.vibrate) navigator.vibrate(100);
+                const newName = prompt(`ボタンの名称を変更します\n（現在の設定：${text}）`, text);
+                if (newName !== null) { const list = getCamItems(isCamLocationMode); list[index] = newName; saveCamItems(isCamLocationMode, list); renderCameraButtons(); }
+            }, LONG_PRESS_MS);
+        };
+        const handleEnd = (e) => {
+            clearTimeout(pressTimer); btn.classList.remove('pressing'); if(bar) { bar.style.transition = 'width 0.1s linear'; bar.style.width = '0%'; }
+            if (isLongPress) return;
+            let endX, endY; if(e.changedTouches) { endX = e.changedTouches[0].clientX; endY = e.changedTouches[0].clientY; } else { endX = e.clientX; endY = e.clientY; }
+            if (Math.abs(endX - startX) > 10 || Math.abs(endY - startY) > 10) return;
+            if (e.type === 'touchend' && e.cancelable) e.preventDefault();
+            if (text !== '（空）') { if (isCamLocationMode) { const detailBox = document.getElementById('photoDetail'); detailBox.value = detailBox.value + (detailBox.value ? ' ' : '') + text; drawBoard(); } else { if (btn.classList.contains('active')) { btn.classList.remove('active'); currentProcess = ''; } else { document.querySelectorAll('.proc-btn').forEach(b => b.classList.remove('active')); document.querySelectorAll('.cam-chip').forEach(b => b.classList.remove('active')); btn.classList.add('active'); currentProcess = text; } drawBoard(); } }
+        };
+        btn.addEventListener('touchstart', handleStart, {passive: false}); btn.addEventListener('touchend', handleEnd, {passive: false});
+        btn.addEventListener('mousedown', handleStart); btn.addEventListener('mouseup', handleEnd); btn.addEventListener('mouseleave', () => { clearTimeout(pressTimer); btn.classList.remove('pressing'); if(bar) { bar.style.transition = 'none'; bar.style.width = '0%'; } });
+    }
 
-            // 高画質用キャンバスを作成（黒板or日付）
-            const hdBoard = document.createElement('canvas');
-            hdBoard.width = finalW;
-            hdBoard.height = finalH;
-            const hdCtx = hdBoard.getContext('2d');
-            
-            // ★重要：ここでもモード判定して描画
-            // width/heightを渡して再描画させる
-            drawBoardContent(hdCtx, finalW, finalH);
+    function renderProcessButtons() {
+        const container = document.querySelector('.process-btns'); if(!container) return; container.innerHTML = '';
+        const list = JSON.parse(localStorage.getItem('dx_process_list')) || DEFAULT_PROCESSES;
+        list.forEach((text, index) => {
+            const btn = document.createElement('button'); btn.className = 'proc-btn';
+            if (currentProcess === text) btn.classList.add('active');
+            btn.innerText = text;
+            const bar = document.createElement('div'); bar.className = 'chip-bar'; btn.appendChild(bar);
+            setupProcessBtnEvents(btn, index, text);
+            container.appendChild(btn);
+        });
+    }
 
-            finalCtx.drawImage(hdBoard, finalX, finalY);
+    function setupProcessBtnEvents(btn, index, text) {
+        let pressTimer = null, isLongPress = false, startX, startY; const bar = btn.querySelector('.chip-bar');
+        const handleStart = (e) => {
+            if (e.type === 'mousedown' && e.button !== 0) return;
+            isLongPress = false; if(e.touches) { startX = e.touches[0].clientX; startY = e.touches[0].clientY; } else { startX = e.clientX; startY = e.clientY; }
+            if(bar) { bar.style.transition = `width ${LONG_PRESS_MS}ms linear`; bar.style.width = '100%'; } btn.classList.add('pressing');
+            pressTimer = setTimeout(() => {
+                isLongPress = true; btn.classList.remove('pressing'); if(bar) { bar.style.transition = 'none'; bar.style.width = '0%'; }
+                if(navigator.vibrate) navigator.vibrate(100);
+                const newName = prompt(`工程名の変更\n（現在の設定：${text}）`, text);
+                if(newName !== null && newName.trim() !== "") { const list = JSON.parse(localStorage.getItem('dx_process_list')) || DEFAULT_PROCESSES; list[index] = newName; localStorage.setItem('dx_process_list', JSON.stringify(list)); if(currentProcess === text) currentProcess = newName; renderProcessButtons(); drawBoard(); }
+            }, LONG_PRESS_MS);
+        };
+        const handleEnd = (e) => {
+            clearTimeout(pressTimer); btn.classList.remove('pressing'); if(bar) { bar.style.transition = 'width 0.1s linear'; bar.style.width = '0%'; }
+            if (isLongPress) return;
+            let endX, endY; if(e.changedTouches) { endX = e.changedTouches[0].clientX; endY = e.changedTouches[0].clientY; } else { endX = e.clientX; endY = e.clientY; }
+            if (Math.abs(endX - startX) > 10 || Math.abs(endY - startY) > 10) return;
+            if (e.type === 'touchend' && e.cancelable) e.preventDefault();
+            if (btn.classList.contains('active')) { btn.classList.remove('active'); currentProcess = ''; } 
+            else { document.querySelectorAll('.proc-btn').forEach(b => b.classList.remove('active')); btn.classList.add('active'); currentProcess = text; } 
+            drawBoard();
+        };
+        btn.addEventListener('touchstart', handleStart, {passive: false}); btn.addEventListener('touchend', handleEnd, {passive: false});
+        btn.addEventListener('mousedown', handleStart); btn.addEventListener('mouseup', handleEnd); btn.addEventListener('mouseleave', () => { clearTimeout(pressTimer); btn.classList.remove('pressing'); if(bar) { bar.style.transition = 'none'; bar.style.width = '0%'; } });
+    }
 
-            const link = document.createElement('a');
-            const d = new Date();
-            const timeStr = `${d.getHours()}${d.getMinutes()}${d.getSeconds()}`;
-            link.download = `現場写真_${timeStr}.jpg`;
-            link.href = finalCanvas.toDataURL('image/jpeg', 0.9);
-            document.body.appendChild(link);
-            link.click();
-            document.body.removeChild(link);
-            
-            document.getElementById('loading').style.display = 'none';
-        }
-    </script>
+    function clearLocation() {
+        const input = document.getElementById('photoDetail');
+        if(input) { input.value = ""; drawBoard(); }
+    }
+</script>
 </body>
 </html>
