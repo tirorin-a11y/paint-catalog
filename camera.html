@@ -15,13 +15,11 @@
         /* メインコンテナ */
         #cameraContainer { flex: 1; display: flex; flex-direction: column; background: #fff; overflow: hidden; position: relative; }
         
-        /* === ★エリア分割設定 === */
-        
-        /* 上部：固定エリア（黒板プレビュー） */
+        /* 固定エリア（上部） */
         #fixedTopArea {
-            background: #222; /* 黒板が見やすい暗い背景 */
+            background: #222; 
             padding: 10px;
-            flex-shrink: 0; /* 縮まない */
+            flex-shrink: 0;
             border-bottom: 1px solid #444;
             display: flex;
             flex-direction: column;
@@ -29,47 +27,38 @@
             z-index: 10;
         }
 
-        /* 下部：スクロールエリア（入力フォーム） */
+        /* スクロールエリア（下部） */
         #scrollableInputArea {
-            flex: 1; /* 残りのスペースを埋める */
-            overflow-y: auto; /* ここだけスクロール */
+            flex: 1;
+            overflow-y: auto;
             background: #fff;
             padding: 15px;
-            -webkit-overflow-scrolling: touch; /* スムーズスクロール */
+            /* ★重要：一番下に余白を作って、ボタンが押しやすいようにする */
+            padding-bottom: 80px; 
+            -webkit-overflow-scrolling: touch;
         }
 
-        /* モード切替ボタン（固定エリア内） */
+        /* モード切替 */
         .mode-switch-container { display: flex; width: 100%; max-width: 400px; background: rgba(255,255,255,0.1); border-radius: 8px; padding: 4px; margin-bottom: 8px; }
         .mode-btn { flex: 1; border: none; background: transparent; padding: 6px; font-weight: bold; color: #aaa; cursor: pointer; border-radius: 6px; transition: 0.2s; font-size: 0.85rem; }
         .mode-btn.active { background: #fff; color: #2c3e50; }
         .mode-btn.active-date { color: #e67e22; }
 
-        /* キャンバス（固定エリア内） */
-        .preview-canvas-wrapper { 
-            display: flex; justify-content: center; align-items: center; 
-            width: 100%; max-width: 320px; /* 大きすぎないように制限 */
-        }
-        #boardCanvas { 
-            width: 100%; height: auto; 
-            box-shadow: 0 4px 10px rgba(0,0,0,0.5); 
-            background: transparent;
-        }
+        .preview-canvas-wrapper { display: flex; justify-content: center; align-items: center; width: 100%; max-width: 320px; }
+        #boardCanvas { width: 100%; height: auto; box-shadow: 0 4px 10px rgba(0,0,0,0.5); background: transparent; }
 
-        /* 入力エリアのスタイル */
-        #boardInputGroup { display: block; transition: opacity 0.3s; padding-bottom: 20px; }
+        /* 入力エリア */
+        #boardInputGroup { display: block; transition: opacity 0.3s; margin-bottom: 20px; }
         #boardInputGroup.hidden { display: none; }
 
         label { margin-top: 15px; display: block; font-weight: bold; font-size: 0.9rem; color: #2c3e50; }
-        label:first-child { margin-top: 0; } /* 最初の要素はマージンなし */
-        
+        label:first-child { margin-top: 0; }
         input[type="text"] { width: 100%; padding: 12px; margin-top: 5px; border: 1px solid #ccc; border-radius: 6px; font-size: 1rem; box-sizing: border-box; background: #f9f9f9; }
         
-        /* 工程ボタン */
         .process-btns { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 10px; margin-top: 5px; }
         .proc-btn { flex: 1; min-width: 70px; padding: 5px; font-size: 0.9rem; line-height: 1.2; background: #f0f0f0; border: 1px solid #ccc; border-radius: 6px; cursor: pointer; color: #555; font-weight: bold; display: flex; align-items: center; justify-content: center; text-align: center; height: 45px; position: relative; overflow: hidden; }
         .proc-btn.active { background: #2c3e50; color: white; border-color: #2c3e50; }
         
-        /* 任意ボタン */
         .custom-btn-area { border-top: 1px dashed #ddd; padding-top: 15px; margin-top: 15px; }
         .input-grid-cam { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; margin-top: 5px; }
         .cam-chip { background: #f0f0f0; border: 1px solid #ccc; border-radius: 6px; font-size: 0.8rem; height: 40px; display: flex; align-items: center; justify-content: center; cursor: pointer; position: relative; overflow: hidden; font-weight: bold; color: #555; user-select: none; padding: 0 2px; text-align: center; }
@@ -83,32 +72,54 @@
         .input-wrapper { display: flex; align-items: center; margin-top: 5px; gap: 5px; }
         .btn-clear-left { width: 44px; height: 44px; border-radius: 6px; border: 1px solid #ccc; background: #ffebee; color: #c62828; font-weight: bold; font-size: 1.2rem; cursor: pointer; flex-shrink: 0; }
 
-        /* フッター */
-        .footer-actions { padding: 15px; background: #fff; border-top: 1px solid #eee; display: flex; gap: 10px; flex-shrink: 0; z-index: 20; }
+        /* ★変更箇所：フッターアクション（固定をやめて通常のボタンとして配置） */
+        .footer-actions { 
+            padding-top: 20px; 
+            border-top: 1px solid #eee; 
+            display: flex; 
+            gap: 10px; 
+            /* 下固定のスタイルを削除しました */
+        }
         .btn-close { background-color: #95a5a6; color: white; padding: 12px; border: none; border-radius: 8px; font-weight: bold; cursor: pointer; flex: 1; }
         .save-btn { background-color: #00C853; color: white; padding: 12px; border: none; border-radius: 8px; font-weight: bold; cursor: pointer; flex: 2; font-size: 1.1rem; box-shadow: 0 4px 6px rgba(0,200,83,0.2); }
+
 
         /* 撮影後プレビュー画面 */
         #photoPreviewArea { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #000; z-index: 200; flex-direction: column; justify-content: center; align-items: center; }
         #previewImage { max-width: 100%; max-height: 100%; object-fit: contain; flex: 1; }
         #overlayBoard { position: absolute; top: 20px; left: 20px; width: 200px; cursor: grab; z-index: 210; touch-action: none; }
         
-        .snap-controls { position: absolute; bottom: 100px; left: 50%; transform: translateX(-50%); display: flex; gap: 20px; z-index: 220; background: rgba(0,0,0,0.6); padding: 10px 20px; border-radius: 30px; }
+        /* ★変更箇所：矢印コントローラの位置調整 */
+        .snap-controls { 
+            position: absolute; 
+            /* ▼▼▼ この数値を変更すると、上下の位置が変わります ▼▼▼ */
+            bottom: 120px;  
+            /* ▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲ */
+            
+            left: 50%; 
+            transform: translateX(-50%); /* これで左右は常に中央になります */
+            
+            display: flex; 
+            gap: 20px; 
+            z-index: 220; 
+            background: rgba(0,0,0,0.6); 
+            padding: 10px 20px; 
+            border-radius: 30px; 
+        }
         .snap-btn { background: rgba(255,255,255,0.2); color: white; border: 1px solid rgba(255,255,255,0.5); width: 44px; height: 44px; border-radius: 50%; font-size: 1.5rem; cursor: pointer; display: flex; justify-content: center; align-items: center; }
         
-        /* ★修正箇所：ボタンコントローラを中央寄せ */
         .camera-controls-area { 
-            position: absolute; bottom: 0; width: 100%; padding: 25px; 
-            background: rgba(0,0,0,0.8); 
-            display: flex; justify-content: center; /* 中央寄せ */
-            gap: 30px; /* ボタン間の隙間 */
+            position: absolute; bottom: 0; width: 100%; padding: 30px 20px; 
+            background: linear-gradient(to top, rgba(0,0,0,0.9), transparent); /* 少し見やすくグラデーションに */
+            display: flex; justify-content: center; 
+            gap: 30px; 
             align-items: center; box-sizing: border-box; z-index: 220; 
         }
         .btn-cam-action { padding: 12px 30px; border-radius: 30px; font-weight: bold; cursor: pointer; border: none; font-size: 1rem; min-width: 120px; }
         .btn-retake { background: #e74c3c; color: white; }
         .btn-save-photo { background: #00C853; color: white; box-shadow: 0 0 15px rgba(0,200,83,0.4); }
 
-        /* スライダーポップアップ */
+        /* スライダーその他スタイル（変更なし） */
         .slider-overlay { position: fixed; bottom: 100px; left: 50%; transform: translateX(-50%); width: 85%; max-width: 400px; background: rgba(44, 62, 80, 0.95); padding: 20px; border-radius: 15px; box-shadow: 0 10px 25px rgba(0,0,0,0.5); z-index: 300; display: none; text-align: center; color: white; backdrop-filter: blur(5px); }
         .slider-overlay.show { display: block; animation: popUp 0.2s ease-out; }
         @keyframes popUp { from { transform: translate(-50%, 20px); opacity: 0; } to { transform: translate(-50%, 0); opacity: 1; } }
@@ -116,7 +127,6 @@
         .slider-sub { font-size: 0.9rem; color: #bdc3c7; margin-bottom: 15px; }
         input[type=range] { -webkit-appearance: none; appearance: none; width: 100%; height: 10px; border-radius: 5px; background: #555; outline: none; }
         input[type=range]::-webkit-slider-thumb { -webkit-appearance: none; appearance: none; width: 30px; height: 30px; border-radius: 50%; background: #f39c12; cursor: pointer; border: 3px solid white; box-shadow: 0 2px 5px rgba(0,0,0,0.3); }
-
         .cam-chip.target-floor.selected { background-color: #2196F3; color: white; border-color: #1976D2; }
         .cam-chip.target-dir.selected { background-color: #FFEB3B; color: #333; border-color: #FBC02D; }
         .cam-chip.op-btn { background-color: #eceff1; color: #333; font-size: 1.4rem; font-weight: 900; }
@@ -162,12 +172,12 @@
                 <input type="text" id="photoDetail" placeholder="例：北面、軒天など" oninput="drawBoard()">
             </div>
         </div>
-    </div>
 
-    <div class="footer-actions">
-        <button class="btn-close" onclick="location.href='tools.html'">閉じる</button>
-        <input type="file" id="nativeCameraInput" accept="image/*" capture="environment" style="display:none;" onchange="handlePhotoSelect(this)">
-        <button class="save-btn" onclick="document.getElementById('nativeCameraInput').click()">📸 カメラ起動</button>
+        <div class="footer-actions">
+            <button class="btn-close" onclick="location.href='tools.html'">閉じる</button>
+            <input type="file" id="nativeCameraInput" accept="image/*" capture="environment" style="display:none;" onchange="handlePhotoSelect(this)">
+            <button class="save-btn" onclick="document.getElementById('nativeCameraInput').click()">📸 カメラ起動</button>
+        </div>
     </div>
 </div>
 
