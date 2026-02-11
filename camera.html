@@ -33,8 +33,7 @@
             overflow-y: auto;
             background: #fff;
             padding: 15px;
-            /* ★重要：一番下に余白を作って、ボタンが押しやすいようにする */
-            padding-bottom: 80px; 
+            padding-bottom: 80px; /* 下に余白 */
             -webkit-overflow-scrolling: touch;
         }
 
@@ -72,13 +71,12 @@
         .input-wrapper { display: flex; align-items: center; margin-top: 5px; gap: 5px; }
         .btn-clear-left { width: 44px; height: 44px; border-radius: 6px; border: 1px solid #ccc; background: #ffebee; color: #c62828; font-weight: bold; font-size: 1.2rem; cursor: pointer; flex-shrink: 0; }
 
-        /* ★変更箇所：フッターアクション（固定をやめて通常のボタンとして配置） */
+        /* フッターアクション（スクロールの最後に配置） */
         .footer-actions { 
             padding-top: 20px; 
             border-top: 1px solid #eee; 
             display: flex; 
             gap: 10px; 
-            /* 下固定のスタイルを削除しました */
         }
         .btn-close { background-color: #95a5a6; color: white; padding: 12px; border: none; border-radius: 8px; font-weight: bold; cursor: pointer; flex: 1; }
         .save-btn { background-color: #00C853; color: white; padding: 12px; border: none; border-radius: 8px; font-weight: bold; cursor: pointer; flex: 2; font-size: 1.1rem; box-shadow: 0 4px 6px rgba(0,200,83,0.2); }
@@ -89,16 +87,12 @@
         #previewImage { max-width: 100%; max-height: 100%; object-fit: contain; flex: 1; }
         #overlayBoard { position: absolute; top: 20px; left: 20px; width: 200px; cursor: grab; z-index: 210; touch-action: none; }
         
-        /* ★変更箇所：矢印コントローラの位置調整 */
+        /* 矢印コントローラー */
         .snap-controls { 
             position: absolute; 
-            /* ▼▼▼ この数値を変更すると、上下の位置が変わります ▼▼▼ */
-            bottom: 120px;  
-            /* ▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲ */
-            
+            bottom: 20px; /* ここで高さを調整 */
             left: 50%; 
-            transform: translateX(-50%); /* これで左右は常に中央になります */
-            
+            transform: translateX(-50%);
             display: flex; 
             gap: 20px; 
             z-index: 220; 
@@ -110,7 +104,7 @@
         
         .camera-controls-area { 
             position: absolute; bottom: 0; width: 100%; padding: 30px 20px; 
-            background: linear-gradient(to top, rgba(0,0,0,0.9), transparent); /* 少し見やすくグラデーションに */
+            background: linear-gradient(to top, rgba(0,0,0,0.9), transparent);
             display: flex; justify-content: center; 
             gap: 30px; 
             align-items: center; box-sizing: border-box; z-index: 220; 
@@ -119,7 +113,7 @@
         .btn-retake { background: #e74c3c; color: white; }
         .btn-save-photo { background: #00C853; color: white; box-shadow: 0 0 15px rgba(0,200,83,0.4); }
 
-        /* スライダーその他スタイル（変更なし） */
+        /* スライダーその他スタイル */
         .slider-overlay { position: fixed; bottom: 100px; left: 50%; transform: translateX(-50%); width: 85%; max-width: 400px; background: rgba(44, 62, 80, 0.95); padding: 20px; border-radius: 15px; box-shadow: 0 10px 25px rgba(0,0,0,0.5); z-index: 300; display: none; text-align: center; color: white; backdrop-filter: blur(5px); }
         .slider-overlay.show { display: block; animation: popUp 0.2s ease-out; }
         @keyframes popUp { from { transform: translate(-50%, 20px); opacity: 0; } to { transform: translate(-50%, 0); opacity: 1; } }
@@ -199,7 +193,7 @@
 </div>
 
 <script>
-    // --- JSロジック（変更なし） ---
+    // --- JSロジック ---
     let currentSite = null;
     let currentMode = 'board';
 
@@ -378,25 +372,52 @@
         retakePhoto();
     }
 
-    const BOARD_MARGIN = 30;
+    // --- ★変更箇所：黒板移動・スナップ設定（数値で微調整可能） ---
+    
+    // ここで四隅からの距離をpx単位で指定します
+    const SNAP_MARGIN_TOP    = 20;  // 上からの隙間
+    const SNAP_MARGIN_BOTTOM = 20;  // 下からの隙間
+    const SNAP_MARGIN_LEFT   = 20;  // 左からの隙間
+    const SNAP_MARGIN_RIGHT  = 20;  // 右からの隙間
+
     function snapBoard(pos) {
         const board = document.getElementById('overlayBoard');
         const pImg = document.getElementById('previewImage');
         const container = document.getElementById('photoPreviewArea');
         const pRect = pImg.getBoundingClientRect();
         const cRect = container.getBoundingClientRect();
+        
+        // 写真の表示位置（余白を考慮）
         const offsetTop = pRect.top - cRect.top;
         const offsetLeft = pRect.left - cRect.left;
-        const pWidth = pRect.width; const pHeight = pRect.height;
-        const bWidth = board.offsetWidth; const bHeight = board.offsetHeight;
+        const pWidth = pRect.width;
+        const pHeight = pRect.height;
+        
+        const bWidth = board.offsetWidth;
+        const bHeight = board.offsetHeight;
 
         board.style.top = ''; board.style.bottom = ''; board.style.left = ''; board.style.right = '';
-        if (pos === 'tl') { board.style.top = (offsetTop + BOARD_MARGIN)+'px'; board.style.left = (offsetLeft + BOARD_MARGIN)+'px'; } 
-        else if (pos === 'tr') { board.style.top = (offsetTop + BOARD_MARGIN)+'px'; board.style.left = (offsetLeft + pWidth - bWidth - BOARD_MARGIN)+'px'; } 
-        else if (pos === 'bl') { board.style.top = (offsetTop + pHeight - bHeight - BOARD_MARGIN)+'px'; board.style.left = (offsetLeft + BOARD_MARGIN)+'px'; } 
-        else if (pos === 'br') { board.style.top = (offsetTop + pHeight - bHeight - BOARD_MARGIN)+'px'; board.style.left = (offsetLeft + pWidth - bWidth - BOARD_MARGIN)+'px'; }
+
+        // 位置計算
+        if (pos === 'tl') { // 左上
+            board.style.top  = (offsetTop + SNAP_MARGIN_TOP) + 'px';
+            board.style.left = (offsetLeft + SNAP_MARGIN_LEFT) + 'px';
+        } 
+        else if (pos === 'tr') { // 右上
+            board.style.top  = (offsetTop + SNAP_MARGIN_TOP) + 'px';
+            board.style.left = (offsetLeft + pWidth - bWidth - SNAP_MARGIN_RIGHT) + 'px';
+        } 
+        else if (pos === 'bl') { // 左下
+            board.style.top  = (offsetTop + pHeight - bHeight - SNAP_MARGIN_BOTTOM) + 'px';
+            board.style.left = (offsetLeft + SNAP_MARGIN_LEFT) + 'px';
+        } 
+        else if (pos === 'br') { // 右下
+            board.style.top  = (offsetTop + pHeight - bHeight - SNAP_MARGIN_BOTTOM) + 'px';
+            board.style.left = (offsetLeft + pWidth - bWidth - SNAP_MARGIN_RIGHT) + 'px';
+        }
     }
 
+    // ドラッグ処理
     const overlayBoard = document.getElementById('overlayBoard'); 
     let isDragging = false, dragStartX, dragStartY, initialLeft, initialTop;
     const SNAP_SIZE = 10;
