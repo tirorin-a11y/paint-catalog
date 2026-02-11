@@ -18,15 +18,32 @@
 
         /* 編集エリア */
         .edit-area { display: none; flex-direction: column; gap: 10px; }
+        
+        /* モード選択ラジオボタン */
+        .mode-select {
+            display: flex; justify-content: center; gap: 10px;
+            background: rgba(0,0,0,0.05); padding: 10px; border-radius: 8px; margin-bottom: 5px;
+        }
+        .mode-label {
+            font-weight: bold; cursor: pointer; display: flex; align-items: center; gap: 5px; font-size: 0.9rem;
+        }
+        .mode-label input { width: auto; margin: 0; }
+
         .photo-frame { 
             position: relative; width: 100%; overflow: hidden; 
             border-radius: 8px; box-shadow: 0 4px 10px rgba(0,0,0,0.2); 
             background: #000; touch-action: none; 
         }
         #previewImg { width: 100%; display: block; }
+        
+        /* ドラッグ要素（黒板または日付） */
         #draggableBoard { 
             position: absolute; top: 10px; left: 10px; 
-            width: 35%; cursor: grab; filter: drop-shadow(0 4px 6px rgba(0,0,0,0.5)); 
+            /* widthはJSで制御しますが、初期値として */
+            width: 35%; 
+            cursor: grab; 
+            /* 黒板モード用の影（日付モードではJSで消すことも可能だが残しても良い） */
+            filter: drop-shadow(0 4px 6px rgba(0,0,0,0.5)); 
         }
 
         /* ボタン類 */
@@ -83,7 +100,19 @@
         </div>
 
         <div id="step2" class="edit-area">
-            <p style="text-align:center; font-weight:bold; color:#e67e22; margin:0;">👇 黒板をドラッグして位置調整</p>
+            <div class="mode-select">
+                <label class="mode-label">
+                    <input type="radio" name="cameraMode" value="board" checked onchange="changeMode()"> 📋 黒板
+                </label>
+                <label class="mode-label" style="color:#e67e22;">
+                    <input type="radio" name="cameraMode" value="dateOnly" onchange="changeMode()"> 📅 日付
+                </label>
+                <label class="mode-label" style="color:#e67e22;">
+                    <input type="radio" name="cameraMode" value="dateTime" onchange="changeMode()"> 🕒 日時
+                </label>
+            </div>
+
+            <p style="text-align:center; font-weight:bold; color:#666; margin:0; font-size:0.9rem;">👇 項目をドラッグして位置調整</p>
             
             <div class="photo-frame" id="photoFrame">
                 <img id="previewImg" src="" alt="撮影写真">
@@ -148,135 +177,176 @@
             step2.style.display = 'flex';
             document.getElementById('loading').style.display = 'none';
 
-            boardCanvas.width = 400; 
-            boardCanvas.height = 300;
-            drawBoardContent(boardCtx, boardCanvas.width, boardCanvas.height);
-            
-            const frameW = document.getElementById('photoFrame').clientWidth;
-            const frameH = document.getElementById('photoFrame').clientHeight;
-            boardCanvas.style.left = (frameW * 0.55) + 'px';
-            boardCanvas.style.top = (frameH * 0.6) + 'px';
+            // 初期モードで描画
+            changeMode();
         }
 
-        // ★★★ ここが文字縮小の魔法の関数 ★★★
+        // ★モード変更時の処理
+        function changeMode() {
+            const mode = document.querySelector('input[name="cameraMode"]:checked').value;
+            const frameW = document.getElementById('photoFrame').clientWidth;
+            const frameH = document.getElementById('photoFrame').clientHeight;
+
+            // キャンバスサイズをリセット
+            boardCanvas.width = 400;
+            boardCanvas.height = 300;
+
+            // 描画実行
+            drawBoardContent(boardCtx, boardCanvas.width, boardCanvas.height);
+
+            // 位置の自動調整
+            if (mode === 'board') {
+                // 黒板ならやや右下に
+                boardCanvas.style.width = '35%'; // CSSで見た目の大きさを指定
+                boardCanvas.style.left = (frameW * 0.55) + 'px';
+                boardCanvas.style.top = (frameH * 0.6) + 'px';
+            } else {
+                // 日付/日時なら右下に配置
+                boardCanvas.style.width = '45%'; // 日付は見やすいように少し幅広に
+                boardCanvas.style.left = (frameW * 0.50) + 'px'; // 右寄せ
+                boardCanvas.style.top = (frameH * 0.85) + 'px'; // 下寄せ
+            }
+        }
+
+        // ★★★ 文字縮小の魔法の関数 ★★★
         function drawTextFit(ctx, text, x, y, maxWidth, initialFontSize) {
             ctx.textAlign = 'left';
             ctx.textBaseline = 'middle';
             let fontSize = initialFontSize;
             ctx.font = `bold ${fontSize}px sans-serif`;
-            
-            // 幅に収まるまでフォントサイズを小さくするループ
             while (ctx.measureText(text).width > maxWidth && fontSize > 10) {
                 fontSize--;
                 ctx.font = `bold ${fontSize}px sans-serif`;
             }
             ctx.fillText(text, x, y);
         }
-        // ★★★ これが「2行対応」の賢い描画関数 ★★★
+
+        // ★★★ 2行対応の賢い描画関数 ★★★
         function drawSmartText(ctx, text, centerX, centerY, maxWidth, maxFontSize) {
-        ctx.textAlign = 'center';
-        ctx.textBaseline = 'middle';
-        ctx.fillStyle = 'white';
-
-        // 1. まず1行で入るかテスト
-        ctx.font = `bold ${maxFontSize}px sans-serif`;
-        const width = ctx.measureText(text).width;
-
-        // 2. 幅に余裕があれば、そのまま1行で描画
-        if (width <= maxWidth) {
-            ctx.fillText(text, centerX, centerY);
-            return;
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            ctx.fillStyle = 'white';
+            ctx.font = `bold ${maxFontSize}px sans-serif`;
+            const width = ctx.measureText(text).width;
+            if (width <= maxWidth) {
+                ctx.fillText(text, centerX, centerY);
+                return;
+            }
+            let fontSize = maxFontSize;
+            while (ctx.measureText(text).width > maxWidth && fontSize > maxFontSize * 0.7) {
+                fontSize--;
+                ctx.font = `bold ${fontSize}px sans-serif`;
+            }
+            if (ctx.measureText(text).width > maxWidth) {
+                const halfIndex = Math.ceil(text.length / 2);
+                const line1 = text.substring(0, halfIndex);
+                const line2 = text.substring(halfIndex);
+                const multiLineSize = maxFontSize * 0.8;
+                ctx.font = `bold ${multiLineSize}px sans-serif`;
+                const lineHeight = multiLineSize * 1.2;
+                ctx.fillText(line1, centerX, centerY - lineHeight * 0.35);
+                ctx.fillText(line2, centerX, centerY + lineHeight * 0.55);
+            } else {
+                ctx.fillText(text, centerX, centerY);
+            }
         }
 
-        // 3. 幅がキツイ場合、文字を小さくして粘る（最小サイズの70%まで）
-        let fontSize = maxFontSize;
-        while (ctx.measureText(text).width > maxWidth && fontSize > maxFontSize * 0.7) {
-            fontSize--;
-            ctx.font = `bold ${fontSize}px sans-serif`;
-        }
-
-        // 4. それでもはみ出るなら「2行」に分割！
-        if (ctx.measureText(text).width > maxWidth) {
-            const halfIndex = Math.ceil(text.length / 2);
-            const line1 = text.substring(0, halfIndex);
-            const line2 = text.substring(halfIndex);
+        // --- 描画ロジック（黒板 vs 日付） ---
+        function drawBoardContent(ctx, w, h) {
+            // 現在のモードを取得
+            const mode = document.querySelector('input[name="cameraMode"]:checked').value;
             
-            // 2行用のフォントサイズ（少し小さめからスタート）
-            const multiLineSize = maxFontSize * 0.8;
-            ctx.font = `bold ${multiLineSize}px sans-serif`;
-            
-            // 行間（高さ）の調整
-            const lineHeight = multiLineSize * 1.2;
-            
-            // 2行を描画（Y座標を上下にずらす）
-            ctx.fillText(line1, centerX, centerY - lineHeight * 0.35);
-            ctx.fillText(line2, centerX, centerY + lineHeight * 0.55);
-        } else {
-            // 縮小して1行で収まった場合
-            ctx.fillText(text, centerX, centerY);
-        }
-    }
+            // 共通：日付文字列作成
+            const d = new Date();
+            const dateStr = `${d.getFullYear()}/${('0'+(d.getMonth()+1)).slice(-2)}/${('0'+d.getDate()).slice(-2)}`;
+            const timeStr = `${('0'+d.getHours()).slice(-2)}:${('0'+d.getMinutes()).slice(-2)}`;
 
-    // --- 黒板描画の中身（書き換え） ---
-    function drawBoardContent(ctx, w, h) {
-        const siteName = document.getElementById('siteSelect').value || "　";
-        const process = document.getElementById('processSelect').value;
-        const location = document.getElementById('locationInput').value || "";
-        const d = new Date();
-        const dateStr = `${d.getFullYear()}/${d.getMonth()+1}/${d.getDate()}`;
+            // 画面を一旦クリア
+            ctx.clearRect(0, 0, w, h);
 
-        // 背景と枠
-        ctx.fillStyle = '#004d40';
-        ctx.fillRect(0, 0, w, h);
-        
-        const border = w * 0.015;
-        ctx.strokeStyle = 'white';
-        ctx.lineWidth = border;
-        ctx.strokeRect(w*0.02, w*0.02, w*0.96, h*0.96);
+            if (mode === 'board') {
+                // ==========================
+                // 📋 黒板モードの描画
+                // ==========================
+                const siteName = document.getElementById('siteSelect').value || "　";
+                const process = document.getElementById('processSelect').value;
+                const location = document.getElementById('locationInput').value || "";
 
-        // 罫線
-        ctx.lineWidth = w * 0.005;
-        ctx.beginPath();
-        const line1 = h * 0.28;
-        const line2 = h * 0.55;
-        const lineV = w * 0.72;
-        
-        ctx.moveTo(w*0.04, line1); ctx.lineTo(w*0.96, line1);
-        ctx.moveTo(w*0.04, line2); ctx.lineTo(w*0.96, line2);
-        ctx.moveTo(lineV, line2); ctx.lineTo(lineV, h*0.96);
-        ctx.stroke();
+                // 背景と枠
+                ctx.fillStyle = '#004d40';
+                ctx.fillRect(0, 0, w, h);
+                
+                const border = w * 0.015;
+                ctx.strokeStyle = 'white';
+                ctx.lineWidth = border;
+                ctx.strokeRect(w*0.02, w*0.02, w*0.96, h*0.96);
 
-        // --- 文字描画（drawSmartTextを使用） ---
-        const sizeS = w * 0.055; // 小見出しサイズ
-        const sizeL = w * 0.09;  // 本文基準サイズ
-        
-        // 項目名（左寄せ固定）
-        ctx.fillStyle = 'white';
-        ctx.textAlign = 'left';
-        ctx.textBaseline = 'middle';
-        ctx.font = `bold ${sizeS}px sans-serif`;
-        
-        ctx.fillText("工事名", w*0.05, h*0.12);
-        ctx.fillText("工種", w*0.05, h*0.38);
-        ctx.fillText("施工箇所", w*0.05, h*0.65);
+                // 罫線
+                ctx.lineWidth = w * 0.005;
+                ctx.beginPath();
+                const line1 = h * 0.28;
+                const line2 = h * 0.55;
+                const lineV = w * 0.72;
+                
+                ctx.moveTo(w*0.04, line1); ctx.lineTo(w*0.96, line1);
+                ctx.moveTo(w*0.04, line2); ctx.lineTo(w*0.96, line2);
+                ctx.moveTo(lineV, line2); ctx.lineTo(lineV, h*0.96);
+                ctx.stroke();
 
-        // ★中身（長いと自動で2行になる！）
-        // 座標は「エリアの中心」を指定する
-        const contentCenterX = w * 0.52; // 中央より少し右
-        const maxContentW = w * 0.85;    // 許容幅
+                // 文字
+                const sizeS = w * 0.055;
+                const sizeL = w * 0.09;
+                
+                ctx.fillStyle = 'white';
+                ctx.textAlign = 'left';
+                ctx.textBaseline = 'middle';
+                ctx.font = `bold ${sizeS}px sans-serif`;
+                
+                ctx.fillText("工事名", w*0.05, h*0.12);
+                ctx.fillText("工種", w*0.05, h*0.38);
+                ctx.fillText("施工箇所", w*0.05, h*0.65);
 
-        // 1段目：工事名
-        drawSmartText(ctx, siteName, contentCenterX, h*0.20, maxContentW, sizeL);
+                const contentCenterX = w * 0.52;
+                const maxContentW = w * 0.85;
+                drawSmartText(ctx, siteName, contentCenterX, h*0.20, maxContentW, sizeL);
+                drawSmartText(ctx, process, w*0.58, h*0.46, w*0.75, sizeL);
+                drawSmartText(ctx, location, w*0.38, h*0.75, w*0.6, sizeL * 0.8);
 
-        // 2段目：工種（少し右寄り）
-        drawSmartText(ctx, process, w*0.58, h*0.46, w*0.75, sizeL);
+                // 日付（右下）
+                const dateCenterX = lineV + (w - lineV) / 2;
+                drawSmartText(ctx, dateStr, dateCenterX, h*0.75, (w - lineV)*0.9, sizeS);
 
-        // 3段目：施工箇所（左側の狭いエリア）
-        drawSmartText(ctx, location, w*0.38, h*0.75, w*0.6, sizeL * 0.8);
+            } else {
+                // ==========================
+                // 📅 日付・日時モードの描画
+                // ==========================
+                let displayText = dateStr;
+                if (mode === 'dateTime') {
+                    displayText += " " + timeStr;
+                }
 
-        // 日付（右下エリア）
-        const dateCenterX = lineV + (w - lineV) / 2;
-        drawSmartText(ctx, dateStr, dateCenterX, h*0.75, (w - lineV)*0.9, sizeS);
+                // 文字設定（オレンジ色・太字・右下）
+                const fontSize = w * 0.12; // 大きめに設定（400px幅に対して）
+                ctx.font = `bold ${fontSize}px sans-serif`;
+                ctx.textBaseline = 'bottom';
+                ctx.textAlign = 'right';
+
+                // 影（黒い縁取り）
+                ctx.strokeStyle = 'black';
+                ctx.lineWidth = fontSize * 0.15; // 太めの縁取り
+                ctx.lineJoin = 'round';
+                ctx.miterLimit = 2;
+
+                // 配置（キャンバスの右下いっぱい）
+                const x = w - 10;
+                const y = h - 10;
+
+                // 描画（縁取り → 本体）
+                ctx.strokeText(displayText, x, y);
+                
+                ctx.fillStyle = '#ff9f43'; // オレンジ
+                ctx.fillText(displayText, x, y);
+            }
         }
 
         // --- ドラッグ処理 ---
@@ -330,11 +400,14 @@
             const finalW = screenBoardW * scaleX;
             const finalH = screenBoardH * scaleY;
 
-            // 高画質用黒板キャンバス
+            // 高画質用キャンバスを作成（黒板or日付）
             const hdBoard = document.createElement('canvas');
             hdBoard.width = finalW;
             hdBoard.height = finalH;
             const hdCtx = hdBoard.getContext('2d');
+            
+            // ★重要：ここでもモード判定して描画
+            // width/heightを渡して再描画させる
             drawBoardContent(hdCtx, finalW, finalH);
 
             finalCtx.drawImage(hdBoard, finalX, finalY);
