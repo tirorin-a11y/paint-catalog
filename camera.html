@@ -90,9 +90,11 @@
         /* 矢印コントローラー */
         .snap-controls { 
             position: absolute; 
-            bottom: 200px; /* ここで高さを調整 */
-            left: 50%; 
-            transform: translateX(-50%);
+            /* ▼▼▼ ここを変更しました ▼▼▼ */
+            top: 50%;               /* 上から50%の位置 */
+            left: 50%;              /* 左から50%の位置 */
+            transform: translate(-50%, -50%); /* 自身の大きさ分ずらして「ど真ん中」にする */
+            /* ▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲ */
             display: flex; 
             gap: 20px; 
             z-index: 220; 
@@ -104,7 +106,7 @@
         
         .camera-controls-area { 
             position: absolute; bottom: 0; width: 100%; padding: 30px 20px; 
-            background: linear-gradient(to top, rgba(0,0,0,0.9), transparent);
+            background: rgba(0, 0, 0, 0.8);
             display: flex; justify-content: center; 
             gap: 30px; 
             align-items: center; box-sizing: border-box; z-index: 220; 
@@ -385,8 +387,8 @@
     // --- ★変更箇所：黒板移動・スナップ設定（数値で微調整可能） ---
     
     // ここで四隅からの距離をpx単位で指定します
-    const SNAP_MARGIN_TOP    = 40;  // 上からの隙間
-    const SNAP_MARGIN_BOTTOM = 80;  // 下からの隙間
+    const SNAP_MARGIN_TOP    = 50;  // 上からの隙間
+    const SNAP_MARGIN_BOTTOM = 90;  // 下からの隙間
     const SNAP_MARGIN_LEFT   = 10;  // 左からの隙間
     const SNAP_MARGIN_RIGHT  = 10;  // 右からの隙間
 
