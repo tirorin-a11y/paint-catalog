@@ -193,15 +193,25 @@
 </div>
 
 <script>
-    // --- JSロジック ---
+    // --- JSロジック（修正版：ID指定のみ） ---
     let currentSite = null;
     let currentMode = 'board';
 
     try {
+        // 1. URLからIDを取得
         const params = new URLSearchParams(window.location.search);
         const siteId = params.get('id');
+        
+        // 2. 保存されているリストから、そのIDの現場を探す
         const sites = JSON.parse(localStorage.getItem('dx_sites')) || [];
-        if (siteId) { currentSite = sites.find(s => s.id === siteId); }
+        
+        if (siteId) {
+            currentSite = sites.find(s => s.id === siteId);
+        }
+        
+        // ※もしIDがない、または見つからない場合は null（現場名未定）のままにする
+        // （余計な自動検索はしない）
+
     } catch(e) { console.error(e); }
 
     let currentProcess = '施工前';

@@ -1600,6 +1600,22 @@
             drawBoard();      // 黒板を書き直す
         }
     }
+    // --- tools.html に追加 ---
+
+document.addEventListener('DOMContentLoaded', () => {
+    // 1. 今開いている現場のIDをURLから取得
+    const params = new URLSearchParams(window.location.search);
+    const siteId = params.get('id');
+
+    // 2. カメラボタンを探して、リンクにIDを埋め込む
+    // （class="tool-btn" で href に "camera.html" が含まれるものを探す）
+    const cameraLink = document.querySelector('a[href*="camera.html"]');
+    
+    if (siteId && cameraLink) {
+        // リンク先を "camera.html?id=123" のように書き換える
+        cameraLink.href = `camera.html?id=${siteId}`;
+    }
+});
 </script>
 </body>
 </html>
