@@ -32,7 +32,6 @@
         .grid-layer { display: flex; position: absolute; top: 0; left: 0; height: 100%; z-index: 1; pointer-events: none; }
         
         /* データレイヤー（現場行） */
-        /* ★修正：absoluteをやめてrelativeにし、背景を押し広げるようにする */
         .data-layer { position: relative; width: 100%; z-index: 10; }
         
         /* 共通セル定義 */
@@ -64,7 +63,6 @@
         .modal-box { position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 85%; max-width: 400px; background: white; padding: 20px; border-radius: 12px; z-index: 160; box-shadow: 0 10px 25px rgba(0,0,0,0.3); display: none; }
         .modal-box.show { display: block; }
         
-        /* ★修正：ボタンエリアのデザイン調整 */
         input, select { width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 6px; box-sizing: border-box; margin-top: 5px; font-size: 1rem; }
         label { display: block; margin-top: 15px; font-size: 0.9rem; font-weight: bold; color: #555; }
         /* 工期未定の現場を目立たせる */
@@ -158,20 +156,16 @@
         document.getElementById('monthDisplay').textContent = `${d.getFullYear()}年 ${d.getMonth()+1}月`;
     }
 
-    // ★★★ 爆速レンダリングロジック ★★★
     function renderGantt() {
         const container = document.getElementById('ganttArea'); 
         container.innerHTML = '';
 
         const today = new Date(); const todayZero = new Date(today.getFullYear(), today.getMonth(), today.getDate());
-        // 前後合わせて5ヶ月
         const startDate = new Date(today.getFullYear(), today.getMonth()-1, 1); gStartDate=startDate;
         const endDate = new Date(today.getFullYear(), today.getMonth()+4, 0);
         const totalDays = getDiffDays(startDate, endDate) + 1;
 
-        // 1. ヘッダーを作る
         let headerHTML = `<div class="gantt-header"><div class="site-name-col" style="background:#ecf0f1; cursor:default; z-index:60;">現場名</div>`;
-        // 2. 背景グリッド（縦縞）を作る
         let gridHTML = `<div class="grid-layer" style="padding-left:120px; width:${totalDays*40}px;">`;
 
         let todayLeft = 0;
@@ -181,46 +175,33 @@
             const isSun = d.getDay()===0, isToday = d.toDateString()===today.toDateString(), isPast = d<todayZero;
             const mClass = (d.getMonth()+1)%2===0 ? 'month-even' : 'month-odd';
             
-            // クラス判定
             let classes = `gantt-cell ${mClass}`;
             if(isPast) classes += ' is-past';
             if(isSun) classes += ' is-sunday';
             if(isToday) { classes += ' is-today'; todayLeft = i*40; }
 
-            // ヘッダー用
             headerHTML += `<div class="${classes} header-cell">${d.getDate()}</div>`;
-            // 背景用（中身は空っぽでOK）
             gridHTML += `<div class="${classes}"></div>`;
         }
         headerHTML += '</div>';
         gridHTML += '</div>';
 
-        // 3. データ行を作る（中身のDivループを排除！）
         const target = isShowAll ? sites : sites.filter(s => s.status!=='complete' && s.status!=='lost' && s.status!=='done' && s.status!=='handover');
         
         let rowsHTML = `<div class="data-layer" style="width:${120 + totalDays*40}px;">`;
         
         target.forEach(site => {
             let barHTML = '';
-            
-            // ★追加：工期がセットされているか判定
             const hasDate = site.start && site.end;
-            // ★追加：クラスを決定（工期がなければ no-date クラスをつける）
             const nameClass = hasDate ? '' : 'no-date';
 
-            // 日付がある場合のみバー計算を行う
             if(hasDate) {
                 const sDate = parseDate(site.start), eDate = parseDate(site.end);
-                
-                // 範囲内かチェック
                 if(eDate >= startDate && sDate <= endDate) {
                     const off = getDiffDays(startDate, sDate);
                     const dur = getDiffDays(sDate, eDate) + 1;
-                    
                     let l = off * 40; 
                     let w = dur * 40;
-
-                    // 画面外のはみ出し調整
                     if(l < 0) { w += l; l = 0; }
                     
                     let bClass = 'bar-plan';
@@ -231,8 +212,6 @@
                 }
             }
 
-            // ★重要：ここ（行の生成）は if(hasDate) の外で行う
-            // そうしないと、日付がない現場が表示されなくなってしまう
             rowsHTML += `
                 <div class="site-row">
                     <div class="site-name-col ${nameClass}" onclick="openEditModal('${site.id}')">
@@ -243,12 +222,9 @@
         });
         rowsHTML += '</div>';
 
-        // 4. 合体（ボディの中に、背景とデータを重ねる）
         const bodyHTML = `<div class="gantt-body" style="width:${120 + totalDays*40}px;">${gridHTML}${rowsHTML}</div>`;
-        
         container.innerHTML = headerHTML + bodyHTML;
 
-        // スクロール位置調整
         container.onscroll = updateMonthDisplay;
         updateMonthDisplay();
         if(todayLeft > 0) setTimeout(()=>container.scrollTo({left:todayLeft-100, behavior:'smooth'}), 100);
@@ -265,20 +241,17 @@
 
     document.addEventListener('DOMContentLoaded', renderGantt);
 
-    // ★修正版：カレンダー登録（同時にアプリ内のデータも保存更新する）
+    // ★修正版：カレンダー登録（合言葉 authKey を追加）
     function sendCalendarFromManager() {
         if (!editingId) return;
         
-        // 編集中のデータを探す
         const idx = sites.findIndex(s => s.id === editingId);
         if (idx === -1) return;
         const site = sites[idx];
 
-        // 入力欄の値を取得
         const inputStart = document.getElementById('editStart').value;
         const inputEnd = document.getElementById('editEnd').value;
         
-        // 日付チェック
         if(inputStart && inputEnd && inputStart > inputEnd){ 
             alert("開始日が終了日より後です"); return; 
         }
@@ -286,17 +259,15 @@
         const targetStart = inputStart || site.start || new Date().toISOString().split('T')[0];
         const targetEnd = inputEnd || site.end || targetStart;
 
-        // 確認
         if(!confirm(`この工期でカレンダーに登録しますか？\n（同時にこの工期でアプリに保存します）\n\n期間: ${targetStart} 〜 ${targetEnd}\n現場: ${site.name}`)) return;
 
-        // ★ここが追加機能：アプリ側のデータを更新・保存・再描画
+        // アプリ保存
         site.start = inputStart;
         site.end = inputEnd;
         site.updatedAt = Date.now();
         localStorage.setItem('dx_sites', JSON.stringify(sites));
-        renderGantt(); // 背景の表を即座に更新！
+        renderGantt(); 
 
-        // --- 以下、GAS送信処理 ---
         const gasUrl = localStorage.getItem('dx_gas_url');
         const calId = localStorage.getItem('dx_calendar_id');
 
@@ -310,7 +281,8 @@
             description: `案件No: ${site.id}\n住所: ${site.address}`,
             address: site.address,
             start: targetStart,
-            end: targetEnd
+            end: targetEnd,
+            authKey: localStorage.getItem('dx_auth_key') || "" // ★これが抜けていました！
         };
 
         const btn = event.target;
@@ -327,7 +299,7 @@
         .then(json => {
             if(json.result === 'success') {
                 alert("✅ カレンダー登録＆保存完了！");
-                closeModal(); // 成功したら閉じる
+                closeModal();
             } else {
                 alert("エラー: " + json.error);
             }
@@ -339,7 +311,6 @@
         });
     }
 
-    // (補助) ステータス文字変換
     function getStatusText(st) {
         const map = { 'estimate':'見積', 'contract':'施工', 'billing':'請求', 'complete':'完了', 'lost':'失注' };
         return map[st] || '予定';
