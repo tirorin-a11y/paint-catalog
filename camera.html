@@ -2,8 +2,17 @@
 <html lang="ja">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>電子黒板カメラ - 職人ギア</title>
+    
+    <link rel="icon" href="icon-192x192.png">
+    <link rel="apple-touch-icon" href="icon-192x192.png">
+    
+    <link rel="manifest" href="manifest.json">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="theme-color" content="#2c3e50">
+
     <style>
         /* 基本設定 */
         body { font-family: -apple-system, BlinkMacSystemFont, "Helvetica Neue", "Yu Gothic", sans-serif; background-color: #000; margin: 0; padding: 0; color: #333; height: 100vh; overflow: hidden; display: flex; flex-direction: column; }
@@ -90,25 +99,17 @@
         /* 矢印コントローラー（四角い2x2配置 & 高透過） */
         .snap-controls { 
             position: absolute; 
-            top: 40%; 
+            top: 50%; 
             left: 50%; 
             transform: translate(-50%, -50%);
-            
-            /* ▼▼▼ 四角いグリッドレイアウトに変更 ▼▼▼ */
             display: grid;
             grid-template-columns: 1fr 1fr; /* 2列 */
             gap: 15px; /* ボタン同士の間隔 */
-            /* ▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲ */
-
             z-index: 230; 
-            
-            /* ▼▼▼ 透明度を上げました（0.6 → 0.2） ▼▼▼ */
             background: rgba(0, 0, 0, 0.2); 
-            /* ▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲ */
-            
             padding: 20px; 
             border-radius: 25px; /* 角丸の四角 */
-            backdrop-filter: blur(2px); /* すりガラス効果で視認性確保 */
+            backdrop-filter: blur(2px); /* すりガラス効果 */
         }
 
         .snap-btn { 
@@ -130,12 +131,15 @@
             background: rgba(255,255,255,0.5); /* 押した時だけ明るく */
             transform: scale(0.95);
         }
+        
+        /* コントロールエリア背景（黒・不透明） */
         .camera-controls-area { 
             position: absolute; bottom: 0; width: 100%; padding: 30px 20px; 
-            background: #000000;  /* 完全な黒 */
+            background: #000000;  /* 真っ黒 */
             display: flex; justify-content: center; 
             gap: 30px; 
-            align-items: center; box-sizing: border-box; z-index: 220; 
+            align-items: center; box-sizing: border-box; 
+            z-index: 220; 
         }
         .btn-cam-action { padding: 12px 30px; border-radius: 30px; font-weight: bold; cursor: pointer; border: none; font-size: 1rem; min-width: 120px; }
         .btn-retake { background: #e74c3c; color: white; }
@@ -221,25 +225,15 @@
 </div>
 
 <script>
-    // --- JSロジック（修正版：ID指定のみ） ---
+    // --- JSロジック ---
     let currentSite = null;
     let currentMode = 'board';
 
     try {
-        // 1. URLからIDを取得
         const params = new URLSearchParams(window.location.search);
         const siteId = params.get('id');
-        
-        // 2. 保存されているリストから、そのIDの現場を探す
         const sites = JSON.parse(localStorage.getItem('dx_sites')) || [];
-        
-        if (siteId) {
-            currentSite = sites.find(s => s.id === siteId);
-        }
-        
-        // ※もしIDがない、または見つからない場合は null（現場名未定）のままにする
-        // （余計な自動検索はしない）
-
+        if (siteId) { currentSite = sites.find(s => s.id === siteId); }
     } catch(e) { console.error(e); }
 
     let currentProcess = '施工前';
@@ -364,24 +358,20 @@
             reader.onload = function(e) {
                 const previewImg = document.getElementById('previewImage');
                 
-                // ★修正1：画像が完全に読み込まれてから処理を開始する
+                // ★修正：画像読み込み完了後に処理
                 previewImg.onload = function() {
-                    // 1. 黒板を描画して画像化
                     drawBoard(); 
                     const boardImg = document.getElementById('overlayBoard');
                     boardImg.src = canvas.toDataURL('image/png');
                     
-                    // 2. 画面を表示（表示しないとサイズ計算できないため）
                     document.getElementById('photoPreviewArea').style.display = 'flex';
                     
-                    // 3. 最後に位置を右下に合わせる
-                    // （黒板画像の読み込みラグ対策として少しだけ待つのがベストですが、通常はこれでも動きます）
+                    // 初期位置を右下に
                     setTimeout(() => {
                         snapBoard('br');
                     }, 50);
                 };
 
-                // 画像ソースをセット（これをトリガーに上のonloadが動く）
                 previewImg.src = e.target.result;
             };
             reader.readAsDataURL(photoFile);
@@ -420,13 +410,11 @@
         retakePhoto();
     }
 
-    // --- ★変更箇所：黒板移動・スナップ設定（数値で微調整可能） ---
-    
-    // ここで四隅からの距離をpx単位で指定します
-    const SNAP_MARGIN_TOP    = 50;  // 上からの隙間
-    const SNAP_MARGIN_BOTTOM = 110;  // 下からの隙間
-    const SNAP_MARGIN_LEFT   = 10;  // 左からの隙間
-    const SNAP_MARGIN_RIGHT  = 10;  // 右からの隙間
+    // --- 黒板移動・スナップ設定 ---
+    const SNAP_MARGIN_TOP    = 20; 
+    const SNAP_MARGIN_BOTTOM = 20; 
+    const SNAP_MARGIN_LEFT   = 20; 
+    const SNAP_MARGIN_RIGHT  = 20; 
 
     function snapBoard(pos) {
         const board = document.getElementById('overlayBoard');
@@ -435,7 +423,6 @@
         const pRect = pImg.getBoundingClientRect();
         const cRect = container.getBoundingClientRect();
         
-        // 写真の表示位置（余白を考慮）
         const offsetTop = pRect.top - cRect.top;
         const offsetLeft = pRect.left - cRect.left;
         const pWidth = pRect.width;
@@ -446,20 +433,19 @@
 
         board.style.top = ''; board.style.bottom = ''; board.style.left = ''; board.style.right = '';
 
-        // 位置計算
-        if (pos === 'tl') { // 左上
+        if (pos === 'tl') { 
             board.style.top  = (offsetTop + SNAP_MARGIN_TOP) + 'px';
             board.style.left = (offsetLeft + SNAP_MARGIN_LEFT) + 'px';
         } 
-        else if (pos === 'tr') { // 右上
+        else if (pos === 'tr') { 
             board.style.top  = (offsetTop + SNAP_MARGIN_TOP) + 'px';
             board.style.left = (offsetLeft + pWidth - bWidth - SNAP_MARGIN_RIGHT) + 'px';
         } 
-        else if (pos === 'bl') { // 左下
+        else if (pos === 'bl') { 
             board.style.top  = (offsetTop + pHeight - bHeight - SNAP_MARGIN_BOTTOM) + 'px';
             board.style.left = (offsetLeft + SNAP_MARGIN_LEFT) + 'px';
         } 
-        else if (pos === 'br') { // 右下
+        else if (pos === 'br') { 
             board.style.top  = (offsetTop + pHeight - bHeight - SNAP_MARGIN_BOTTOM) + 'px';
             board.style.left = (offsetLeft + pWidth - bWidth - SNAP_MARGIN_RIGHT) + 'px';
         }
