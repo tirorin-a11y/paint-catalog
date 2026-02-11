@@ -1,0 +1,335 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>職人ギア V15 (ホームボタン追加)</title>
+<script src="https://html2canvas.hertzen.com/dist/html2canvas.min.js"></script>
+<style>
+    * { box-sizing: border-box; }
+
+    body {
+        font-family: "Helvetica Neue", Arial, sans-serif;
+        background-color: #2c3e50;
+        color: #333;
+        margin: 0; padding: 10px; display: flex; flex-direction: column;
+        height: 100vh; overflow: hidden;
+    }
+
+    /* UI共通 */
+    button {
+        border: none; padding: 8px 12px; border-radius: 6px; cursor: pointer;
+        font-size: 13px; font-weight: bold; color: white; display: flex; align-items: center; justify-content: center;
+        transition: opacity 0.2s; box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+    }
+    button:active { opacity: 0.7; }
+    
+    /* ボタン色設定 */
+    .btn-home { background: #555; } /* ★新設：ホームボタン（渋いグレー） */
+    .btn-data { background: #8e44ad; }
+    .btn-add  { background: #2ecc71; }
+    .btn-reset{ background: #e74c3c; } 
+    .btn-photo{ background: #e67e22; }
+    .btn-save { background: #34495e; }
+    .btn-sub  { background: #95a5a6; font-size: 11px; padding: 5px 10px; width:100%; margin-top:10px;}
+
+    /* 操作パネル */
+    .control-panel {
+        background: rgba(255, 255, 255, 0.95);
+        padding: 10px; border-radius: 8px;
+        box-shadow: 0 4px 10px rgba(0,0,0,0.3);
+        display: flex; gap: 5px; justify-content: space-between; align-items: center;
+        margin-bottom: 10px; flex-shrink: 0; flex-wrap: wrap; z-index: 100;
+    }
+
+    /* メインエリア */
+    .workspace { 
+        display: flex; flex: 1; gap: 10px; overflow: hidden; position: relative;
+        background-size: cover; background-position: center; background-repeat: no-repeat;
+        background-color: #bdc3c7; 
+        border-radius: 8px;
+        box-shadow: inset 0 0 20px rgba(0,0,0,0.2);
+    }
+    
+    .palette, .scale-area {
+        background: rgba(255, 255, 255, 0.05);
+        border: 2px solid rgba(255, 255, 255, 0.4);
+        backdrop-filter: blur(2px);
+    }
+
+    /* 左：カタログエリア */
+    .palette {
+        width: 140px; border-radius: 8px;
+        padding: 5px; overflow-y: auto; display: flex; flex-direction: column; gap: 8px;
+    }
+    .palette-item-wrap { position: relative; width: 100%; display: flex; justify-content: center; }
+    
+    .palette-del-btn {
+        position: absolute; top: -6px; left: -2px; width: 20px; height: 20px; 
+        background: #e74c3c; color: white; border: 2px solid #fff;
+        border-radius: 50%; font-size: 14px; line-height: 18px; text-align: center; font-weight: bold;
+        cursor: pointer; z-index: 10; display: none; box-shadow: 0 2px 4px rgba(0,0,0,0.3);
+    }
+    .palette-item-wrap:hover .palette-del-btn { display: block; }
+
+    /* 右：積み上げエリア */
+    .scale-area {
+        flex: 1; 
+        border-bottom: 10px solid rgba(44, 62, 80, 0.8);
+        border-radius: 8px 8px 0 0; position: relative;
+        display: flex; justify-content: center; align-items: flex-end; overflow: hidden;
+    }
+    #stack-container {
+        width: 100%; display: flex; flex-direction: column-reverse;
+        align-items: center; transition: transform 0.1s; transform-origin: bottom center; padding-bottom: 2px;
+    }
+
+    /* 合計表示 */
+    .total-display {
+        position: absolute; top: 10px; right: 10px;
+        background: rgba(0, 0, 0, 0.6);
+        color: #f1c40f; padding: 8px 16px;
+        border-radius: 30px; font-size: 18px; font-weight: bold; z-index: 100; pointer-events: none;
+        backdrop-filter: blur(5px); border: 1px solid rgba(255,255,255,0.2);
+        text-align: right;
+    }
+    .tax-info { font-size: 10px; color: #ddd; font-weight: normal; display: block;}
+
+    /* 箱のデザイン */
+    .cost-box {
+        width: 90%; max-width: 280px; border-radius: 4px;
+        display: flex; justify-content: space-between; align-items: center; padding: 0 8px;
+        color: white; font-weight: bold; cursor: grab; font-size: 11px;
+        position: relative; line-height: 1.2; flex-shrink: 0;
+        opacity: 0.85; 
+        box-shadow: 0 4px 6px rgba(0,0,0,0.15);
+        border: 1px solid rgba(255,255,255,0.3);
+        text-shadow: 0 1px 3px rgba(0,0,0, 0.9); 
+    }
+
+    .palette .cost-box { 
+        height: 35px !important; font-size: 10px; width: 100%; margin: 0;
+        justify-content: flex-end; padding-left: 20px; padding-right: 10px; text-align: right;
+    }
+
+    /* モーダル類 */
+    .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); justify-content: center; align-items: center; z-index: 999; backdrop-filter: blur(3px); }
+    .modal-content { background: white; padding: 20px; border-radius: 12px; width: 90%; max-width: 350px; display: flex; flex-direction: column; gap: 10px; max-height: 80vh; overflow-y: auto; box-shadow: 0 10px 30px rgba(0,0,0,0.5); }
+    .form-group label { display: block; font-size: 11px; color: #555; margin-bottom: 3px; }
+    .form-group input, .form-group select { width: 100%; padding: 8px; border: 1px solid #ccc; border-radius: 4px; }
+    #site-data-list { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 10px; }
+    
+    .color-palette { display: flex; justify-content: space-between; gap: 5px; margin-top: 5px; }
+    .color-swatch { width: 40px; height: 40px; border-radius: 50%; cursor: pointer; border: 3px solid transparent; box-shadow: 0 2px 4px rgba(0,0,0,0.2); }
+    .color-swatch.selected { border-color: #333; transform: scale(1.1); }
+
+</style>
+</head>
+<body>
+
+    <div class="control-panel">
+        <div style="display:flex; gap:5px;">
+            <button class="btn-home" onclick="location.href='index.html'">🏠 ホーム</button>
+            <button class="btn-data" onclick="openDataModal()">⚙️ 設定</button>
+            <button class="btn-photo" onclick="document.getElementById('bg-upload').click()">📷 背景</button>
+            <input type="file" id="bg-upload" accept="image/*" style="display:none" onchange="loadBackground(this)">
+        </div>
+
+        <div style="display:flex; gap:5px; align-items:center;">
+            <input type="range" id="zoom" min="0.2" max="1.5" step="0.1" value="1.0" style="width:60px;">
+            <button class="btn-add" onclick="openItemModal()">＋ 部材</button>
+            <button class="btn-reset" onclick="resetStack()">🗑️</button>
+            <button class="btn-save" onclick="saveAsImage()">💾 保存</button>
+        </div>
+    </div>
+
+    <div class="workspace" id="capture-area">
+        <div class="palette" id="source-zone"></div>
+        <div class="scale-area" id="drop-zone">
+            <div class="total-display">
+                <span class="tax-info">税込合計</span>
+                ¥<span id="total-price">0</span>
+            </div>
+            <div id="stack-container"></div>
+            <div style="position:absolute; bottom:5px; color:rgba(255,255,255,0.7); font-size:10px; text-shadow:0 1px 2px rgba(0,0,0,0.8);">タップで削除</div>
+        </div>
+    </div>
+
+    <div id="dataModal" class="modal">
+        <div class="modal-content">
+            <h3>建物データ (計算基準)</h3>
+            <div id="site-data-list"></div>
+            <button class="btn-sub" onclick="addNewVariable()">＋ 新しい基準を追加</button>
+            <button onclick="saveDataModal()" style="background:#3498db; width:100%; margin-top:10px;">閉じる & 保存</button>
+        </div>
+    </div>
+
+    <div id="itemModal" class="modal">
+        <div class="modal-content">
+            <h3>部材カタログ追加</h3>
+            <div class="form-group">
+                <label>項目名</label>
+                <div style="display:flex; gap:5px;">
+                    <input type="text" id="m-name" placeholder="名称を入力" style="flex:1;">
+                    <select id="m-name-preset" onchange="applyPresetName()" style="width:90px; font-size:11px;"><option value="">候補から</option></select>
+                </div>
+            </div>
+            <div class="form-group"><label>計算タイプ</label><select id="m-type"></select></div>
+            <div class="form-group"><label>金額 / 単価</label><input type="number" id="m-price"></div>
+            <div class="form-group"><label>色を選択</label><div class="color-palette" id="swatch-container"></div><input type="hidden" id="m-color-val" value="#95a5a6"></div>
+            <div style="display:flex; gap:10px; margin-top:10px;">
+                <button onclick="closeItemModal()" style="background:#ccc; flex:1; color:#333;">キャンセル</button>
+                <button onclick="addItemFromModal()" style="background:#2ecc71; flex:1;">追加</button>
+            </div>
+        </div>
+    </div>
+
+<script>
+    const PIXEL_PER_YEN = 0.0005; 
+    const STORAGE_KEY_VARS = 'shokunin_vars_v9';
+    const STORAGE_KEY_ITEMS = 'shokunin_items_v9';
+    const TAX_RATE = 1.1; 
+
+    const PRESET_COLORS = [
+        { val: '#95a5a6', name: 'グレー' }, { val: '#e74c3c', name: '赤' },
+        { val: '#3498db', name: '青' }, { val: '#f1c40f', name: '黄' }, { val: '#2ecc71', name: '緑' }
+    ];
+
+    let siteVariables = [], paletteItems = [];
+    const sourceZone = document.getElementById('source-zone');
+    const stackContainer = document.getElementById('stack-container');
+    const dropZone = document.getElementById('drop-zone');
+    const totalDisplay = document.getElementById('total-price');
+
+    loadData(); renderPalette(); initColorSwatches();
+
+    document.getElementById('zoom').addEventListener('input', (e) => stackContainer.style.transform = `scale(${e.target.value})`);
+
+    function loadBackground(input) {
+        if (input.files && input.files[0]) {
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                document.getElementById('capture-area').style.backgroundImage = `url(${e.target.result})`;
+            };
+            reader.readAsDataURL(input.files[0]);
+        }
+    }
+
+    function saveAsImage() {
+        const element = document.getElementById('capture-area');
+        html2canvas(element, { backgroundColor: null }).then(canvas => {
+            const link = document.createElement('a');
+            link.download = 'mitsumori_sim.png';
+            link.href = canvas.toDataURL();
+            link.click();
+        });
+    }
+
+    function initColorSwatches() {
+        const container = document.getElementById('swatch-container');
+        const input = document.getElementById('m-color-val');
+        container.innerHTML = '';
+        PRESET_COLORS.forEach((color, index) => {
+            const swatch = document.createElement('div');
+            swatch.className = 'color-swatch';
+            swatch.style.backgroundColor = color.val;
+            swatch.onclick = () => {
+                document.querySelectorAll('.color-swatch').forEach(s => s.classList.remove('selected'));
+                swatch.classList.add('selected');
+                input.value = color.val;
+            };
+            if (index === 0) swatch.classList.add('selected');
+            container.appendChild(swatch);
+        });
+    }
+
+    function loadData() {
+        const savedVars = localStorage.getItem(STORAGE_KEY_VARS);
+        siteVariables = savedVars ? JSON.parse(savedVars) : [{ id: 'wall', label: '外壁(㎡)', val: 150 }, { id: 'roof', label: '屋根(㎡)', val: 80 }, { id: 'seal', label: 'シール(ｍ)', val: 120 }];
+        const savedItems = localStorage.getItem(STORAGE_KEY_ITEMS);
+        paletteItems = savedItems ? JSON.parse(savedItems) : [
+            { id: 1, label: "足場代", unitPrice: 150000, typeId: "fixed", color: "#95a5a6" },
+            { id: 2, label: "外壁シリコン", unitPrice: 2800, typeId: "wall", color: "#e74c3c" },
+            { id: 3, label: "屋根フッ素", unitPrice: 4500, typeId: "roof", color: "#3498db" }
+        ];
+    }
+    function saveData() { localStorage.setItem(STORAGE_KEY_VARS, JSON.stringify(siteVariables)); localStorage.setItem(STORAGE_KEY_ITEMS, JSON.stringify(paletteItems)); }
+
+    function renderPalette() {
+        sourceZone.innerHTML = '';
+        paletteItems.forEach((item, index) => {
+            const wrap = document.createElement('div'); wrap.className = 'palette-item-wrap';
+            const delBtn = document.createElement('div'); delBtn.className = 'palette-del-btn'; delBtn.innerHTML = '×';
+            delBtn.onclick = () => deletePaletteItem(index);
+            const div = document.createElement('div'); div.className = 'cost-box'; div.draggable = true;
+            div.style.background = `linear-gradient(135deg, ${item.color}, ${darkenColor(item.color, 20)})`;
+            div.innerHTML = `<span>${item.label}</span>`;
+            div.addEventListener('dragstart', (e) => { e.dataTransfer.effectAllowed = 'copy'; e.dataTransfer.setData('application/json', JSON.stringify(item)); div.style.opacity = '0.5'; });
+            div.addEventListener('dragend', () => div.style.opacity = '0.85');
+            wrap.appendChild(div); wrap.appendChild(delBtn); sourceZone.appendChild(wrap);
+        });
+    }
+    function addPaletteItem(label, unitPrice, typeId, color) { paletteItems.push({ id: Date.now(), label, unitPrice, typeId, color }); saveData(); renderPalette(); }
+    function deletePaletteItem(index) { if(confirm("カタログから削除しますか？")) { paletteItems.splice(index, 1); saveData(); renderPalette(); } }
+
+    dropZone.addEventListener('dragover', (e) => { e.preventDefault(); e.dataTransfer.dropEffect = 'copy'; });
+    dropZone.addEventListener('drop', (e) => { e.preventDefault(); const data = JSON.parse(e.dataTransfer.getData('application/json')||'null'); if(data) createStackBox(data); });
+
+    function createStackBox(data) {
+        const div = document.createElement('div'); div.className = 'cost-box';
+        div.style.background = `linear-gradient(135deg, ${data.color}, ${darkenColor(data.color, 20)})`;
+        div.dataset.label = data.label; div.dataset.unitPrice = data.unitPrice; div.dataset.typeId = data.typeId; 
+        div.addEventListener('click', () => { if(confirm('崩しますか？')) { div.remove(); recalcTotal(); } });
+        stackContainer.appendChild(div); recalcSingleBox(div); recalcTotal();
+    }
+
+    function recalcSingleBox(box) {
+        const typeId = box.dataset.typeId; const unitPrice = parseFloat(box.dataset.unitPrice);
+        let multiplier = 1; 
+        if (typeId !== 'fixed') { const variable = siteVariables.find(v => v.id === typeId); multiplier = variable ? parseFloat(variable.val) : 0; }
+        const currentPrice = unitPrice * multiplier;
+        box.dataset.currentPrice = currentPrice;
+        let height = currentPrice * PIXEL_PER_YEN; if (height < 24) height = 24; box.style.height = `${height}px`;
+        box.innerHTML = `<span>${box.dataset.label}</span><span>¥${Math.round(currentPrice).toLocaleString()}</span>`;
+    }
+
+    function recalcTotal() {
+        let total = 0; const boxes = stackContainer.querySelectorAll('.cost-box');
+        boxes.forEach(box => { recalcSingleBox(box); total += parseFloat(box.dataset.currentPrice); });
+        const totalTaxIn = Math.round(total * TAX_RATE);
+        totalDisplay.innerText = totalTaxIn.toLocaleString();
+    }
+
+    function openDataModal() {
+        const list = document.getElementById('site-data-list'); list.innerHTML = '';
+        siteVariables.forEach(v => {
+            const div = document.createElement('div');
+            div.innerHTML = `<div class="form-group"><label>${v.label}</label><input type="number" value="${v.val}" onchange="updateVariable('${v.id}', this.value)"></div>`;
+            list.appendChild(div);
+        });
+        document.getElementById('dataModal').style.display = 'flex';
+    }
+    window.updateVariable = function(id, val) { const target = siteVariables.find(v => v.id === id); if (target) target.val = parseFloat(val); }
+    window.addNewVariable = function() { const name = prompt("項目名"); if (!name) return; siteVariables.push({ id: 'custom_' + Date.now(), label: name, val: 0 }); openDataModal(); }
+    function saveDataModal() { document.getElementById('dataModal').style.display = 'none'; saveData(); recalcTotal(); }
+
+    function openItemModal() {
+        const selectType = document.getElementById('m-type'); selectType.innerHTML = '<option value="fixed">固定金額 (一式)</option>';
+        const selectName = document.getElementById('m-name-preset'); selectName.innerHTML = '<option value="">候補から</option>';
+        siteVariables.forEach(v => {
+            const optType = document.createElement('option'); optType.value = v.id; optType.text = `× ${v.label}`; selectType.appendChild(optType);
+            const optName = document.createElement('option'); optName.value = v.label; optName.text = v.label; selectName.appendChild(optName);
+        });
+        document.getElementById('itemModal').style.display = 'flex';
+    }
+    window.applyPresetName = function() { const val = document.getElementById('m-name-preset').value; if (val) document.getElementById('m-name').value = val; }
+    function closeItemModal() { document.getElementById('itemModal').style.display = 'none'; }
+    function addItemFromModal() {
+        const name = document.getElementById('m-name').value, type = document.getElementById('m-type').value, price = parseFloat(document.getElementById('m-price').value), color = document.getElementById('m-color-val').value;
+        if (name && price) { addPaletteItem(name, price, type, color); closeItemModal(); }
+    }
+    function resetStack() { if(confirm("積み上げをクリアしますか？")) { stackContainer.innerHTML = ''; recalcTotal(); } }
+    function darkenColor(hex, percent) { let num = parseInt(hex.replace("#",""), 16), amt = Math.round(2.55 * percent), R = (num >> 16) - amt, B = (num >> 8 & 0x00FF) - amt, G = (num & 0x0000FF) - amt; return "#" + (0x1000000 + (R<255?R<1?0:R:255)*0x10000 + (B<255?B<1?0:B:255)*0x100 + (G<255?G<1?0:G:255)).toString(16).slice(1); }
+</script>
+</body>
+</html>

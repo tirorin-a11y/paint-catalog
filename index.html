@@ -6,53 +6,76 @@
     
     <title>完全無料の現場管理アプリ | 職人ギア (電子黒板・日報・工程表)</title>
     
-    <meta name="description" content="インストール不要、完全無料の建設現場・施工管理アプリ。スマホひとつで「電子黒板付き写真撮影」「音声入力日報」「工程管理」「現場ナビ」が使えます。一人親方から中小工務店まで、現場DXを強力にサポート。">
+    <meta name="description" content="インストール不要、完全無料の建設現場・施工管理アプリ。スマホひとつで「電子黒板付き写真撮影」「音声入力日報」「工程管理」「現場ナビ」が使えます。">
+    <meta name="keywords" content="施工管理アプリ,現場アプリ,現場管理,無料,日報アプリ,電子黒板,職人,建設業,DX,見積シミュレーション">
     
-    <meta name="keywords" content="施工管理アプリ,現場アプリ,現場管理,無料,日報アプリ,電子黒板,黒板アプリ,職人,一人親方,建設業,DX,塗料カタログ">
-    
-    <meta property="og:site_name" content="職人ギア">
-    <meta property="og:title" content="完全無料の現場管理アプリ | 職人ギア">
-    <meta property="og:description" content="黒板カメラも日報も全部タダ。インストール不要ですぐ使える現場アプリ。">
-    <meta property="og:type" content="website">
-    <meta property="og:url" content="https://tirorin-ally.github.io/">
-    <meta property="og:image" content="https://tirorin-ally.github.io/icon-192x192.png">
-
-    <script type="application/ld+json">
-    {
-      "@context": "https://schema.org",
-      "@type": "WebSite",
-      "name": "職人ギア",
-      "url": "https://tirorin-ally.github.io/",
-      "alternateName": ["職人GEAR", "現場ナビ"]
-    }
-    </script>
-
-    <script type="application/ld+json">
-    {
-      "@context": "https://schema.org",
-      "@type": "SoftwareApplication",
-      "name": "職人ギア",
-      "applicationCategory": "BusinessApplication",
-      "operatingSystem": "Web",
-      "offers": {
-        "@type": "Offer",
-        "price": "0",
-        "priceCurrency": "JPY"
-      },
-      "description": "完全無料の建設現場向け施工管理Webアプリ。電子黒板、日報、工程管理機能搭載。"
-    }
-    </script>
     <link rel="manifest" href="manifest.json">
     <link rel="icon" href="icon-192x192.png">
     <link rel="apple-touch-icon" href="icon-192x192.png">
     <meta name="apple-mobile-web-app-capable" content="yes">
     
-    <link rel="stylesheet" href="style.css">
     <style>
-        /* index.html 専用スタイル */
+        /* --- 基本設定 (元style.cssの内容) --- */
+        body {
+            font-family: "Helvetica Neue", Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #f4f7f6;
+            color: #333;
+        }
+        header {
+            background-color: #333;
+            color: white;
+            padding: 15px;
+            text-align: center;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+        }
+        header h1 { margin: 0; font-size: 1.5rem; }
+        
+        main { padding: 20px; max-width: 600px; margin: 0 auto; }
+        
+        footer {
+            text-align: center;
+            padding: 20px;
+            color: #777;
+            font-size: 0.8rem;
+            margin-top: 30px;
+        }
+
+        /* セクション共通 */
+        .tool-section {
+            background: white;
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+        }
+        .tool-section h2 {
+            margin-top: 0;
+            font-size: 1.2rem;
+            color: #2c3e50;
+            border-bottom: 2px solid #eee;
+            padding-bottom: 10px;
+            margin-bottom: 15px;
+        }
+
+        /* 更新情報ボックス */
+        .news-scroll-box {
+            height: 100px;
+            overflow-y: auto;
+            border: 1px solid #eee;
+            padding: 10px;
+            border-radius: 4px;
+            background: #fafafa;
+            font-size: 0.9rem;
+        }
+        .news-scroll-box ul { padding-left: 20px; margin: 0; }
+        .news-scroll-box li { margin-bottom: 5px; }
+
+        /* --- index.html 専用スタイル --- */
         .nav-area {
             display: flex;
-            flex-direction: column; /* 縦並び */
+            flex-direction: column;
             gap: 15px;
             margin-bottom: 30px;
         }
@@ -74,50 +97,22 @@
             transition: transform 0.1s;
             box-sizing: border-box;
         }
-        .nav-btn-large:active {
-            transform: translateY(2px);
-            box-shadow: none;
-        }
+        .nav-btn-large:active { transform: translateY(2px); box-shadow: none; }
+        
+        /* ボタン色設定 */
         .btn-navi { background-color: #00C853; } /* 緑 */
         .btn-manager { background-color: #2c3e50; } /* 紺 */
+        .btn-sim { background-color: #e67e22; } /* オレンジ */
 
-        /* 検索エリアのデザイン調整 */
-        .search-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 10px;
-        }
-        .search-title {
-            font-weight: bold;
-            font-size: 1.2rem;
-            color: #0056b3;
-            margin: 0;
-            border: none;
-        }
-        .hint-btn {
-            font-size: 0.8rem;
-            background: #f0f8ff;
-            border: 1px solid #007bff;
-            color: #007bff;
-            border-radius: 15px;
-            padding: 4px 12px;
-            cursor: pointer;
-        }
-        .filter-section {
-            background-color: #f9f9f9;
-            padding: 15px;
-            border-radius: 8px;
-            border: 1px solid #eee;
-            margin-top: 15px;
-        }
-        .filter-grid {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 10px;
-            margin-top: 10px;
-        }
-        /* リストスタイル */
+        /* 検索エリア */
+        .search-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
+        .search-title { font-weight: bold; font-size: 1.2rem; color: #0056b3; margin: 0; border: none; }
+        .hint-btn { font-size: 0.8rem; background: #f0f8ff; border: 1px solid #007bff; color: #007bff; border-radius: 15px; padding: 4px 12px; cursor: pointer; }
+        
+        .filter-section { background-color: #f9f9f9; padding: 15px; border-radius: 8px; border: 1px solid #eee; margin-top: 15px; }
+        .filter-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 10px; }
+        
+        /* リスト */
         .item-main { display: flex; align-items: center; flex-wrap: wrap; gap: 5px; }
         .result-link { font-weight: bold; text-decoration: none; color: #007bff; font-size: 1.1rem; }
         .pdf-link { color: #d9534f; font-size: 0.9rem; font-weight: bold; text-decoration: none; }
@@ -141,12 +136,16 @@
             <a href="manager.html" class="nav-btn-large btn-manager">
                 📊 工程管理
             </a>
+            <a href="simulator.html" class="nav-btn-large btn-sim">
+                💰 見積シミュレータ
+            </a>
         </div>
 
         <section class="tool-section">
             <h2>📢 更新情報</h2>
             <div class="news-scroll-box">
                 <ul>
+                    <li><strong>2025.12.01</strong> : 積み上げ式の「見積シミュレータ」機能を追加しました！</li>
                     <li><strong>2025.11.24</strong> : 検索結果に「一般名称」を表示するように改良！</li>
                     <li><strong>2025.11.16</strong> : 絞り込み機能を4大分類（大分類・用途・タイプ・樹脂）に再構築。</li>
                 </ul>
@@ -238,7 +237,6 @@
         initializeHintPopup(); 
     });
 
-    // イベントリスナー設定
     document.getElementById("catalogSearch").addEventListener("change", function() { runUpdate(false); }); 
     document.getElementById("catalogSearch").addEventListener("input", function() { runUpdate(false); }); 
     document.getElementById("maker1").addEventListener("change", function() { runUpdate(false); }); 
@@ -246,7 +244,6 @@
         document.getElementById(id).addEventListener("change", function() { runUpdate(false); });
     });
 
-    // 初期データ取得 (GAS連携)
     function fetchInitialData() {
         if(GAS_API_URL.includes("xxxx")) {
             document.getElementById("searchStatus").innerHTML = "<span style='color:red;'>⚠️ URL未設定：コード内のGAS_API_URLを書き換えてください</span>";
@@ -270,7 +267,6 @@
             });
     }
 
-    // 検索実行
     function runUpdate(isInitialLoad = false) { 
         let keyword = document.getElementById("catalogSearch").value;
         let maker = document.getElementById("maker1").value; 
@@ -279,7 +275,6 @@
         let statusMsg = document.getElementById("searchStatus");
 
         if (!keyword && !maker && !filterJ && !filterK && !filterL && !filterM) {
-            // 空の時はクリアして初期状態へ
             listElement.innerHTML = ""; 
             statusMsg.innerText = ""; 
             if(isInitialLoad === false && allMakersList.length === 0) fetchInitialData(); 
@@ -348,7 +343,6 @@
             });
     }
 
-    // ドロップダウン更新
     function updateAllDropdowns(filters, isInitialLoad) {
         if (!filters) return; 
         let makerListSource = isInitialLoad ? filters.makers : allMakersList;
@@ -384,7 +378,6 @@
         if (currentValue && list && !list.includes(currentValue)) { select.value = ""; }
     }
 
-    // ヒントタグ
     function generateHintTags(keywords) {
         const container = document.getElementById("hintTagContainer");
         if (!container) return;
