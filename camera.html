@@ -5,46 +5,74 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>電子黒板カメラ - 職人ギア</title>
     <style>
-        /* tools.html のスタイルをベースに、モード切替用スタイルを追加 */
+        /* 基本設定 */
         body { font-family: -apple-system, BlinkMacSystemFont, "Helvetica Neue", "Yu Gothic", sans-serif; background-color: #000; margin: 0; padding: 0; color: #333; height: 100vh; overflow: hidden; display: flex; flex-direction: column; }
         
         /* ヘッダー */
-        .site-header { background: #2c3e50; color: white; padding: 15px; text-align: center; box-shadow: 0 4px 10px rgba(0,0,0,0.1); position: sticky; top: 0; z-index: 100; flex-shrink: 0; }
-        .site-title { margin: 0; font-size: 1.2rem; font-weight: bold; }
+        .site-header { background: #2c3e50; color: white; padding: 12px; text-align: center; box-shadow: 0 4px 10px rgba(0,0,0,0.1); z-index: 100; flex-shrink: 0; }
+        .site-title { margin: 0; font-size: 1.1rem; font-weight: bold; }
         
-        /* メインエリア */
+        /* メインコンテナ */
         #cameraContainer { flex: 1; display: flex; flex-direction: column; background: #fff; overflow: hidden; position: relative; }
         
-        /* 設定エリア */
-        #cameraSetup { padding: 15px; background: #fff; color: #333; overflow-y: auto; flex: 1; display: flex; flex-direction: column; }
+        /* === ★エリア分割設定 === */
         
-        /* ★モード切替スイッチ */
-        .mode-switch-container { display: flex; background: #f0f0f0; border-radius: 8px; padding: 4px; margin-bottom: 15px; flex-shrink: 0; }
-        .mode-btn { flex: 1; border: none; background: transparent; padding: 8px; font-weight: bold; color: #7f8c8d; cursor: pointer; border-radius: 6px; transition: 0.2s; font-size: 0.9rem; }
-        .mode-btn.active { background: #fff; color: #2c3e50; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
-        .mode-btn.active-date { color: #e67e22; } /* 日付モード時はオレンジ文字 */
+        /* 上部：固定エリア（黒板プレビュー） */
+        #fixedTopArea {
+            background: #222; /* 黒板が見やすい暗い背景 */
+            padding: 10px;
+            flex-shrink: 0; /* 縮まない */
+            border-bottom: 1px solid #444;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            z-index: 10;
+        }
 
-        /* プレビューエリア */
-        .preview-canvas-wrapper { text-align: center; margin-bottom: 10px; background: #333; padding: 10px; border-radius: 8px; flex-shrink: 0; min-height: 200px; display: flex; align-items: center; justify-content: center; }
-        #boardCanvas { max-width: 100%; height: auto; box-shadow: 0 4px 8px rgba(0,0,0,0.3); }
-        
-        /* 黒板入力エリア（日付モードの時は隠す用） */
-        #boardInputGroup { display: block; transition: opacity 0.3s; }
+        /* 下部：スクロールエリア（入力フォーム） */
+        #scrollableInputArea {
+            flex: 1; /* 残りのスペースを埋める */
+            overflow-y: auto; /* ここだけスクロール */
+            background: #fff;
+            padding: 15px;
+            -webkit-overflow-scrolling: touch; /* スムーズスクロール */
+        }
+
+        /* モード切替ボタン（固定エリア内） */
+        .mode-switch-container { display: flex; width: 100%; max-width: 400px; background: rgba(255,255,255,0.1); border-radius: 8px; padding: 4px; margin-bottom: 8px; }
+        .mode-btn { flex: 1; border: none; background: transparent; padding: 6px; font-weight: bold; color: #aaa; cursor: pointer; border-radius: 6px; transition: 0.2s; font-size: 0.85rem; }
+        .mode-btn.active { background: #fff; color: #2c3e50; }
+        .mode-btn.active-date { color: #e67e22; }
+
+        /* キャンバス（固定エリア内） */
+        .preview-canvas-wrapper { 
+            display: flex; justify-content: center; align-items: center; 
+            width: 100%; max-width: 320px; /* 大きすぎないように制限 */
+        }
+        #boardCanvas { 
+            width: 100%; height: auto; 
+            box-shadow: 0 4px 10px rgba(0,0,0,0.5); 
+            background: transparent;
+        }
+
+        /* 入力エリアのスタイル */
+        #boardInputGroup { display: block; transition: opacity 0.3s; padding-bottom: 20px; }
         #boardInputGroup.hidden { display: none; }
 
-        label { margin-top: 10px; display: block; font-weight: bold; font-size: 0.9rem; color: #2c3e50; }
-        input[type="text"] { width: 100%; padding: 10px; margin-top: 5px; border: 1px solid #ccc; border-radius: 6px; font-size: 1rem; box-sizing: border-box; background: #f9f9f9; }
+        label { margin-top: 15px; display: block; font-weight: bold; font-size: 0.9rem; color: #2c3e50; }
+        label:first-child { margin-top: 0; } /* 最初の要素はマージンなし */
+        
+        input[type="text"] { width: 100%; padding: 12px; margin-top: 5px; border: 1px solid #ccc; border-radius: 6px; font-size: 1rem; box-sizing: border-box; background: #f9f9f9; }
         
         /* 工程ボタン */
         .process-btns { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 10px; margin-top: 5px; }
-        .proc-btn { flex: 1; min-width: 70px; padding: 5px; font-size: 0.9rem; line-height: 1.2; background: #f0f0f0; border: 1px solid #ccc; border-radius: 6px; cursor: pointer; white-space: normal; word-break: break-all; color: #555; font-weight: bold; position: relative; overflow: hidden; display: flex; align-items: center; justify-content: center; text-align: center; height: 45px; }
+        .proc-btn { flex: 1; min-width: 70px; padding: 5px; font-size: 0.9rem; line-height: 1.2; background: #f0f0f0; border: 1px solid #ccc; border-radius: 6px; cursor: pointer; color: #555; font-weight: bold; display: flex; align-items: center; justify-content: center; text-align: center; height: 45px; position: relative; overflow: hidden; }
         .proc-btn.active { background: #2c3e50; color: white; border-color: #2c3e50; }
         
         /* 任意ボタン */
-        .custom-btn-area { border-top: 1px dashed #ddd; padding-top: 10px; margin-top: 10px; }
-        .input-grid-cam { display: grid; grid-template-columns: repeat(4, 1fr); gap: 5px; margin-top: 5px; }
+        .custom-btn-area { border-top: 1px dashed #ddd; padding-top: 15px; margin-top: 15px; }
+        .input-grid-cam { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; margin-top: 5px; }
         .cam-chip { background: #f0f0f0; border: 1px solid #ccc; border-radius: 6px; font-size: 0.8rem; height: 40px; display: flex; align-items: center; justify-content: center; cursor: pointer; position: relative; overflow: hidden; font-weight: bold; color: #555; user-select: none; padding: 0 2px; text-align: center; }
-        .cam-chip:active { transform: scale(0.96); }
         .cam-chip.active { background: #2c3e50; color: white; border-color: #2c3e50; }
         .cam-chip.mode-loc { background: #e8f5e9; color: #2e7d32; border-color: #a5d6a7; }
         .cam-chip.btn-switch { background: #34495e; color: white; border: none; font-size: 0.75rem; }
@@ -53,26 +81,32 @@
         .pressing .chip-bar { width: 100%; transition: width 0.8s linear; }
         
         .input-wrapper { display: flex; align-items: center; margin-top: 5px; gap: 5px; }
-        .btn-clear-left { width: 40px; height: 40px; border-radius: 6px; border: 1px solid #ccc; background: #ffebee; color: #c62828; font-weight: bold; font-size: 1.2rem; cursor: pointer; flex-shrink: 0; }
-        .input-wrapper input { flex: 1; margin-top: 0; }
+        .btn-clear-left { width: 44px; height: 44px; border-radius: 6px; border: 1px solid #ccc; background: #ffebee; color: #c62828; font-weight: bold; font-size: 1.2rem; cursor: pointer; flex-shrink: 0; }
 
         /* フッター */
-        .footer-actions { padding: 15px; background: #fff; border-top: 1px solid #eee; display: flex; gap: 10px; flex-shrink: 0; }
+        .footer-actions { padding: 15px; background: #fff; border-top: 1px solid #eee; display: flex; gap: 10px; flex-shrink: 0; z-index: 20; }
         .btn-close { background-color: #95a5a6; color: white; padding: 12px; border: none; border-radius: 8px; font-weight: bold; cursor: pointer; flex: 1; }
-        .save-btn { background-color: #00C853; color: white; padding: 12px; border: none; border-radius: 8px; font-weight: bold; cursor: pointer; flex: 2; font-size: 1.1rem; }
+        .save-btn { background-color: #00C853; color: white; padding: 12px; border: none; border-radius: 8px; font-weight: bold; cursor: pointer; flex: 2; font-size: 1.1rem; box-shadow: 0 4px 6px rgba(0,200,83,0.2); }
 
-        /* 撮影後プレビュー */
+        /* 撮影後プレビュー画面 */
         #photoPreviewArea { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #000; z-index: 200; flex-direction: column; justify-content: center; align-items: center; }
         #previewImage { max-width: 100%; max-height: 100%; object-fit: contain; flex: 1; }
         #overlayBoard { position: absolute; top: 20px; left: 20px; width: 200px; cursor: grab; z-index: 210; touch-action: none; }
         
-        .snap-controls { position: absolute; bottom: 90px; left: 50%; transform: translateX(-50%); display: flex; gap: 15px; z-index: 220; background: rgba(0,0,0,0.6); padding: 8px 15px; border-radius: 30px; }
+        .snap-controls { position: absolute; bottom: 100px; left: 50%; transform: translateX(-50%); display: flex; gap: 20px; z-index: 220; background: rgba(0,0,0,0.6); padding: 10px 20px; border-radius: 30px; }
         .snap-btn { background: rgba(255,255,255,0.2); color: white; border: 1px solid rgba(255,255,255,0.5); width: 44px; height: 44px; border-radius: 50%; font-size: 1.5rem; cursor: pointer; display: flex; justify-content: center; align-items: center; }
         
-        .camera-controls-area { position: absolute; bottom: 0; width: 100%; padding: 20px; background: rgba(0,0,0,0.8); display: flex; justify-content: space-between; align-items: center; box-sizing: border-box; z-index: 220; }
-        .btn-cam-action { padding: 12px 25px; border-radius: 30px; font-weight: bold; cursor: pointer; border: none; font-size: 1rem; }
+        /* ★修正箇所：ボタンコントローラを中央寄せ */
+        .camera-controls-area { 
+            position: absolute; bottom: 0; width: 100%; padding: 25px; 
+            background: rgba(0,0,0,0.8); 
+            display: flex; justify-content: center; /* 中央寄せ */
+            gap: 30px; /* ボタン間の隙間 */
+            align-items: center; box-sizing: border-box; z-index: 220; 
+        }
+        .btn-cam-action { padding: 12px 30px; border-radius: 30px; font-weight: bold; cursor: pointer; border: none; font-size: 1rem; min-width: 120px; }
         .btn-retake { background: #e74c3c; color: white; }
-        .btn-save-photo { background: #00C853; color: white; padding: 12px 40px; font-size: 1.1rem; }
+        .btn-save-photo { background: #00C853; color: white; box-shadow: 0 0 15px rgba(0,200,83,0.4); }
 
         /* スライダーポップアップ */
         .slider-overlay { position: fixed; bottom: 100px; left: 50%; transform: translateX(-50%); width: 85%; max-width: 400px; background: rgba(44, 62, 80, 0.95); padding: 20px; border-radius: 15px; box-shadow: 0 10px 25px rgba(0,0,0,0.5); z-index: 300; display: none; text-align: center; color: white; backdrop-filter: blur(5px); }
@@ -80,7 +114,6 @@
         @keyframes popUp { from { transform: translate(-50%, 20px); opacity: 0; } to { transform: translate(-50%, 0); opacity: 1; } }
         .slider-label { font-size: 2.5rem; font-weight: bold; margin-bottom: 10px; color: #f39c12; }
         .slider-sub { font-size: 0.9rem; color: #bdc3c7; margin-bottom: 15px; }
-        
         input[type=range] { -webkit-appearance: none; appearance: none; width: 100%; height: 10px; border-radius: 5px; background: #555; outline: none; }
         input[type=range]::-webkit-slider-thumb { -webkit-appearance: none; appearance: none; width: 30px; height: 30px; border-radius: 50%; background: #f39c12; cursor: pointer; border: 3px solid white; box-shadow: 0 2px 5px rgba(0,0,0,0.3); }
 
@@ -97,8 +130,8 @@
 </div>
 
 <div id="cameraContainer">
-    <div id="cameraSetup">
-        
+    
+    <div id="fixedTopArea">
         <div class="mode-switch-container">
             <button class="mode-btn active" onclick="switchMode('board')" id="btn-mode-board">📋 黒板</button>
             <button class="mode-btn" onclick="switchMode('date')" id="btn-mode-date">📅 日付</button>
@@ -108,7 +141,9 @@
         <div class="preview-canvas-wrapper">
             <canvas id="boardCanvas" width="400" height="300"></canvas>
         </div>
-        
+    </div>
+
+    <div id="scrollableInputArea">
         <div id="boardInputGroup">
             <label>会社名</label>
             <input type="text" id="companyName" placeholder="会社名を入力" oninput="drawBoard(); saveCameraSettings()">
@@ -127,7 +162,6 @@
                 <input type="text" id="photoDetail" placeholder="例：北面、軒天など" oninput="drawBoard()">
             </div>
         </div>
-
     </div>
 
     <div class="footer-actions">
@@ -155,9 +189,9 @@
 </div>
 
 <script>
-    // --- 変数定義 ---
+    // --- JSロジック（変更なし） ---
     let currentSite = null;
-    let currentMode = 'board'; // board | date | datetime
+    let currentMode = 'board';
 
     try {
         const params = new URLSearchParams(window.location.search);
@@ -183,11 +217,8 @@
         localStorage.setItem('dx_company_name', val);
     }
 
-    // ★モード切替機能
     function switchMode(mode) {
         currentMode = mode;
-        
-        // ボタンの見た目更新
         document.querySelectorAll('.mode-btn').forEach(b => {
             b.classList.remove('active', 'active-date');
         });
@@ -195,54 +226,42 @@
         activeBtn.classList.add('active');
         if(mode !== 'board') activeBtn.classList.add('active-date');
 
-        // 入力エリアの表示切替
         const inputGroup = document.getElementById('boardInputGroup');
         if (mode === 'board') {
             inputGroup.classList.remove('hidden');
         } else {
             inputGroup.classList.add('hidden');
         }
-
-        // キャンバス再描画
         drawBoard();
     }
 
-    // --- 描画ロジック ---
     const canvas = document.getElementById('boardCanvas');
     const ctx = canvas.getContext('2d');
 
     function drawBoard() {
         if(!canvas) return;
-        
-        // 日付情報の作成
         const d = new Date();
         const dateStr = `${d.getFullYear()}/${d.getMonth()+1}/${d.getDate()}`;
         const timeStr = `${('0'+d.getHours()).slice(-2)}:${('0'+d.getMinutes()).slice(-2)}`;
         const fullDateTime = `${dateStr} ${timeStr}`;
 
-        // クリア
         ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-        // ★モード分岐
         if (currentMode === 'board') {
-            // === 黒板モード ===
             const siteName = currentSite ? currentSite.name : "（現場名未定）";
             const company = document.getElementById('companyName').value || "";
             const location = document.getElementById('photoDetail').value || "";
             const process = currentProcess || "（選択なし）";
             const fontFamily = '"Yu Gothic","Hiragino Kaku Gothic ProN", "Hiragino Sans", sans-serif';
 
-            // 背景
             ctx.fillStyle = '#004d40'; ctx.fillRect(0, 0, canvas.width, canvas.height); 
             ctx.strokeStyle = 'white'; ctx.lineWidth = 5; ctx.strokeRect(5, 5, canvas.width - 10, canvas.height - 10);
             
-            // 罫線
             ctx.lineWidth = 2; ctx.beginPath(); 
             ctx.moveTo(10, 80); ctx.lineTo(390, 80); 
             ctx.moveTo(10, 150); ctx.lineTo(390, 150); 
             ctx.stroke();
 
-            // 文字
             ctx.fillStyle = 'white'; ctx.textAlign = 'left'; ctx.textBaseline = 'middle'; 
             const maxWidth = 340; 
             const getLines = (ctx, text, max) => {
@@ -280,30 +299,20 @@
             ctx.textAlign = 'left'; ctx.font = `16px ${fontFamily}`; ctx.fillStyle = '#ccc'; ctx.fillText(company, 20, 270);
 
         } else {
-            // === 日付・日時モード ===
             const displayText = (currentMode === 'datetime') ? fullDateTime : dateStr;
-            
-            // 背景は透明（描かない）
-            
-            // 文字設定
-            const fontSize = 50; // 大きく
+            const fontSize = 50; 
             ctx.font = `bold ${fontSize}px sans-serif`;
             ctx.textAlign = 'right';
             ctx.textBaseline = 'bottom';
-            
-            // 縁取り（黒）
             ctx.strokeStyle = 'black';
             ctx.lineWidth = 6;
             ctx.lineJoin = 'round';
             ctx.strokeText(displayText, canvas.width - 10, canvas.height - 10);
-            
-            // 本体（オレンジ）
             ctx.fillStyle = '#ff9f43';
             ctx.fillText(displayText, canvas.width - 10, canvas.height - 10);
         }
     }
 
-    // --- 撮影・合成処理 ---
     let photoFile = null;
     function handlePhotoSelect(input) {
         if (input.files && input.files[0]) {
@@ -312,15 +321,13 @@
             reader.onload = function(e) {
                 const previewImg = document.getElementById('previewImage');
                 previewImg.src = e.target.result;
-                drawBoard(); // 最新化
+                drawBoard(); 
                 const boardImg = document.getElementById('overlayBoard');
                 boardImg.src = canvas.toDataURL('image/png');
                 
                 document.getElementById('photoPreviewArea').style.display = 'flex';
-                // 初期位置：黒板は左上、日付は右下にする？（とりあえず左上デフォルトでスナップ可能）
                 boardImg.style.top = '20px'; boardImg.style.left = '20px'; boardImg.style.bottom = ''; boardImg.style.right = '';
                 
-                // 日付モードなら自動で右下に配置
                 if (currentMode !== 'board') {
                     snapBoard('br');
                 }
@@ -348,7 +355,6 @@
         const bRect = bImg.getBoundingClientRect();
         const s = pImg.naturalWidth / pRect.width;
         
-        // ★透明度対応（日付モードの透過PNGもこれでOK）
         cx.drawImage(bImg, (bRect.left - pRect.left) * s, (bRect.top - pRect.top) * s, bRect.width * s, bRect.height * s);
         
         const link = document.createElement('a');
@@ -362,7 +368,6 @@
         retakePhoto();
     }
 
-    // --- 黒板移動・スナップ・ボタン関連ロジック（以下 tools.htmlと同じ） ---
     const BOARD_MARGIN = 30;
     function snapBoard(pos) {
         const board = document.getElementById('overlayBoard');
@@ -382,7 +387,6 @@
         else if (pos === 'br') { board.style.top = (offsetTop + pHeight - bHeight - BOARD_MARGIN)+'px'; board.style.left = (offsetLeft + pWidth - bWidth - BOARD_MARGIN)+'px'; }
     }
 
-    // ドラッグ処理
     const overlayBoard = document.getElementById('overlayBoard'); 
     let isDragging = false, dragStartX, dragStartY, initialLeft, initialTop;
     const SNAP_SIZE = 10;
@@ -416,7 +420,6 @@
     window.addEventListener('mousemove', handleDragMove);
     window.addEventListener('mouseup', handleDragEnd);
 
-    // ボタンロジック（tools.html準拠）
     const DX_CAM_PARTS = ["ケレン", "洗浄", "養生", "シーリング", "足場", "パターン調整", "下地処理", "吹付", "鉄部", "木部", "付帯部"];
     const DX_CAM_LOCS  = ["ベランダ", "共用廊下", "階段", "屋上", "玄関廻り", "エントランス", "妻面", "詳細"];
     const DIRECTIONS = ["北面", "北北東面", "北東面", "東北東面", "東面", "東南東面", "南東面", "南南東面", "南面", "南南西面", "南西面", "西南西面", "西面", "西北西面", "北西面", "北北西面"];
