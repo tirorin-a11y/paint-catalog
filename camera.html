@@ -90,7 +90,7 @@
         /* 矢印コントローラー（四角い2x2配置 & 高透過） */
         .snap-controls { 
             position: absolute; 
-            top: 50%; 
+            top: 40%; 
             left: 50%; 
             transform: translate(-50%, -50%);
             
@@ -360,18 +360,29 @@
         if (input.files && input.files[0]) {
             photoFile = input.files[0];
             const reader = new FileReader();
+            
             reader.onload = function(e) {
                 const previewImg = document.getElementById('previewImage');
-                previewImg.src = e.target.result;
-                drawBoard(); 
-                const boardImg = document.getElementById('overlayBoard');
-                boardImg.src = canvas.toDataURL('image/png');
                 
-                document.getElementById('photoPreviewArea').style.display = 'flex';
-                snapBoard('br');
-                if (currentMode !== 'board') {
-                    snapBoard('br');
-                }
+                // ★修正1：画像が完全に読み込まれてから処理を開始する
+                previewImg.onload = function() {
+                    // 1. 黒板を描画して画像化
+                    drawBoard(); 
+                    const boardImg = document.getElementById('overlayBoard');
+                    boardImg.src = canvas.toDataURL('image/png');
+                    
+                    // 2. 画面を表示（表示しないとサイズ計算できないため）
+                    document.getElementById('photoPreviewArea').style.display = 'flex';
+                    
+                    // 3. 最後に位置を右下に合わせる
+                    // （黒板画像の読み込みラグ対策として少しだけ待つのがベストですが、通常はこれでも動きます）
+                    setTimeout(() => {
+                        snapBoard('br');
+                    }, 50);
+                };
+
+                // 画像ソースをセット（これをトリガーに上のonloadが動く）
+                previewImg.src = e.target.result;
             };
             reader.readAsDataURL(photoFile);
         }
