@@ -87,23 +87,49 @@
         #previewImage { max-width: 100%; max-height: 100%; object-fit: contain; flex: 1; }
         #overlayBoard { position: absolute; top: 20px; left: 20px; width: 200px; cursor: grab; z-index: 210; touch-action: none; }
         
-        /* 矢印コントローラー */
+        /* 矢印コントローラー（四角い2x2配置 & 高透過） */
         .snap-controls { 
             position: absolute; 
-            /* ▼▼▼ ここを変更しました ▼▼▼ */
-            top: 40%;               /* 上から50%の位置 */
-            left: 50%;              /* 左から50%の位置 */
-            transform: translate(-50%, -50%); /* 自身の大きさ分ずらして「ど真ん中」にする */
-            /* ▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲ */
-            display: flex; 
-            gap: 20px; 
-            z-index: 220; 
-            background: rgba(0,0,0,0.6); 
-            padding: 10px 20px; 
-            border-radius: 30px; 
+            top: 50%; 
+            left: 50%; 
+            transform: translate(-50%, -50%);
+            
+            /* ▼▼▼ 四角いグリッドレイアウトに変更 ▼▼▼ */
+            display: grid;
+            grid-template-columns: 1fr 1fr; /* 2列 */
+            gap: 15px; /* ボタン同士の間隔 */
+            /* ▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲ */
+
+            z-index: 230; 
+            
+            /* ▼▼▼ 透明度を上げました（0.6 → 0.2） ▼▼▼ */
+            background: rgba(0, 0, 0, 0.2); 
+            /* ▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲ */
+            
+            padding: 20px; 
+            border-radius: 25px; /* 角丸の四角 */
+            backdrop-filter: blur(2px); /* すりガラス効果で視認性確保 */
         }
-        .snap-btn { background: rgba(255,255,255,0.2); color: white; border: 1px solid rgba(255,255,255,0.5); width: 44px; height: 44px; border-radius: 50%; font-size: 1.5rem; cursor: pointer; display: flex; justify-content: center; align-items: center; }
+
+        .snap-btn { 
+            background: rgba(255,255,255,0.15); /* ボタン自体も薄く */
+            color: white; 
+            border: 1px solid rgba(255,255,255,0.4); 
+            width: 50px; 
+            height: 50px; 
+            border-radius: 50%; 
+            font-size: 1.5rem; 
+            cursor: pointer; 
+            display: flex; 
+            justify-content: center; 
+            align-items: center; 
+            transition: 0.2s;
+        }
         
+        .snap-btn:active {
+            background: rgba(255,255,255,0.5); /* 押した時だけ明るく */
+            transform: scale(0.95);
+        }
         .camera-controls-area { 
             position: absolute; bottom: 0; width: 100%; padding: 30px 20px; 
             background: #000000;  /* 完全な黒 */
@@ -387,7 +413,7 @@
     
     // ここで四隅からの距離をpx単位で指定します
     const SNAP_MARGIN_TOP    = 50;  // 上からの隙間
-    const SNAP_MARGIN_BOTTOM = 90;  // 下からの隙間
+    const SNAP_MARGIN_BOTTOM = 110;  // 下からの隙間
     const SNAP_MARGIN_LEFT   = 10;  // 左からの隙間
     const SNAP_MARGIN_RIGHT  = 10;  // 右からの隙間
 
