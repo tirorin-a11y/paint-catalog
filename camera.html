@@ -91,7 +91,7 @@
         .snap-controls { 
             position: absolute; 
             /* ▼▼▼ ここを変更しました ▼▼▼ */
-            top: 50%;               /* 上から50%の位置 */
+            top: 40%;               /* 上から50%の位置 */
             left: 50%;              /* 左から50%の位置 */
             transform: translate(-50%, -50%); /* 自身の大きさ分ずらして「ど真ん中」にする */
             /* ▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲ */
@@ -106,7 +106,7 @@
         
         .camera-controls-area { 
             position: absolute; bottom: 0; width: 100%; padding: 30px 20px; 
-            background: rgba(0, 0, 0, 0.8);
+            background: #000000;  /* 完全な黒 */
             display: flex; justify-content: center; 
             gap: 30px; 
             align-items: center; box-sizing: border-box; z-index: 220; 
@@ -342,8 +342,7 @@
                 boardImg.src = canvas.toDataURL('image/png');
                 
                 document.getElementById('photoPreviewArea').style.display = 'flex';
-                boardImg.style.top = '20px'; boardImg.style.left = '20px'; boardImg.style.bottom = ''; boardImg.style.right = '';
-                
+                snapBoard('br');
                 if (currentMode !== 'board') {
                     snapBoard('br');
                 }
