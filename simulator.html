@@ -2,30 +2,33 @@
 <html lang="ja">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>職人ギア V15 (ホームボタン追加)</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>職人ギア V16 (スマホ完全対応)</title>
 <script src="https://html2canvas.hertzen.com/dist/html2canvas.min.js"></script>
 <style>
-    * { box-sizing: border-box; }
+    * { box-sizing: border-box; touch-action: manipulation; /* タッチ操作の遅延をなくす */ }
 
     body {
-        font-family: "Helvetica Neue", Arial, sans-serif;
+        font-family: -apple-system, BlinkMacSystemFont, "Helvetica Neue", Arial, sans-serif;
         background-color: #2c3e50;
         color: #333;
-        margin: 0; padding: 10px; display: flex; flex-direction: column;
-        height: 100vh; overflow: hidden;
+        margin: 0; 
+        /* ★修正：スマホのアドレスバー対策 (100dvh) と余白削減 */
+        height: 100dvh; 
+        padding: 5px; 
+        display: flex; flex-direction: column;
+        overflow: hidden;
     }
 
     /* UI共通 */
     button {
-        border: none; padding: 8px 12px; border-radius: 6px; cursor: pointer;
-        font-size: 13px; font-weight: bold; color: white; display: flex; align-items: center; justify-content: center;
+        border: none; padding: 8px 10px; border-radius: 6px; cursor: pointer;
+        font-size: 12px; font-weight: bold; color: white; display: flex; align-items: center; justify-content: center;
         transition: opacity 0.2s; box-shadow: 0 2px 4px rgba(0,0,0,0.2);
     }
-    button:active { opacity: 0.7; }
+    button:active { opacity: 0.7; transform: scale(0.96); }
     
-    /* ボタン色設定 */
-    .btn-home { background: #555; } /* ★新設：ホームボタン（渋いグレー） */
+    .btn-home { background: #555; }
     .btn-data { background: #8e44ad; }
     .btn-add  { background: #2ecc71; }
     .btn-reset{ background: #e74c3c; } 
@@ -33,18 +36,22 @@
     .btn-save { background: #34495e; }
     .btn-sub  { background: #95a5a6; font-size: 11px; padding: 5px 10px; width:100%; margin-top:10px;}
 
-    /* 操作パネル */
+    /* 操作パネル（コンパクト化） */
     .control-panel {
         background: rgba(255, 255, 255, 0.95);
-        padding: 10px; border-radius: 8px;
-        box-shadow: 0 4px 10px rgba(0,0,0,0.3);
+        padding: 8px; border-radius: 8px;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.2);
         display: flex; gap: 5px; justify-content: space-between; align-items: center;
-        margin-bottom: 10px; flex-shrink: 0; flex-wrap: wrap; z-index: 100;
+        margin-bottom: 5px; flex-shrink: 0; z-index: 100;
+        overflow-x: auto; /* ボタンが多い時は横スクロール */
+        white-space: nowrap;
     }
+    /* スクロールバーを隠す */
+    .control-panel::-webkit-scrollbar { display: none; }
 
     /* メインエリア */
     .workspace { 
-        display: flex; flex: 1; gap: 10px; overflow: hidden; position: relative;
+        display: flex; flex: 1; gap: 5px; overflow: hidden; position: relative;
         background-size: cover; background-position: center; background-repeat: no-repeat;
         background-color: #bdc3c7; 
         border-radius: 8px;
@@ -52,25 +59,27 @@
     }
     
     .palette, .scale-area {
-        background: rgba(255, 255, 255, 0.05);
-        border: 2px solid rgba(255, 255, 255, 0.4);
-        backdrop-filter: blur(2px);
+        background: rgba(255, 255, 255, 0.15); /* 少し明るく */
+        border: 1px solid rgba(255, 255, 255, 0.6);
+        backdrop-filter: blur(4px);
     }
 
     /* 左：カタログエリア */
     .palette {
-        width: 140px; border-radius: 8px;
-        padding: 5px; overflow-y: auto; display: flex; flex-direction: column; gap: 8px;
+        width: 120px; border-radius: 8px;
+        padding: 5px; overflow-y: auto; display: flex; flex-direction: column; gap: 6px;
     }
     .palette-item-wrap { position: relative; width: 100%; display: flex; justify-content: center; }
     
     .palette-del-btn {
-        position: absolute; top: -6px; left: -2px; width: 20px; height: 20px; 
+        position: absolute; top: -6px; left: -4px; width: 22px; height: 22px; 
         background: #e74c3c; color: white; border: 2px solid #fff;
-        border-radius: 50%; font-size: 14px; line-height: 18px; text-align: center; font-weight: bold;
-        cursor: pointer; z-index: 10; display: none; box-shadow: 0 2px 4px rgba(0,0,0,0.3);
+        border-radius: 50%; font-size: 16px; line-height: 18px; text-align: center; font-weight: bold;
+        cursor: pointer; z-index: 10; 
+        /* スマホだとホバーがないので常に表示するか、タップしやすいように調整 */
+        display: block; opacity: 0.8;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.3);
     }
-    .palette-item-wrap:hover .palette-del-btn { display: block; }
 
     /* 右：積み上げエリア */
     .scale-area {
@@ -87,29 +96,36 @@
     /* 合計表示 */
     .total-display {
         position: absolute; top: 10px; right: 10px;
-        background: rgba(0, 0, 0, 0.6);
-        color: #f1c40f; padding: 8px 16px;
-        border-radius: 30px; font-size: 18px; font-weight: bold; z-index: 100; pointer-events: none;
-        backdrop-filter: blur(5px); border: 1px solid rgba(255,255,255,0.2);
+        background: rgba(0, 0, 0, 0.7);
+        color: #f1c40f; padding: 6px 12px;
+        border-radius: 20px; font-size: 16px; font-weight: bold; z-index: 100; pointer-events: none;
+        backdrop-filter: blur(5px); border: 1px solid rgba(255,255,255,0.3);
         text-align: right;
     }
-    .tax-info { font-size: 10px; color: #ddd; font-weight: normal; display: block;}
+    .tax-info { font-size: 9px; color: #ddd; font-weight: normal; display: block;}
 
     /* 箱のデザイン */
     .cost-box {
         width: 90%; max-width: 280px; border-radius: 4px;
-        display: flex; justify-content: space-between; align-items: center; padding: 0 8px;
-        color: white; font-weight: bold; cursor: grab; font-size: 11px;
+        display: flex; justify-content: space-between; align-items: center; padding: 0 6px;
+        color: white; font-weight: bold; cursor: grab; font-size: 10px;
         position: relative; line-height: 1.2; flex-shrink: 0;
-        opacity: 0.85; 
-        box-shadow: 0 4px 6px rgba(0,0,0,0.15);
-        border: 1px solid rgba(255,255,255,0.3);
-        text-shadow: 0 1px 3px rgba(0,0,0, 0.9); 
+        opacity: 0.9; 
+        box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+        border: 1px solid rgba(255,255,255,0.4);
+        text-shadow: 0 1px 2px rgba(0,0,0, 0.8); 
     }
 
     .palette .cost-box { 
-        height: 35px !important; font-size: 10px; width: 100%; margin: 0;
-        justify-content: flex-end; padding-left: 20px; padding-right: 10px; text-align: right;
+        height: 38px !important; font-size: 10px; width: 100%; margin: 0;
+        justify-content: flex-end; padding-left: 20px; padding-right: 5px; text-align: right;
+    }
+
+    /* ドラッグ中のゴースト要素用スタイル */
+    .dragging-ghost {
+        position: fixed; pointer-events: none; z-index: 9999;
+        opacity: 0.8; transform: scale(1.05);
+        box-shadow: 0 10px 20px rgba(0,0,0,0.3);
     }
 
     /* モーダル類 */
@@ -259,19 +275,85 @@
         sourceZone.innerHTML = '';
         paletteItems.forEach((item, index) => {
             const wrap = document.createElement('div'); wrap.className = 'palette-item-wrap';
-            const delBtn = document.createElement('div'); delBtn.className = 'palette-del-btn'; delBtn.innerHTML = '×';
+            
+            const delBtn = document.createElement('div'); 
+            delBtn.className = 'palette-del-btn'; 
+            delBtn.innerHTML = '×';
             delBtn.onclick = () => deletePaletteItem(index);
-            const div = document.createElement('div'); div.className = 'cost-box'; div.draggable = true;
+
+            const div = document.createElement('div'); 
+            div.className = 'cost-box'; 
+            
             div.style.background = `linear-gradient(135deg, ${item.color}, ${darkenColor(item.color, 20)})`;
             div.innerHTML = `<span>${item.label}</span>`;
+            
+            // ★スマホ対応：タッチイベントを追加
+            setupTouchDrag(div, item);
+
+            // PC用ドラッグイベント（念のため残す）
+            div.draggable = true;
             div.addEventListener('dragstart', (e) => { e.dataTransfer.effectAllowed = 'copy'; e.dataTransfer.setData('application/json', JSON.stringify(item)); div.style.opacity = '0.5'; });
-            div.addEventListener('dragend', () => div.style.opacity = '0.85');
+            div.addEventListener('dragend', () => div.style.opacity = '0.9');
+            
             wrap.appendChild(div); wrap.appendChild(delBtn); sourceZone.appendChild(wrap);
         });
     }
+
+    // ★★★ スマホ用ドラッグ＆ドロップ実装の核心部分 ★★★
+    function setupTouchDrag(el, itemData) {
+        let ghost = null;
+        let startX, startY;
+
+        el.addEventListener('touchstart', (e) => {
+            // スクロールを止める
+            // e.preventDefault(); // これを入れるとカタログの縦スクロールができなくなるので注意。
+            // 横方向の移動が大きければドラッグとみなすロジックが必要だが、今回は長押し判定などはせずシンプルに実装
+            
+            const touch = e.touches[0];
+            startX = touch.clientX;
+            startY = touch.clientY;
+
+            // 複製（ゴースト）を作成
+            ghost = el.cloneNode(true);
+            ghost.classList.add('dragging-ghost');
+            ghost.style.width = el.offsetWidth + 'px';
+            ghost.style.height = el.offsetHeight + 'px';
+            ghost.style.left = (touch.clientX - el.offsetWidth/2) + 'px';
+            ghost.style.top = (touch.clientY - el.offsetHeight/2) + 'px';
+            
+            document.body.appendChild(ghost);
+        }, {passive: false});
+
+        el.addEventListener('touchmove', (e) => {
+            if (!ghost) return;
+            e.preventDefault(); // ドラッグ中は画面スクロールを禁止
+            const touch = e.touches[0];
+            ghost.style.left = (touch.clientX - ghost.offsetWidth/2) + 'px';
+            ghost.style.top = (touch.clientY - ghost.offsetHeight/2) + 'px';
+        }, {passive: false});
+
+        el.addEventListener('touchend', (e) => {
+            if (!ghost) return;
+            
+            // ドロップ位置の判定
+            const touch = e.changedTouches[0];
+            const dropTarget = document.elementFromPoint(touch.clientX, touch.clientY);
+            
+            // ドロップ先が「scale-area」またはその子要素ならOK
+            if (dropTarget && dropTarget.closest('#drop-zone')) {
+                createStackBox(itemData);
+            }
+
+            // ゴースト消去
+            document.body.removeChild(ghost);
+            ghost = null;
+        });
+    }
+
     function addPaletteItem(label, unitPrice, typeId, color) { paletteItems.push({ id: Date.now(), label, unitPrice, typeId, color }); saveData(); renderPalette(); }
     function deletePaletteItem(index) { if(confirm("カタログから削除しますか？")) { paletteItems.splice(index, 1); saveData(); renderPalette(); } }
 
+    // PC用ドロップ受け入れ（念のため）
     dropZone.addEventListener('dragover', (e) => { e.preventDefault(); e.dataTransfer.dropEffect = 'copy'; });
     dropZone.addEventListener('drop', (e) => { e.preventDefault(); const data = JSON.parse(e.dataTransfer.getData('application/json')||'null'); if(data) createStackBox(data); });
 
