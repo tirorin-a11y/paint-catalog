@@ -55,14 +55,15 @@
         .preview-canvas-wrapper { display: flex; justify-content: center; align-items: center; width: 100%; max-width: 320px; }
         #boardCanvas { width: 100%; height: auto; box-shadow: 0 4px 10px rgba(0,0,0,0.5); background: transparent; }
 
-        /* 入力エリア */
-        #boardInputGroup { display: block; transition: opacity 0.3s; margin-bottom: 20px; }
-        #boardInputGroup.hidden { display: none; }
+        /* 入力エリア（黒板・日付共通） */
+        .input-group-container { display: block; transition: opacity 0.3s; margin-bottom: 20px; }
+        .input-group-container.hidden { display: none; }
 
         label { margin-top: 15px; display: block; font-weight: bold; font-size: 0.9rem; color: #2c3e50; }
         label:first-child { margin-top: 0; }
         input[type="text"] { width: 100%; padding: 12px; margin-top: 5px; border: 1px solid #ccc; border-radius: 6px; font-size: 1rem; box-sizing: border-box; background: #f9f9f9; }
         
+        /* 黒板用ボタン類 */
         .process-btns { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 10px; margin-top: 5px; }
         .proc-btn { flex: 1; min-width: 70px; padding: 5px; font-size: 0.9rem; line-height: 1.2; background: #f0f0f0; border: 1px solid #ccc; border-radius: 6px; cursor: pointer; color: #555; font-weight: bold; display: flex; align-items: center; justify-content: center; text-align: center; height: 45px; position: relative; overflow: hidden; }
         .proc-btn.active { background: #2c3e50; color: white; border-color: #2c3e50; }
@@ -80,72 +81,70 @@
         .input-wrapper { display: flex; align-items: center; margin-top: 5px; gap: 5px; }
         .btn-clear-left { width: 44px; height: 44px; border-radius: 6px; border: 1px solid #ccc; background: #ffebee; color: #c62828; font-weight: bold; font-size: 1.2rem; cursor: pointer; flex-shrink: 0; }
 
-        /* フッターアクション（スクロールの最後に配置） */
-        .footer-actions { 
-            padding-top: 20px; 
-            border-top: 1px solid #eee; 
-            display: flex; 
-            gap: 10px; 
+        /* ★日付調整用コントローラー */
+        .date-adjust-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            background: #f9f9f9;
+            padding: 10px;
+            border-radius: 8px;
+            margin-top: 5px;
+            border: 1px solid #eee;
         }
+        .date-val-display { font-size: 1.2rem; font-weight: bold; color: #333; width: 60px; text-align: center; }
+        .adj-btn {
+            width: 44px; height: 44px;
+            border-radius: 50%;
+            border: 1px solid #ccc;
+            background: white;
+            font-size: 1.5rem;
+            font-weight: bold;
+            color: #555;
+            cursor: pointer;
+            display: flex; justify-content: center; align-items: center;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+        }
+        .adj-btn:active { background: #eee; transform: scale(0.95); }
+
+        /* フッターアクション */
+        .footer-actions { padding-top: 20px; border-top: 1px solid #eee; display: flex; gap: 10px; }
         .btn-close { background-color: #95a5a6; color: white; padding: 12px; border: none; border-radius: 8px; font-weight: bold; cursor: pointer; flex: 1; }
         .save-btn { background-color: #00C853; color: white; padding: 12px; border: none; border-radius: 8px; font-weight: bold; cursor: pointer; flex: 2; font-size: 1.1rem; box-shadow: 0 4px 6px rgba(0,200,83,0.2); }
 
-
-        /* 撮影後プレビュー画面 */
+        /* 撮影後プレビュー */
         #photoPreviewArea { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #000; z-index: 200; flex-direction: column; justify-content: center; align-items: center; }
         #previewImage { max-width: 100%; max-height: 100%; object-fit: contain; flex: 1; }
         #overlayBoard { position: absolute; top: 20px; left: 20px; width: 200px; cursor: grab; z-index: 210; touch-action: none; }
         
-        /* 矢印コントローラー（四角い2x2配置 & 高透過） */
+        /* 矢印コントローラー */
         .snap-controls { 
-            position: absolute; 
-            top: 50%; 
-            left: 50%; 
-            transform: translate(-50%, -50%);
-            display: grid;
-            grid-template-columns: 1fr 1fr; /* 2列 */
-            gap: 15px; /* ボタン同士の間隔 */
+            position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
+            display: grid; grid-template-columns: 1fr 1fr; gap: 15px; 
             z-index: 230; 
             background: rgba(0, 0, 0, 0.2); 
-            padding: 20px; 
-            border-radius: 25px; /* 角丸の四角 */
-            backdrop-filter: blur(2px); /* すりガラス効果 */
+            padding: 20px; border-radius: 25px; 
+            backdrop-filter: blur(2px); 
         }
-
         .snap-btn { 
-            background: rgba(255,255,255,0.15); /* ボタン自体も薄く */
-            color: white; 
-            border: 1px solid rgba(255,255,255,0.4); 
-            width: 50px; 
-            height: 50px; 
-            border-radius: 50%; 
-            font-size: 1.5rem; 
-            cursor: pointer; 
-            display: flex; 
-            justify-content: center; 
-            align-items: center; 
-            transition: 0.2s;
+            background: rgba(255,255,255,0.15); color: white; border: 1px solid rgba(255,255,255,0.4); 
+            width: 50px; height: 50px; border-radius: 50%; font-size: 1.5rem; 
+            cursor: pointer; display: flex; justify-content: center; align-items: center; transition: 0.2s;
         }
+        .snap-btn:active { background: rgba(255,255,255,0.5); transform: scale(0.95); }
         
-        .snap-btn:active {
-            background: rgba(255,255,255,0.5); /* 押した時だけ明るく */
-            transform: scale(0.95);
-        }
-        
-        /* コントロールエリア背景（黒・不透明） */
+        /* コントロールエリア */
         .camera-controls-area { 
             position: absolute; bottom: 0; width: 100%; padding: 30px 20px; 
-            background: #000000;  /* 真っ黒 */
-            display: flex; justify-content: center; 
-            gap: 30px; 
-            align-items: center; box-sizing: border-box; 
-            z-index: 220; 
+            background: #000000; 
+            display: flex; justify-content: center; gap: 30px; 
+            align-items: center; box-sizing: border-box; z-index: 220; 
         }
         .btn-cam-action { padding: 12px 30px; border-radius: 30px; font-weight: bold; cursor: pointer; border: none; font-size: 1rem; min-width: 120px; }
         .btn-retake { background: #e74c3c; color: white; }
         .btn-save-photo { background: #00C853; color: white; box-shadow: 0 0 15px rgba(0,200,83,0.4); }
 
-        /* スライダーその他スタイル */
+        /* スライダーその他 */
         .slider-overlay { position: fixed; bottom: 100px; left: 50%; transform: translateX(-50%); width: 85%; max-width: 400px; background: rgba(44, 62, 80, 0.95); padding: 20px; border-radius: 15px; box-shadow: 0 10px 25px rgba(0,0,0,0.5); z-index: 300; display: none; text-align: center; color: white; backdrop-filter: blur(5px); }
         .slider-overlay.show { display: block; animation: popUp 0.2s ease-out; }
         @keyframes popUp { from { transform: translate(-50%, 20px); opacity: 0; } to { transform: translate(-50%, 0); opacity: 1; } }
@@ -180,7 +179,8 @@
     </div>
 
     <div id="scrollableInputArea">
-        <div id="boardInputGroup">
+        
+        <div id="boardInputGroup" class="input-group-container">
             <label>会社名</label>
             <input type="text" id="companyName" placeholder="会社名を入力" oninput="drawBoard(); saveCameraSettings()">
 
@@ -197,6 +197,26 @@
                 <button class="btn-clear-left" onclick="clearLocation()">×</button>
                 <input type="text" id="photoDetail" placeholder="例：北面、軒天など" oninput="drawBoard()">
             </div>
+        </div>
+
+        <div id="dateInputGroup" class="input-group-container hidden">
+            <label>文字の大きさ</label>
+            <div class="date-adjust-row">
+                <button class="adj-btn" onclick="changeDateConfig('size', -5)">－</button>
+                <span class="date-val-display" id="disp-date-size">50</span>
+                <button class="adj-btn" onclick="changeDateConfig('size', 5)">＋</button>
+            </div>
+
+            <label>縁取りの太さ（太字感）</label>
+            <div class="date-adjust-row">
+                <button class="adj-btn" onclick="changeDateConfig('stroke', -1)">－</button>
+                <span class="date-val-display" id="disp-date-stroke">6</span>
+                <button class="adj-btn" onclick="changeDateConfig('stroke', 1)">＋</button>
+            </div>
+            
+            <p style="font-size:0.8rem; color:#888; margin-top:10px;">
+                ※ ここで設定したサイズは自動的に保存され、次回も同じ大きさで表示されます。
+            </p>
         </div>
 
         <div class="footer-actions">
@@ -229,6 +249,12 @@
     let currentSite = null;
     let currentMode = 'board';
 
+    // ★日付用設定（初期値）
+    let dateConfig = {
+        size: parseInt(localStorage.getItem('dx_date_size')) || 50,
+        stroke: parseInt(localStorage.getItem('dx_date_stroke')) || 6
+    };
+
     try {
         const params = new URLSearchParams(window.location.search);
         const siteId = params.get('id');
@@ -245,12 +271,35 @@
         document.getElementById('companyName').value = savedComp ? savedComp : "ペイントハウス";
         renderProcessButtons();
         renderCameraButtons();
+        updateDateConfigDisplay(); // 設定値を画面に反映
         drawBoard();
     };
 
     function saveCameraSettings() {
         const val = document.getElementById('companyName').value;
         localStorage.setItem('dx_company_name', val);
+    }
+
+    // ★日付設定変更処理
+    function changeDateConfig(key, delta) {
+        if(key === 'size') {
+            dateConfig.size += delta;
+            if(dateConfig.size < 10) dateConfig.size = 10;
+            if(dateConfig.size > 200) dateConfig.size = 200;
+            localStorage.setItem('dx_date_size', dateConfig.size);
+        } else if(key === 'stroke') {
+            dateConfig.stroke += delta;
+            if(dateConfig.stroke < 0) dateConfig.stroke = 0;
+            if(dateConfig.stroke > 20) dateConfig.stroke = 20;
+            localStorage.setItem('dx_date_stroke', dateConfig.stroke);
+        }
+        updateDateConfigDisplay();
+        drawBoard();
+    }
+
+    function updateDateConfigDisplay() {
+        document.getElementById('disp-date-size').innerText = dateConfig.size;
+        document.getElementById('disp-date-stroke').innerText = dateConfig.stroke;
     }
 
     function switchMode(mode) {
@@ -262,11 +311,15 @@
         activeBtn.classList.add('active');
         if(mode !== 'board') activeBtn.classList.add('active-date');
 
-        const inputGroup = document.getElementById('boardInputGroup');
+        const boardInput = document.getElementById('boardInputGroup');
+        const dateInput = document.getElementById('dateInputGroup');
+        
         if (mode === 'board') {
-            inputGroup.classList.remove('hidden');
+            boardInput.classList.remove('hidden');
+            dateInput.classList.add('hidden');
         } else {
-            inputGroup.classList.add('hidden');
+            boardInput.classList.add('hidden');
+            dateInput.classList.remove('hidden');
         }
         drawBoard();
     }
@@ -335,15 +388,23 @@
             ctx.textAlign = 'left'; ctx.font = `16px ${fontFamily}`; ctx.fillStyle = '#ccc'; ctx.fillText(company, 20, 270);
 
         } else {
+            // ★日付・日時モード（設定値を反映）
             const displayText = (currentMode === 'datetime') ? fullDateTime : dateStr;
-            const fontSize = 50; 
-            ctx.font = `bold ${fontSize}px sans-serif`;
+            
+            // 設定値を使用
+            ctx.font = `bold ${dateConfig.size}px sans-serif`;
             ctx.textAlign = 'right';
             ctx.textBaseline = 'bottom';
+            
+            // 縁取り（黒）
             ctx.strokeStyle = 'black';
-            ctx.lineWidth = 6;
+            ctx.lineWidth = dateConfig.stroke; // 設定値を使用
             ctx.lineJoin = 'round';
-            ctx.strokeText(displayText, canvas.width - 10, canvas.height - 10);
+            if(dateConfig.stroke > 0) {
+                ctx.strokeText(displayText, canvas.width - 10, canvas.height - 10);
+            }
+            
+            // 本体（オレンジ）
             ctx.fillStyle = '#ff9f43';
             ctx.fillText(displayText, canvas.width - 10, canvas.height - 10);
         }
@@ -358,7 +419,6 @@
             reader.onload = function(e) {
                 const previewImg = document.getElementById('previewImage');
                 
-                // ★修正：画像読み込み完了後に処理
                 previewImg.onload = function() {
                     drawBoard(); 
                     const boardImg = document.getElementById('overlayBoard');
@@ -410,7 +470,6 @@
         retakePhoto();
     }
 
-    // --- 黒板移動・スナップ設定 ---
     const SNAP_MARGIN_TOP    = 20; 
     const SNAP_MARGIN_BOTTOM = 20; 
     const SNAP_MARGIN_LEFT   = 20; 
@@ -451,7 +510,6 @@
         }
     }
 
-    // ドラッグ処理
     const overlayBoard = document.getElementById('overlayBoard'); 
     let isDragging = false, dragStartX, dragStartY, initialLeft, initialTop;
     const SNAP_SIZE = 10;

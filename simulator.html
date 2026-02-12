@@ -3,19 +3,22 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>職人ギア V16 (スマホ完全対応)</title>
+<title>職人ギア V18 (Androidナビバー対応)</title>
 <script src="https://html2canvas.hertzen.com/dist/html2canvas.min.js"></script>
 <style>
-    * { box-sizing: border-box; touch-action: manipulation; /* タッチ操作の遅延をなくす */ }
+    * { box-sizing: border-box; touch-action: manipulation; }
 
     body {
         font-family: -apple-system, BlinkMacSystemFont, "Helvetica Neue", Arial, sans-serif;
         background-color: #2c3e50;
         color: #333;
         margin: 0; 
-        /* ★修正：スマホのアドレスバー対策 (100dvh) と余白削減 */
-        height: 100dvh; 
-        padding: 5px; 
+        height: 100dvh; /* スマホのアドレスバー対策 */
+        
+        /* ★修正：Androidのナビバー対策として、下に大きめの余白を確保 */
+        padding: 5px;
+        padding-bottom: 80px; 
+        
         display: flex; flex-direction: column;
         overflow: hidden;
     }
@@ -36,17 +39,16 @@
     .btn-save { background: #34495e; }
     .btn-sub  { background: #95a5a6; font-size: 11px; padding: 5px 10px; width:100%; margin-top:10px;}
 
-    /* 操作パネル（コンパクト化） */
+    /* 操作パネル */
     .control-panel {
         background: rgba(255, 255, 255, 0.95);
         padding: 8px; border-radius: 8px;
         box-shadow: 0 2px 8px rgba(0,0,0,0.2);
         display: flex; gap: 5px; justify-content: space-between; align-items: center;
         margin-bottom: 5px; flex-shrink: 0; z-index: 100;
-        overflow-x: auto; /* ボタンが多い時は横スクロール */
+        overflow-x: auto; 
         white-space: nowrap;
     }
-    /* スクロールバーを隠す */
     .control-panel::-webkit-scrollbar { display: none; }
 
     /* メインエリア */
@@ -59,7 +61,7 @@
     }
     
     .palette, .scale-area {
-        background: rgba(255, 255, 255, 0.15); /* 少し明るく */
+        background: rgba(255, 255, 255, 0.15);
         border: 1px solid rgba(255, 255, 255, 0.6);
         backdrop-filter: blur(4px);
     }
@@ -76,7 +78,6 @@
         background: #e74c3c; color: white; border: 2px solid #fff;
         border-radius: 50%; font-size: 16px; line-height: 18px; text-align: center; font-weight: bold;
         cursor: pointer; z-index: 10; 
-        /* スマホだとホバーがないので常に表示するか、タップしやすいように調整 */
         display: block; opacity: 0.8;
         box-shadow: 0 2px 4px rgba(0,0,0,0.3);
     }
@@ -96,13 +97,20 @@
     /* 合計表示 */
     .total-display {
         position: absolute; top: 10px; right: 10px;
-        background: rgba(0, 0, 0, 0.7);
-        color: #f1c40f; padding: 6px 12px;
-        border-radius: 20px; font-size: 16px; font-weight: bold; z-index: 100; pointer-events: none;
-        backdrop-filter: blur(5px); border: 1px solid rgba(255,255,255,0.3);
+        background: rgba(0, 0, 0, 0.8);
+        color: #f1c40f; padding: 8px 14px;
+        border-radius: 24px; font-size: 16px; font-weight: bold; z-index: 100; 
+        backdrop-filter: blur(5px); border: 2px solid rgba(255,255,255,0.3);
         text-align: right;
+        cursor: pointer;
+        user-select: none;
+        box-shadow: 0 4px 8px rgba(0,0,0,0.3);
+        transition: transform 0.1s;
     }
-    .tax-info { font-size: 9px; color: #ddd; font-weight: normal; display: block;}
+    .total-display:active { transform: scale(0.95); background: rgba(0,0,0,1); }
+    
+    .tax-info { font-size: 10px; color: #ddd; font-weight: normal; display: block; margin-bottom: 2px;}
+    .toggle-hint { font-size: 9px; color: #aaa; font-weight: normal; margin-left: 5px; }
 
     /* 箱のデザイン */
     .cost-box {
@@ -121,7 +129,6 @@
         justify-content: flex-end; padding-left: 20px; padding-right: 5px; text-align: right;
     }
 
-    /* ドラッグ中のゴースト要素用スタイル */
     .dragging-ghost {
         position: fixed; pointer-events: none; z-index: 9999;
         opacity: 0.8; transform: scale(1.05);
@@ -162,9 +169,10 @@
     <div class="workspace" id="capture-area">
         <div class="palette" id="source-zone"></div>
         <div class="scale-area" id="drop-zone">
-            <div class="total-display">
-                <span class="tax-info">税込合計</span>
+            <div class="total-display" onclick="toggleTax()">
+                <span class="tax-info" id="tax-label">税込合計</span>
                 ¥<span id="total-price">0</span>
+                <span class="toggle-hint">⇄</span>
             </div>
             <div id="stack-container"></div>
             <div style="position:absolute; bottom:5px; color:rgba(255,255,255,0.7); font-size:10px; text-shadow:0 1px 2px rgba(0,0,0,0.8);">タップで削除</div>
@@ -206,6 +214,8 @@
     const STORAGE_KEY_ITEMS = 'shokunin_items_v9';
     const TAX_RATE = 1.1; 
 
+    let isTaxIncluded = true;
+
     const PRESET_COLORS = [
         { val: '#95a5a6', name: 'グレー' }, { val: '#e74c3c', name: '赤' },
         { val: '#3498db', name: '青' }, { val: '#f1c40f', name: '黄' }, { val: '#2ecc71', name: '緑' }
@@ -220,6 +230,12 @@
     loadData(); renderPalette(); initColorSwatches();
 
     document.getElementById('zoom').addEventListener('input', (e) => stackContainer.style.transform = `scale(${e.target.value})`);
+
+    function toggleTax() {
+        isTaxIncluded = !isTaxIncluded;
+        recalcTotal();
+        if(navigator.vibrate) navigator.vibrate(30);
+    }
 
     function loadBackground(input) {
         if (input.files && input.files[0]) {
@@ -287,10 +303,8 @@
             div.style.background = `linear-gradient(135deg, ${item.color}, ${darkenColor(item.color, 20)})`;
             div.innerHTML = `<span>${item.label}</span>`;
             
-            // ★スマホ対応：タッチイベントを追加
             setupTouchDrag(div, item);
 
-            // PC用ドラッグイベント（念のため残す）
             div.draggable = true;
             div.addEventListener('dragstart', (e) => { e.dataTransfer.effectAllowed = 'copy'; e.dataTransfer.setData('application/json', JSON.stringify(item)); div.style.opacity = '0.5'; });
             div.addEventListener('dragend', () => div.style.opacity = '0.9');
@@ -299,21 +313,15 @@
         });
     }
 
-    // ★★★ スマホ用ドラッグ＆ドロップ実装の核心部分 ★★★
     function setupTouchDrag(el, itemData) {
         let ghost = null;
         let startX, startY;
 
         el.addEventListener('touchstart', (e) => {
-            // スクロールを止める
-            // e.preventDefault(); // これを入れるとカタログの縦スクロールができなくなるので注意。
-            // 横方向の移動が大きければドラッグとみなすロジックが必要だが、今回は長押し判定などはせずシンプルに実装
-            
             const touch = e.touches[0];
             startX = touch.clientX;
             startY = touch.clientY;
 
-            // 複製（ゴースト）を作成
             ghost = el.cloneNode(true);
             ghost.classList.add('dragging-ghost');
             ghost.style.width = el.offsetWidth + 'px';
@@ -326,7 +334,7 @@
 
         el.addEventListener('touchmove', (e) => {
             if (!ghost) return;
-            e.preventDefault(); // ドラッグ中は画面スクロールを禁止
+            e.preventDefault(); 
             const touch = e.touches[0];
             ghost.style.left = (touch.clientX - ghost.offsetWidth/2) + 'px';
             ghost.style.top = (touch.clientY - ghost.offsetHeight/2) + 'px';
@@ -335,16 +343,13 @@
         el.addEventListener('touchend', (e) => {
             if (!ghost) return;
             
-            // ドロップ位置の判定
             const touch = e.changedTouches[0];
             const dropTarget = document.elementFromPoint(touch.clientX, touch.clientY);
             
-            // ドロップ先が「scale-area」またはその子要素ならOK
             if (dropTarget && dropTarget.closest('#drop-zone')) {
                 createStackBox(itemData);
             }
 
-            // ゴースト消去
             document.body.removeChild(ghost);
             ghost = null;
         });
@@ -353,7 +358,6 @@
     function addPaletteItem(label, unitPrice, typeId, color) { paletteItems.push({ id: Date.now(), label, unitPrice, typeId, color }); saveData(); renderPalette(); }
     function deletePaletteItem(index) { if(confirm("カタログから削除しますか？")) { paletteItems.splice(index, 1); saveData(); renderPalette(); } }
 
-    // PC用ドロップ受け入れ（念のため）
     dropZone.addEventListener('dragover', (e) => { e.preventDefault(); e.dataTransfer.dropEffect = 'copy'; });
     dropZone.addEventListener('drop', (e) => { e.preventDefault(); const data = JSON.parse(e.dataTransfer.getData('application/json')||'null'); if(data) createStackBox(data); });
 
@@ -376,10 +380,23 @@
     }
 
     function recalcTotal() {
-        let total = 0; const boxes = stackContainer.querySelectorAll('.cost-box');
-        boxes.forEach(box => { recalcSingleBox(box); total += parseFloat(box.dataset.currentPrice); });
-        const totalTaxIn = Math.round(total * TAX_RATE);
-        totalDisplay.innerText = totalTaxIn.toLocaleString();
+        let total = 0; 
+        const boxes = stackContainer.querySelectorAll('.cost-box');
+        boxes.forEach(box => { 
+            recalcSingleBox(box); 
+            total += parseFloat(box.dataset.currentPrice); 
+        });
+        
+        let displayTotal = total;
+        let label = "税抜合計";
+
+        if (isTaxIncluded) {
+            displayTotal = Math.round(total * TAX_RATE);
+            label = "税込合計";
+        }
+
+        document.getElementById('tax-label').innerText = label;
+        document.getElementById('total-price').innerText = displayTotal.toLocaleString();
     }
 
     function openDataModal() {
