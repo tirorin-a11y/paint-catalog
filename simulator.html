@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>職人ギア V19 (基準削除機能)</title>
+<title>職人ギア V21 (詳細確認＆バグ修正)</title>
 <script src="https://html2canvas.hertzen.com/dist/html2canvas.min.js"></script>
 <style>
     * { box-sizing: border-box; touch-action: manipulation; }
@@ -74,16 +74,18 @@
         position: absolute; top: -6px; left: -4px; width: 22px; height: 22px; 
         background: #e74c3c; color: white; border: 2px solid #fff;
         border-radius: 50%; font-size: 16px; line-height: 18px; text-align: center; font-weight: bold;
-        cursor: pointer; z-index: 10; 
-        display: block; opacity: 0.8;
-        box-shadow: 0 2px 4px rgba(0,0,0,0.3);
+        cursor: pointer; z-index: 10; display: block; opacity: 0.8; box-shadow: 0 2px 4px rgba(0,0,0,0.3);
+    }
+    .palette-edit-btn {
+        position: absolute; top: -6px; right: -4px; width: 22px; height: 22px; 
+        background: #3498db; color: white; border: 2px solid #fff;
+        border-radius: 50%; font-size: 10px; line-height: 18px; text-align: center; font-weight: bold;
+        cursor: pointer; z-index: 10; display: block; opacity: 0.8; box-shadow: 0 2px 4px rgba(0,0,0,0.3);
     }
 
     /* 右：積み上げエリア */
     .scale-area {
-        flex: 1; 
-        border-bottom: 10px solid rgba(44, 62, 80, 0.8);
-        border-radius: 8px 8px 0 0; position: relative;
+        flex: 1; border-bottom: 10px solid rgba(44, 62, 80, 0.8); border-radius: 8px 8px 0 0; position: relative;
         display: flex; justify-content: center; align-items: flex-end; overflow: hidden;
     }
     #stack-container {
@@ -94,18 +96,13 @@
     /* 合計表示 */
     .total-display {
         position: absolute; top: 10px; right: 10px;
-        background: rgba(0, 0, 0, 0.8);
-        color: #f1c40f; padding: 8px 14px;
+        background: rgba(0, 0, 0, 0.8); color: #f1c40f; padding: 8px 14px;
         border-radius: 24px; font-size: 16px; font-weight: bold; z-index: 100; 
         backdrop-filter: blur(5px); border: 2px solid rgba(255,255,255,0.3);
-        text-align: right;
-        cursor: pointer;
-        user-select: none;
-        box-shadow: 0 4px 8px rgba(0,0,0,0.3);
+        text-align: right; cursor: pointer; user-select: none; box-shadow: 0 4px 8px rgba(0,0,0,0.3);
         transition: transform 0.1s;
     }
     .total-display:active { transform: scale(0.95); background: rgba(0,0,0,1); }
-    
     .tax-info { font-size: 10px; color: #ddd; font-weight: normal; display: block; margin-bottom: 2px;}
     .toggle-hint { font-size: 9px; color: #aaa; font-weight: normal; margin-left: 5px; }
 
@@ -114,23 +111,20 @@
         width: 90%; max-width: 280px; border-radius: 4px;
         display: flex; justify-content: space-between; align-items: center; padding: 0 6px;
         color: white; font-weight: bold; cursor: grab; font-size: 10px;
-        position: relative; line-height: 1.2; flex-shrink: 0;
-        opacity: 0.9; 
-        box-shadow: 0 2px 4px rgba(0,0,0,0.2);
-        border: 1px solid rgba(255,255,255,0.4);
-        text-shadow: 0 1px 2px rgba(0,0,0, 0.8); 
+        position: relative; line-height: 1.2; flex-shrink: 0; opacity: 0.9; 
+        box-shadow: 0 2px 4px rgba(0,0,0,0.2); border: 1px solid rgba(255,255,255,0.4); text-shadow: 0 1px 2px rgba(0,0,0, 0.8); 
+        
+        /* ★長押し対策：選択やOSメニューを禁止 */
+        -webkit-touch-callout: none;
+        -webkit-user-select: none;
+        user-select: none;
     }
-
     .palette .cost-box { 
         height: 38px !important; font-size: 10px; width: 100%; margin: 0;
-        justify-content: flex-end; padding-left: 20px; padding-right: 5px; text-align: right;
+        justify-content: flex-end; padding-left: 20px; padding-right: 20px; text-align: center; 
     }
-
-    .dragging-ghost {
-        position: fixed; pointer-events: none; z-index: 9999;
-        opacity: 0.8; transform: scale(1.05);
-        box-shadow: 0 10px 20px rgba(0,0,0,0.3);
-    }
+    
+    .dragging-ghost { position: fixed; pointer-events: none; z-index: 9999; opacity: 0.8; transform: scale(1.05); box-shadow: 0 10px 20px rgba(0,0,0,0.3); }
 
     /* モーダル類 */
     .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); justify-content: center; align-items: center; z-index: 999; backdrop-filter: blur(3px); }
@@ -138,7 +132,6 @@
     .form-group label { display: block; font-size: 11px; color: #555; margin-bottom: 3px; }
     .form-group input, .form-group select { width: 100%; padding: 8px; border: 1px solid #ccc; border-radius: 4px; }
     #site-data-list { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 10px; }
-    
     .color-palette { display: flex; justify-content: space-between; gap: 5px; margin-top: 5px; }
     .color-swatch { width: 40px; height: 40px; border-radius: 50%; cursor: pointer; border: 3px solid transparent; box-shadow: 0 2px 4px rgba(0,0,0,0.2); }
     .color-swatch.selected { border-color: #333; transform: scale(1.1); }
@@ -172,7 +165,7 @@
                 <span class="toggle-hint">⇄</span>
             </div>
             <div id="stack-container"></div>
-            <div style="position:absolute; bottom:5px; color:rgba(255,255,255,0.7); font-size:10px; text-shadow:0 1px 2px rgba(0,0,0,0.8);">タップで削除</div>
+            <div style="position:absolute; bottom:5px; color:rgba(255,255,255,0.7); font-size:10px; text-shadow:0 1px 2px rgba(0,0,0,0.8);">箱タップで詳細・削除</div>
         </div>
     </div>
 
@@ -187,7 +180,7 @@
 
     <div id="itemModal" class="modal">
         <div class="modal-content">
-            <h3>部材カタログ追加</h3>
+            <h3 id="item-modal-title">部材カタログ追加</h3>
             <div class="form-group">
                 <label>項目名</label>
                 <div style="display:flex; gap:5px;">
@@ -200,7 +193,23 @@
             <div class="form-group"><label>色を選択</label><div class="color-palette" id="swatch-container"></div><input type="hidden" id="m-color-val" value="#95a5a6"></div>
             <div style="display:flex; gap:10px; margin-top:10px;">
                 <button onclick="closeItemModal()" style="background:#ccc; flex:1; color:#333;">キャンセル</button>
-                <button onclick="addItemFromModal()" style="background:#2ecc71; flex:1;">追加</button>
+                <button id="modal-submit-btn" onclick="saveItemFromModal()" style="background:#2ecc71; flex:1;">追加</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="stackDetailModal" class="modal">
+        <div class="modal-content" style="text-align: center;">
+            <h3 id="detail-title" style="margin-top: 0; margin-bottom: 5px; color:#2c3e50;">項目名</h3>
+            <div id="detail-formula" style="font-size: 14px; color: #666; margin-bottom: 10px; background:#f9f9f9; padding:10px; border-radius:6px; border:1px solid #eee;">
+                計算式
+            </div>
+            <div id="detail-price" style="font-size: 24px; font-weight: bold; color: #e74c3c; margin-bottom: 20px;">
+                ¥0
+            </div>
+            <div style="display:flex; gap:10px;">
+                <button onclick="closeStackDetailModal()" style="background:#ccc; flex:1; color:#333;">閉じる</button>
+                <button onclick="removeActiveStackBox()" style="background:#e74c3c; flex:1;">🗑️ この箱を崩す</button>
             </div>
         </div>
     </div>
@@ -212,6 +221,8 @@
     const TAX_RATE = 1.1; 
 
     let isTaxIncluded = true;
+    let editingItemId = null; 
+    let currentActiveStackBox = null; // ★詳細表示中の箱を記憶
 
     const PRESET_COLORS = [
         { val: '#95a5a6', name: 'グレー' }, { val: '#e74c3c', name: '赤' },
@@ -224,7 +235,7 @@
     const dropZone = document.getElementById('drop-zone');
     const totalDisplay = document.getElementById('total-price');
 
-    loadData(); renderPalette(); initColorSwatches();
+    loadData(); renderPalette();
 
     document.getElementById('zoom').addEventListener('input', (e) => stackContainer.style.transform = `scale(${e.target.value})`);
 
@@ -237,9 +248,7 @@
     function loadBackground(input) {
         if (input.files && input.files[0]) {
             const reader = new FileReader();
-            reader.onload = function(e) {
-                document.getElementById('capture-area').style.backgroundImage = `url(${e.target.result})`;
-            };
+            reader.onload = function(e) { document.getElementById('capture-area').style.backgroundImage = `url(${e.target.result})`; };
             reader.readAsDataURL(input.files[0]);
         }
     }
@@ -247,27 +256,23 @@
     function saveAsImage() {
         const element = document.getElementById('capture-area');
         html2canvas(element, { backgroundColor: null }).then(canvas => {
-            const link = document.createElement('a');
-            link.download = 'mitsumori_sim.png';
-            link.href = canvas.toDataURL();
-            link.click();
+            const link = document.createElement('a'); link.download = 'mitsumori_sim.png'; link.href = canvas.toDataURL(); link.click();
         });
     }
 
-    function initColorSwatches() {
+    function initColorSwatches(targetColor = '#95a5a6') {
         const container = document.getElementById('swatch-container');
         const input = document.getElementById('m-color-val');
-        container.innerHTML = '';
-        PRESET_COLORS.forEach((color, index) => {
+        container.innerHTML = ''; input.value = targetColor;
+
+        PRESET_COLORS.forEach((color) => {
             const swatch = document.createElement('div');
-            swatch.className = 'color-swatch';
-            swatch.style.backgroundColor = color.val;
+            swatch.className = 'color-swatch'; swatch.style.backgroundColor = color.val;
             swatch.onclick = () => {
                 document.querySelectorAll('.color-swatch').forEach(s => s.classList.remove('selected'));
-                swatch.classList.add('selected');
-                input.value = color.val;
+                swatch.classList.add('selected'); input.value = color.val;
             };
-            if (index === 0) swatch.classList.add('selected');
+            if (color.val === targetColor || color.val.toLowerCase() === targetColor.toLowerCase()) { swatch.classList.add('selected'); }
             container.appendChild(swatch);
         });
     }
@@ -288,81 +293,84 @@
         sourceZone.innerHTML = '';
         paletteItems.forEach((item, index) => {
             const wrap = document.createElement('div'); wrap.className = 'palette-item-wrap';
-            
-            const delBtn = document.createElement('div'); 
-            delBtn.className = 'palette-del-btn'; 
-            delBtn.innerHTML = '×';
+            const delBtn = document.createElement('div'); delBtn.className = 'palette-del-btn'; delBtn.innerHTML = '×';
             delBtn.onclick = () => deletePaletteItem(index);
-
-            const div = document.createElement('div'); 
-            div.className = 'cost-box'; 
-            
+            const editBtn = document.createElement('div'); editBtn.className = 'palette-edit-btn'; editBtn.innerHTML = '✏️';
+            editBtn.onclick = () => openEditItemModal(item.id);
+            const div = document.createElement('div'); div.className = 'cost-box'; 
             div.style.background = `linear-gradient(135deg, ${item.color}, ${darkenColor(item.color, 20)})`;
             div.innerHTML = `<span>${item.label}</span>`;
             
             setupTouchDrag(div, item);
 
-            div.draggable = true;
-            div.addEventListener('dragstart', (e) => { e.dataTransfer.effectAllowed = 'copy'; e.dataTransfer.setData('application/json', JSON.stringify(item)); div.style.opacity = '0.5'; });
-            div.addEventListener('dragend', () => div.style.opacity = '0.9');
-            
-            wrap.appendChild(div); wrap.appendChild(delBtn); sourceZone.appendChild(wrap);
+            wrap.appendChild(div); wrap.appendChild(delBtn); wrap.appendChild(editBtn); sourceZone.appendChild(wrap);
         });
     }
 
+    // ★★★ フリーズ防止：ドラッグ処理の改善 ★★★
     function setupTouchDrag(el, itemData) {
         let ghost = null;
         let startX, startY;
+        let isDragging = false; // ドラッグ状態の判定
+
+        // 長押しメニュー（コンテキストメニュー）を禁止
+        el.addEventListener('contextmenu', e => e.preventDefault());
 
         el.addEventListener('touchstart', (e) => {
             const touch = e.touches[0];
-            startX = touch.clientX;
-            startY = touch.clientY;
-
-            ghost = el.cloneNode(true);
-            ghost.classList.add('dragging-ghost');
-            ghost.style.width = el.offsetWidth + 'px';
-            ghost.style.height = el.offsetHeight + 'px';
-            ghost.style.left = (touch.clientX - el.offsetWidth/2) + 'px';
-            ghost.style.top = (touch.clientY - el.offsetHeight/2) + 'px';
-            
-            document.body.appendChild(ghost);
+            startX = touch.clientX; startY = touch.clientY;
+            isDragging = false;
         }, {passive: false});
 
         el.addEventListener('touchmove', (e) => {
-            if (!ghost) return;
-            e.preventDefault(); 
             const touch = e.touches[0];
-            ghost.style.left = (touch.clientX - ghost.offsetWidth/2) + 'px';
-            ghost.style.top = (touch.clientY - ghost.offsetHeight/2) + 'px';
-        }, {passive: false});
-
-        el.addEventListener('touchend', (e) => {
-            if (!ghost) return;
             
-            const touch = e.changedTouches[0];
-            const dropTarget = document.elementFromPoint(touch.clientX, touch.clientY);
-            
-            if (dropTarget && dropTarget.closest('#drop-zone')) {
-                createStackBox(itemData);
+            // ★指が10px以上動いたら「ドラッグ」とみなす（タップ・長押しとの誤判定を防ぐ）
+            if (!isDragging && (Math.abs(touch.clientX - startX) > 10 || Math.abs(touch.clientY - startY) > 10)) {
+                isDragging = true;
+                ghost = el.cloneNode(true);
+                ghost.classList.add('dragging-ghost');
+                ghost.style.width = el.offsetWidth + 'px'; ghost.style.height = el.offsetHeight + 'px';
+                document.body.appendChild(ghost);
             }
 
-            document.body.removeChild(ghost);
-            ghost = null;
-        });
+            if (isDragging && ghost) {
+                e.preventDefault(); // ドラッグ中は画面スクロールを止める
+                ghost.style.left = (touch.clientX - el.offsetWidth/2) + 'px';
+                ghost.style.top = (touch.clientY - el.offsetHeight/2) + 'px';
+            }
+        }, {passive: false});
+
+        // 終了時またはOSによる強制中断時のクリーンアップ処理
+        const cleanup = (e) => {
+            if (ghost) {
+                if (e.type === 'touchend') {
+                    const touch = e.changedTouches[0];
+                    const dropTarget = document.elementFromPoint(touch.clientX, touch.clientY);
+                    if (dropTarget && dropTarget.closest('#drop-zone')) { createStackBox(itemData); }
+                }
+                document.body.removeChild(ghost); 
+                ghost = null;
+            }
+            isDragging = false;
+        };
+
+        el.addEventListener('touchend', cleanup);
+        el.addEventListener('touchcancel', cleanup); // ★電話着信やOSによる中断時もゴーストを消す
     }
 
-    function addPaletteItem(label, unitPrice, typeId, color) { paletteItems.push({ id: Date.now(), label, unitPrice, typeId, color }); saveData(); renderPalette(); }
     function deletePaletteItem(index) { if(confirm("カタログから削除しますか？")) { paletteItems.splice(index, 1); saveData(); renderPalette(); } }
-
-    dropZone.addEventListener('dragover', (e) => { e.preventDefault(); e.dataTransfer.dropEffect = 'copy'; });
-    dropZone.addEventListener('drop', (e) => { e.preventDefault(); const data = JSON.parse(e.dataTransfer.getData('application/json')||'null'); if(data) createStackBox(data); });
 
     function createStackBox(data) {
         const div = document.createElement('div'); div.className = 'cost-box';
         div.style.background = `linear-gradient(135deg, ${data.color}, ${darkenColor(data.color, 20)})`;
         div.dataset.label = data.label; div.dataset.unitPrice = data.unitPrice; div.dataset.typeId = data.typeId; 
-        div.addEventListener('click', () => { if(confirm('崩しますか？')) { div.remove(); recalcTotal(); } });
+        
+        // ★変更：タップで詳細モーダルを開く
+        div.addEventListener('click', () => { 
+            openStackDetailModal(div);
+        });
+        
         stackContainer.appendChild(div); recalcSingleBox(div); recalcTotal();
     }
 
@@ -377,41 +385,61 @@
     }
 
     function recalcTotal() {
-        let total = 0; 
-        const boxes = stackContainer.querySelectorAll('.cost-box');
-        boxes.forEach(box => { 
-            recalcSingleBox(box); 
-            total += parseFloat(box.dataset.currentPrice); 
-        });
-        
-        let displayTotal = total;
-        let label = "税抜合計";
-
-        if (isTaxIncluded) {
-            displayTotal = Math.round(total * TAX_RATE);
-            label = "税込合計";
-        }
-
-        document.getElementById('tax-label').innerText = label;
+        let total = 0; const boxes = stackContainer.querySelectorAll('.cost-box');
+        boxes.forEach(box => { recalcSingleBox(box); total += parseFloat(box.dataset.currentPrice); });
+        let displayTotal = isTaxIncluded ? Math.round(total * TAX_RATE) : total;
+        document.getElementById('tax-label').innerText = isTaxIncluded ? "税込合計" : "税抜合計";
         document.getElementById('total-price').innerText = displayTotal.toLocaleString();
     }
 
-    // ★変更点：設定モーダルの表示（削除ボタンの追加と基本項目の保護）
-    function openDataModal() {
-        const list = document.getElementById('site-data-list'); 
-        list.innerHTML = '';
+
+    // --- ★新機能：積み木の内訳・削除モーダル ---
+    function openStackDetailModal(box) {
+        currentActiveStackBox = box;
+        const label = box.dataset.label;
+        const typeId = box.dataset.typeId;
+        const unitPrice = parseFloat(box.dataset.unitPrice);
+        const currentPrice = parseFloat(box.dataset.currentPrice);
+
+        let formulaText = "固定金額（一式）";
+        if (typeId !== 'fixed') {
+            const variable = siteVariables.find(v => v.id === typeId);
+            if (variable) {
+                // "(㎡)" などの単位部分だけを抽出して綺麗に表示
+                const unitMatch = variable.label.match(/\((.*?)\)/);
+                const unitStr = unitMatch ? unitMatch[1] : '';
+                formulaText = `単価 ${unitPrice.toLocaleString()}円 × ${variable.val} ${unitStr}`;
+            }
+        }
+
+        document.getElementById('detail-title').innerText = label;
+        document.getElementById('detail-formula').innerText = formulaText;
+        document.getElementById('detail-price').innerText = `計: ¥${Math.round(currentPrice).toLocaleString()}`;
         
+        document.getElementById('stackDetailModal').style.display = 'flex';
+    }
+
+    function closeStackDetailModal() {
+        document.getElementById('stackDetailModal').style.display = 'none';
+        currentActiveStackBox = null;
+    }
+
+    function removeActiveStackBox() {
+        if (currentActiveStackBox) {
+            currentActiveStackBox.remove();
+            recalcTotal();
+            closeStackDetailModal();
+        }
+    }
+
+
+    // --- ⚙️ 設定（建物データ）モーダル ---
+    function openDataModal() {
+        const list = document.getElementById('site-data-list'); list.innerHTML = '';
         siteVariables.forEach(v => {
             const div = document.createElement('div');
-            
-            // ★デフォルトの3項目は削除不可（空白にしてレイアウトを保つ）
-            const isDefault = ['wall', 'roof', 'seal'].includes(v.id);
-            const delBtn = isDefault ? 
-                `<div style="width:35px; flex-shrink:0;"></div>` : 
-                `<button onclick="deleteVariable('${v.id}')" style="width:35px; flex-shrink:0; background:#fff5f5; color:#e74c3c; border:1px solid #e74c3c; font-size:16px; padding:0; box-shadow:none; border-radius:4px;" title="削除">×</button>`;
-
-            div.className = 'form-group';
-            div.style.marginBottom = '0';
+            const delBtn = `<button onclick="deleteVariable('${v.id}')" style="width:35px; flex-shrink:0; background:#fff5f5; color:#e74c3c; border:1px solid #e74c3c; font-size:16px; padding:0; box-shadow:none; border-radius:4px;" title="削除">×</button>`;
+            div.className = 'form-group'; div.style.marginBottom = '0';
             div.innerHTML = `
                 <label>${v.label}</label>
                 <div style="display:flex; gap:5px;">
@@ -425,39 +453,62 @@
     }
 
     window.updateVariable = function(id, val) { const target = siteVariables.find(v => v.id === id); if (target) target.val = parseFloat(val); }
-    
-    window.addNewVariable = function() { 
-        const name = prompt("追加する項目名を入力\n(例: ベランダ, 足場など)"); 
-        if (!name) return; 
-        siteVariables.push({ id: 'custom_' + Date.now(), label: name, val: 0 }); 
-        openDataModal(); 
-    }
-
-    // ★追加：変数の削除処理
+    window.addNewVariable = function() { const name = prompt("追加する項目名を入力\n(例: ベランダ, 足場など)"); if (!name) return; siteVariables.push({ id: 'custom_' + Date.now(), label: name, val: 0 }); openDataModal(); }
     window.deleteVariable = function(id) {
-        if(confirm("この基準項目を削除しますか？\n※既にこの項目を使っている部材がある場合、その金額は0円になります。")) {
-            siteVariables = siteVariables.filter(v => v.id !== id);
-            openDataModal(); // 画面を更新して消す
+        if(confirm("この基準項目を削除しますか？\n※既にこの項目を使っている部材がある場合、その計算は「0円」になります。")) {
+            siteVariables = siteVariables.filter(v => v.id !== id); openDataModal();
         }
     }
-
     function saveDataModal() { document.getElementById('dataModal').style.display = 'none'; saveData(); recalcTotal(); }
 
-    function openItemModal() {
+
+    // --- ＋ 部材追加・編集 モーダル ---
+    function populateItemModalSelects() {
         const selectType = document.getElementById('m-type'); selectType.innerHTML = '<option value="fixed">固定金額 (一式)</option>';
         const selectName = document.getElementById('m-name-preset'); selectName.innerHTML = '<option value="">候補から</option>';
         siteVariables.forEach(v => {
             const optType = document.createElement('option'); optType.value = v.id; optType.text = `× ${v.label}`; selectType.appendChild(optType);
             const optName = document.createElement('option'); optName.value = v.label; optName.text = v.label; selectName.appendChild(optName);
         });
+    }
+
+    function openItemModal() {
+        editingItemId = null;
+        document.getElementById('item-modal-title').innerText = "部材カタログ追加";
+        document.getElementById('m-name').value = ''; document.getElementById('m-price').value = '';
+        document.getElementById('modal-submit-btn').innerText = '追加';
+        populateItemModalSelects(); initColorSwatches('#95a5a6'); 
         document.getElementById('itemModal').style.display = 'flex';
     }
+
+    window.openEditItemModal = function(id) {
+        editingItemId = id;
+        const item = paletteItems.find(i => i.id === id);
+        if(!item) return;
+        document.getElementById('item-modal-title').innerText = "部材の編集";
+        document.getElementById('m-name').value = item.label; document.getElementById('m-price').value = item.unitPrice;
+        populateItemModalSelects(); document.getElementById('m-type').value = item.typeId;
+        initColorSwatches(item.color); 
+        document.getElementById('modal-submit-btn').innerText = '更新';
+        document.getElementById('itemModal').style.display = 'flex';
+    }
+
     window.applyPresetName = function() { const val = document.getElementById('m-name-preset').value; if (val) document.getElementById('m-name').value = val; }
     function closeItemModal() { document.getElementById('itemModal').style.display = 'none'; }
-    function addItemFromModal() {
+    
+    window.saveItemFromModal = function() {
         const name = document.getElementById('m-name').value, type = document.getElementById('m-type').value, price = parseFloat(document.getElementById('m-price').value), color = document.getElementById('m-color-val').value;
-        if (name && price) { addPaletteItem(name, price, type, color); closeItemModal(); }
+        if (name && !isNaN(price)) {
+            if (editingItemId) {
+                const item = paletteItems.find(i => i.id === editingItemId);
+                if (item) { item.label = name; item.typeId = type; item.unitPrice = price; item.color = color; }
+            } else {
+                paletteItems.push({ id: Date.now(), label: name, unitPrice: price, typeId: type, color: color });
+            }
+            saveData(); renderPalette(); closeItemModal();
+        }
     }
+
     function resetStack() { if(confirm("積み上げをクリアしますか？")) { stackContainer.innerHTML = ''; recalcTotal(); } }
     function darkenColor(hex, percent) { let num = parseInt(hex.replace("#",""), 16), amt = Math.round(2.55 * percent), R = (num >> 16) - amt, B = (num >> 8 & 0x00FF) - amt, G = (num & 0x0000FF) - amt; return "#" + (0x1000000 + (R<255?R<1?0:R:255)*0x10000 + (B<255?B<1?0:B:255)*0x100 + (G<255?G<1?0:G:255)).toString(16).slice(1); }
 </script>
