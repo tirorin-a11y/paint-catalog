@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>職人ギア V18 (Androidナビバー対応)</title>
+<title>職人ギア V19 (基準削除機能)</title>
 <script src="https://html2canvas.hertzen.com/dist/html2canvas.min.js"></script>
 <style>
     * { box-sizing: border-box; touch-action: manipulation; }
@@ -13,12 +13,9 @@
         background-color: #2c3e50;
         color: #333;
         margin: 0; 
-        height: 100dvh; /* スマホのアドレスバー対策 */
-        
-        /* ★修正：Androidのナビバー対策として、下に大きめの余白を確保 */
+        height: 100dvh; 
         padding: 5px;
         padding-bottom: 80px; 
-        
         display: flex; flex-direction: column;
         overflow: hidden;
     }
@@ -399,17 +396,51 @@
         document.getElementById('total-price').innerText = displayTotal.toLocaleString();
     }
 
+    // ★変更点：設定モーダルの表示（削除ボタンの追加と基本項目の保護）
     function openDataModal() {
-        const list = document.getElementById('site-data-list'); list.innerHTML = '';
+        const list = document.getElementById('site-data-list'); 
+        list.innerHTML = '';
+        
         siteVariables.forEach(v => {
             const div = document.createElement('div');
-            div.innerHTML = `<div class="form-group"><label>${v.label}</label><input type="number" value="${v.val}" onchange="updateVariable('${v.id}', this.value)"></div>`;
+            
+            // ★デフォルトの3項目は削除不可（空白にしてレイアウトを保つ）
+            const isDefault = ['wall', 'roof', 'seal'].includes(v.id);
+            const delBtn = isDefault ? 
+                `<div style="width:35px; flex-shrink:0;"></div>` : 
+                `<button onclick="deleteVariable('${v.id}')" style="width:35px; flex-shrink:0; background:#fff5f5; color:#e74c3c; border:1px solid #e74c3c; font-size:16px; padding:0; box-shadow:none; border-radius:4px;" title="削除">×</button>`;
+
+            div.className = 'form-group';
+            div.style.marginBottom = '0';
+            div.innerHTML = `
+                <label>${v.label}</label>
+                <div style="display:flex; gap:5px;">
+                    <input type="number" value="${v.val}" style="flex:1; min-width:0;" onchange="updateVariable('${v.id}', this.value)">
+                    ${delBtn}
+                </div>
+            `;
             list.appendChild(div);
         });
         document.getElementById('dataModal').style.display = 'flex';
     }
+
     window.updateVariable = function(id, val) { const target = siteVariables.find(v => v.id === id); if (target) target.val = parseFloat(val); }
-    window.addNewVariable = function() { const name = prompt("項目名"); if (!name) return; siteVariables.push({ id: 'custom_' + Date.now(), label: name, val: 0 }); openDataModal(); }
+    
+    window.addNewVariable = function() { 
+        const name = prompt("追加する項目名を入力\n(例: ベランダ, 足場など)"); 
+        if (!name) return; 
+        siteVariables.push({ id: 'custom_' + Date.now(), label: name, val: 0 }); 
+        openDataModal(); 
+    }
+
+    // ★追加：変数の削除処理
+    window.deleteVariable = function(id) {
+        if(confirm("この基準項目を削除しますか？\n※既にこの項目を使っている部材がある場合、その金額は0円になります。")) {
+            siteVariables = siteVariables.filter(v => v.id !== id);
+            openDataModal(); // 画面を更新して消す
+        }
+    }
+
     function saveDataModal() { document.getElementById('dataModal').style.display = 'none'; saveData(); recalcTotal(); }
 
     function openItemModal() {
