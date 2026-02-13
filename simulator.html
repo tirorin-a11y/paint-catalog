@@ -9,11 +9,11 @@
 
     gtag('config', 'G-EPKTC39SQG');
     </script>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>職人ギア V21 (詳細確認＆バグ修正)</title>
-    <script src="https://html2canvas.hertzen.com/dist/html2canvas.min.js"></script>
-    <style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>職人ギア V22 (スタイリッシュUI・8色版)</title>
+<script src="https://html2canvas.hertzen.com/dist/html2canvas.min.js"></script>
+<style>
     * { box-sizing: border-box; touch-action: manipulation; }
 
     body {
@@ -71,25 +71,12 @@
         backdrop-filter: blur(4px);
     }
 
-    /* 左：カタログエリア */
+    /* 左：カタログエリア（バッジを廃止してスッキリ！） */
     .palette {
         width: 120px; border-radius: 8px;
         padding: 5px; overflow-y: auto; display: flex; flex-direction: column; gap: 6px;
     }
     .palette-item-wrap { position: relative; width: 100%; display: flex; justify-content: center; }
-    
-    .palette-del-btn {
-        position: absolute; top: -6px; left: -4px; width: 22px; height: 22px; 
-        background: #e74c3c; color: white; border: 2px solid #fff;
-        border-radius: 50%; font-size: 16px; line-height: 18px; text-align: center; font-weight: bold;
-        cursor: pointer; z-index: 10; display: block; opacity: 0.8; box-shadow: 0 2px 4px rgba(0,0,0,0.3);
-    }
-    .palette-edit-btn {
-        position: absolute; top: -6px; right: -4px; width: 22px; height: 22px; 
-        background: #3498db; color: white; border: 2px solid #fff;
-        border-radius: 50%; font-size: 10px; line-height: 18px; text-align: center; font-weight: bold;
-        cursor: pointer; z-index: 10; display: block; opacity: 0.8; box-shadow: 0 2px 4px rgba(0,0,0,0.3);
-    }
 
     /* 右：積み上げエリア */
     .scale-area {
@@ -114,22 +101,20 @@
     .tax-info { font-size: 10px; color: #ddd; font-weight: normal; display: block; margin-bottom: 2px;}
     .toggle-hint { font-size: 9px; color: #aaa; font-weight: normal; margin-left: 5px; }
 
-    /* 箱のデザイン */
+    /* 箱のデザイン（共通） */
     .cost-box {
         width: 90%; max-width: 280px; border-radius: 4px;
         display: flex; justify-content: space-between; align-items: center; padding: 0 6px;
         color: white; font-weight: bold; cursor: grab; font-size: 10px;
         position: relative; line-height: 1.2; flex-shrink: 0; opacity: 0.9; 
         box-shadow: 0 2px 4px rgba(0,0,0,0.2); border: 1px solid rgba(255,255,255,0.4); text-shadow: 0 1px 2px rgba(0,0,0, 0.8); 
-        
-        /* ★長押し対策：選択やOSメニューを禁止 */
-        -webkit-touch-callout: none;
-        -webkit-user-select: none;
-        user-select: none;
+        -webkit-touch-callout: none; -webkit-user-select: none; user-select: none;
     }
+    /* カタログ内の箱 */
     .palette .cost-box { 
         height: 38px !important; font-size: 10px; width: 100%; margin: 0;
-        justify-content: flex-end; padding-left: 20px; padding-right: 20px; text-align: center; 
+        justify-content: center; /* バッジが無くなったので文字を中央へ！ */
+        padding: 0 5px; text-align: center; cursor: pointer;
     }
     
     .dragging-ghost { position: fixed; pointer-events: none; z-index: 9999; opacity: 0.8; transform: scale(1.05); box-shadow: 0 10px 20px rgba(0,0,0,0.3); }
@@ -140,9 +125,11 @@
     .form-group label { display: block; font-size: 11px; color: #555; margin-bottom: 3px; }
     .form-group input, .form-group select { width: 100%; padding: 8px; border: 1px solid #ccc; border-radius: 4px; }
     #site-data-list { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 10px; }
-    .color-palette { display: flex; justify-content: space-between; gap: 5px; margin-top: 5px; }
-    .color-swatch { width: 40px; height: 40px; border-radius: 50%; cursor: pointer; border: 3px solid transparent; box-shadow: 0 2px 4px rgba(0,0,0,0.2); }
-    .color-swatch.selected { border-color: #333; transform: scale(1.1); }
+    
+    /* 8色パレット用に2段折り返し設定 */
+    .color-palette { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 8px; margin-top: 5px; }
+    .color-swatch { width: 32px; height: 32px; border-radius: 50%; cursor: pointer; border: 3px solid transparent; box-shadow: 0 2px 4px rgba(0,0,0,0.2); }
+    .color-swatch.selected { border-color: #333; transform: scale(1.15); }
 
 </style>
 </head>
@@ -199,7 +186,8 @@
             <div class="form-group"><label>計算タイプ</label><select id="m-type"></select></div>
             <div class="form-group"><label>金額 / 単価</label><input type="number" id="m-price"></div>
             <div class="form-group"><label>色を選択</label><div class="color-palette" id="swatch-container"></div><input type="hidden" id="m-color-val" value="#95a5a6"></div>
-            <div style="display:flex; gap:10px; margin-top:10px;">
+            <div style="display:flex; gap:8px; margin-top:10px;">
+                <button id="modal-delete-btn" onclick="deleteItemFromModal()" style="background:#e74c3c; width:45px; display:none;">🗑️</button>
                 <button onclick="closeItemModal()" style="background:#ccc; flex:1; color:#333;">キャンセル</button>
                 <button id="modal-submit-btn" onclick="saveItemFromModal()" style="background:#2ecc71; flex:1;">追加</button>
             </div>
@@ -230,11 +218,14 @@
 
     let isTaxIncluded = true;
     let editingItemId = null; 
-    let currentActiveStackBox = null; // ★詳細表示中の箱を記憶
+    let currentActiveStackBox = null; 
 
+    // ★豪華8色パレットに変更！
     const PRESET_COLORS = [
         { val: '#95a5a6', name: 'グレー' }, { val: '#e74c3c', name: '赤' },
-        { val: '#3498db', name: '青' }, { val: '#f1c40f', name: '黄' }, { val: '#2ecc71', name: '緑' }
+        { val: '#3498db', name: '青' },     { val: '#f1c40f', name: '黄' }, 
+        { val: '#2ecc71', name: '緑' },     { val: '#e67e22', name: 'オレンジ' },
+        { val: '#9b59b6', name: '紫' },     { val: '#34495e', name: '濃紺' }
     ];
 
     let siteVariables = [], paletteItems = [];
@@ -299,29 +290,39 @@
 
     function renderPalette() {
         sourceZone.innerHTML = '';
-        paletteItems.forEach((item, index) => {
+        paletteItems.forEach((item) => {
             const wrap = document.createElement('div'); wrap.className = 'palette-item-wrap';
-            const delBtn = document.createElement('div'); delBtn.className = 'palette-del-btn'; delBtn.innerHTML = '×';
-            delBtn.onclick = () => deletePaletteItem(index);
-            const editBtn = document.createElement('div'); editBtn.className = 'palette-edit-btn'; editBtn.innerHTML = '✏️';
-            editBtn.onclick = () => openEditItemModal(item.id);
+            
+            // バッジは生成しません！
             const div = document.createElement('div'); div.className = 'cost-box'; 
             div.style.background = `linear-gradient(135deg, ${item.color}, ${darkenColor(item.color, 20)})`;
             div.innerHTML = `<span>${item.label}</span>`;
             
+            // タップ＆ドラッグの制御
             setupTouchDrag(div, item);
 
-            wrap.appendChild(div); wrap.appendChild(delBtn); wrap.appendChild(editBtn); sourceZone.appendChild(wrap);
+            // PC用：クリックで編集を開く
+            div.addEventListener('click', () => openEditItemModal(item.id));
+            div.draggable = true;
+            div.addEventListener('dragstart', (e) => { e.dataTransfer.effectAllowed = 'copy'; e.dataTransfer.setData('application/json', JSON.stringify(item)); div.style.opacity = '0.5'; });
+            div.addEventListener('dragend', () => div.style.opacity = '0.9');
+            
+            wrap.appendChild(div); sourceZone.appendChild(wrap);
         });
+        
+        // パレットの下に小さなヒントを添える
+        const hint = document.createElement('div');
+        hint.style.cssText = "font-size:9px; color:#aaa; text-align:center; margin-top:10px;";
+        hint.innerText = "タップで編集・削除";
+        sourceZone.appendChild(hint);
     }
 
-    // ★★★ フリーズ防止：ドラッグ処理の改善 ★★★
+    // ★ドラッグとタップ（編集）を完璧に両立させる処理
     function setupTouchDrag(el, itemData) {
         let ghost = null;
         let startX, startY;
-        let isDragging = false; // ドラッグ状態の判定
+        let isDragging = false;
 
-        // 長押しメニュー（コンテキストメニュー）を禁止
         el.addEventListener('contextmenu', e => e.preventDefault());
 
         el.addEventListener('touchstart', (e) => {
@@ -333,8 +334,8 @@
         el.addEventListener('touchmove', (e) => {
             const touch = e.touches[0];
             
-            // ★指が10px以上動いたら「ドラッグ」とみなす（タップ・長押しとの誤判定を防ぐ）
-            if (!isDragging && (Math.abs(touch.clientX - startX) > 10 || Math.abs(touch.clientY - startY) > 10)) {
+            // 指が5px以上動いたら「ドラッグ」とみなす
+            if (!isDragging && (Math.abs(touch.clientX - startX) > 5 || Math.abs(touch.clientY - startY) > 5)) {
                 isDragging = true;
                 ghost = el.cloneNode(true);
                 ghost.classList.add('dragging-ghost');
@@ -343,41 +344,39 @@
             }
 
             if (isDragging && ghost) {
-                e.preventDefault(); // ドラッグ中は画面スクロールを止める
+                e.preventDefault(); // スクロール防止
                 ghost.style.left = (touch.clientX - el.offsetWidth/2) + 'px';
                 ghost.style.top = (touch.clientY - el.offsetHeight/2) + 'px';
             }
         }, {passive: false});
 
-        // 終了時またはOSによる強制中断時のクリーンアップ処理
         const cleanup = (e) => {
-            if (ghost) {
+            if (isDragging && ghost) {
                 if (e.type === 'touchend') {
+                    e.preventDefault(); // スマホでの誤クリックを防止
                     const touch = e.changedTouches[0];
                     const dropTarget = document.elementFromPoint(touch.clientX, touch.clientY);
                     if (dropTarget && dropTarget.closest('#drop-zone')) { createStackBox(itemData); }
                 }
                 document.body.removeChild(ghost); 
                 ghost = null;
+            } else if (!isDragging && e.type === 'touchend') {
+                // 動かさずに指を離した＝「タップした」ので編集画面を開く
+                openEditItemModal(itemData.id);
             }
             isDragging = false;
         };
 
         el.addEventListener('touchend', cleanup);
-        el.addEventListener('touchcancel', cleanup); // ★電話着信やOSによる中断時もゴーストを消す
+        el.addEventListener('touchcancel', cleanup); 
     }
-
-    function deletePaletteItem(index) { if(confirm("カタログから削除しますか？")) { paletteItems.splice(index, 1); saveData(); renderPalette(); } }
 
     function createStackBox(data) {
         const div = document.createElement('div'); div.className = 'cost-box';
         div.style.background = `linear-gradient(135deg, ${data.color}, ${darkenColor(data.color, 20)})`;
         div.dataset.label = data.label; div.dataset.unitPrice = data.unitPrice; div.dataset.typeId = data.typeId; 
         
-        // ★変更：タップで詳細モーダルを開く
-        div.addEventListener('click', () => { 
-            openStackDetailModal(div);
-        });
+        div.addEventListener('click', () => { openStackDetailModal(div); });
         
         stackContainer.appendChild(div); recalcSingleBox(div); recalcTotal();
     }
@@ -400,8 +399,7 @@
         document.getElementById('total-price').innerText = displayTotal.toLocaleString();
     }
 
-
-    // --- ★新機能：積み木の内訳・削除モーダル ---
+    // --- 積み木の内訳・削除モーダル ---
     function openStackDetailModal(box) {
         currentActiveStackBox = box;
         const label = box.dataset.label;
@@ -413,7 +411,6 @@
         if (typeId !== 'fixed') {
             const variable = siteVariables.find(v => v.id === typeId);
             if (variable) {
-                // "(㎡)" などの単位部分だけを抽出して綺麗に表示
                 const unitMatch = variable.label.match(/\((.*?)\)/);
                 const unitStr = unitMatch ? unitMatch[1] : '';
                 formulaText = `単価 ${unitPrice.toLocaleString()}円 × ${variable.val} ${unitStr}`;
@@ -485,6 +482,8 @@
         document.getElementById('item-modal-title').innerText = "部材カタログ追加";
         document.getElementById('m-name').value = ''; document.getElementById('m-price').value = '';
         document.getElementById('modal-submit-btn').innerText = '追加';
+        document.getElementById('modal-delete-btn').style.display = 'none'; // 追加時はゴミ箱を隠す
+        
         populateItemModalSelects(); initColorSwatches('#95a5a6'); 
         document.getElementById('itemModal').style.display = 'flex';
     }
@@ -498,12 +497,22 @@
         populateItemModalSelects(); document.getElementById('m-type').value = item.typeId;
         initColorSwatches(item.color); 
         document.getElementById('modal-submit-btn').innerText = '更新';
+        document.getElementById('modal-delete-btn').style.display = 'block'; // 編集時はゴミ箱を表示
+        
         document.getElementById('itemModal').style.display = 'flex';
     }
 
     window.applyPresetName = function() { const val = document.getElementById('m-name-preset').value; if (val) document.getElementById('m-name').value = val; }
     function closeItemModal() { document.getElementById('itemModal').style.display = 'none'; }
     
+    // ★追加：部材の削除処理
+    window.deleteItemFromModal = function() {
+        if(confirm("この部材をカタログから削除しますか？\n（すでに積み上げた箱は消えません）")) {
+            paletteItems = paletteItems.filter(i => i.id !== editingItemId);
+            saveData(); renderPalette(); closeItemModal();
+        }
+    }
+
     window.saveItemFromModal = function() {
         const name = document.getElementById('m-name').value, type = document.getElementById('m-type').value, price = parseFloat(document.getElementById('m-price').value), color = document.getElementById('m-color-val').value;
         if (name && !isNaN(price)) {
