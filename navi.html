@@ -555,9 +555,20 @@
             if(site.status === 'complete' || site.status === 'done') { stLabel = '完了'; stClass = 'st-complete'; }
             if(site.status === 'lost') { stLabel = '失注'; stClass = 'st-lost'; }
             const sortButtons = (currentFilter === 'all') ? `<div class="sort-actions"><button class="btn-up" onclick="moveItem(${originalIndex},-1)">⬆️</button><button class="btn-down" onclick="moveItem(${originalIndex},1)">⬇️</button></div>` : '';
+            
+            // ★追加：親案件Noの表示ロジック
+            let caseNoHtml = `<span class="case-no">${site.id}</span>`;
+            if (site.parentCaseNo && site.parentCaseNo !== site.id) {
+                // 親案件Noがあり、かつ案件Noと違う場合のみ横に追加（見やすいように少し青色にしています）
+                caseNoHtml += `<span class="case-no" style="margin-left: 5px; background-color: #e3f2fd; color: #1565c0; border: 1px solid #bbdefb;">親: ${site.parentCaseNo}</span>`;
+            }
+
             const html = `
                 <div class="site-card">
-                    <div class="card-header"><span class="case-no">${site.id}</span><span class="status-badge ${stClass}">${stLabel}</span></div>
+                    <div class="card-header">
+                        <div>${caseNoHtml}</div>
+                        <span class="status-badge ${stClass}">${stLabel}</span>
+                    </div>
                     <div class="site-name">${site.name}</div>
                     <div class="site-address">📍 ${site.address}</div>
                     <div class="card-actions">
