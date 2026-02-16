@@ -377,9 +377,9 @@
 <script>
     let sites = JSON.parse(localStorage.getItem('dx_sites')) || [];
     let isEditing = false, tapCount = 0, editingId = null, isSortMode = false, pressTimer = null; 
-    let currentFilter = 'all';
     
-    // ★追加：連打防止用の変数（クールダウン用）
+    // ★タブの記憶機能（これがないと「全て」に戻ってしまいます）
+    let currentFilter = localStorage.getItem('dx_current_filter') || 'all'; 
     let lastCheckTime = 0; 
 
     if (sites.length === 0) {
@@ -387,24 +387,31 @@
     }
 
     document.addEventListener('DOMContentLoaded', function() {
+        // ★画面が開いた時に、記憶していたタブの色を復活させる
+        document.querySelectorAll('.filter-btn').forEach(btn => btn.classList.remove('active'));
+        if (currentFilter === 'all') {
+            document.querySelector('.filter-btn[onclick*="all"]').classList.add('active');
+        } else {
+            const activeBtn = document.querySelector(`.filter-btn[data-st="${currentFilter}"]`);
+            if (activeBtn) activeBtn.classList.add('active');
+            else document.querySelector('.filter-btn[onclick*="all"]').classList.add('active');
+        }
+        
         renderList();
+
         if(localStorage.getItem('dx_reporter_name')) document.getElementById('reporterName').value = localStorage.getItem('dx_reporter_name');
         if(localStorage.getItem('dx_manager_email')) document.getElementById('managerEmail').value = localStorage.getItem('dx_manager_email');
         if(localStorage.getItem('dx_gas_url')) document.getElementById('gasUrl').value = localStorage.getItem('dx_gas_url');
         if(localStorage.getItem('dx_calendar_id')) document.getElementById('calendarId').value = localStorage.getItem('dx_calendar_id');
         if(localStorage.getItem('dx_auth_key')) {
-    document.getElementById('authKey').value = localStorage.getItem('dx_auth_key');
+            document.getElementById('authKey').value = localStorage.getItem('dx_auth_key');
         }
+        
         checkAutoLost();
         
-        // --- ★ここから自動更新ロジック ---
-        // 1. 起動時にまず1回チェック
+        // --- 自動更新ロジック ---
         checkForCloudUpdates(); 
-
-        // 2. その後は「60秒ごと」に自動チェック（ポーリング）
         setInterval(checkForCloudUpdates, 60000);
-
-        // 3. 「画面が表示された瞬間（ポケットから出した時など）」に更新チェック
         document.addEventListener("visibilitychange", function() {
             if (document.visibilityState === 'visible') {
                 console.log("画面がアクティブになりました。更新をチェックします。");
@@ -436,18 +443,21 @@
         localStorage.setItem('dx_manager_email', document.getElementById('managerEmail').value);
         localStorage.setItem('dx_gas_url', document.getElementById('gasUrl').value);
         localStorage.setItem('dx_calendar_id', document.getElementById('calendarId').value);
-        // ★ここを追加！
         localStorage.setItem('dx_auth_key', document.getElementById('authKey').value);
         showNotification('⚙️ 設定を保存しました');
-        }
+    }
 
     function setFilter(status, btn) {
         currentFilter = status;
+        
+        // ★選んだタブをスマホに保存する（これがないと記憶できません）
+        localStorage.setItem('dx_current_filter', currentFilter);
+        
         document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
         btn.classList.add('active');
         renderList();
         if (status !== 'all') {
-            showNotification(`🔍 「${btn.innerText}」で絞り込み (案件No順)`);
+            showNotification(`🔍 「${btn.innerText}」で表示`);
         } else {
             showNotification('📋 全て表示');
         }
