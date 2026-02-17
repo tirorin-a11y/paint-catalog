@@ -315,9 +315,9 @@
                 <summary>🔧 システム連携設定 (GAS・カレンダー)</summary>
                 <div class="accordion-content">
                     <p style="font-size:0.8rem; color:#e67e22; margin-top:0;">※ここを変更すると連携が動かなくなる場合があります。</p>
-                    <label>☁️ GAS URL (★暗号化の合言葉)</label>
+                    <label>☁️ GAS URL</label>
                     <input type="text" id="gasUrl" onchange="saveSettings()">
-                    <label>🔑 合言葉 (GASと同じにする)</label>
+                    <label>🔑 合言葉 (★ローカル暗号化にも使用)</label>
                         <input type="text" id="authKey" placeholder="設定した合言葉を入力" onchange="saveSettings()">
                         
                     <label>📅 カレンダーID</label>
@@ -935,20 +935,20 @@
     function forceDL(f) { const u = URL.createObjectURL(f); const a = document.createElement("a"); a.href=u; a.download=f.name; document.body.appendChild(a); a.click(); document.body.removeChild(a); showNotification('📥 保存しました'); }
     function copyToClipboard() { let t = ""; sites.forEach(s => { t += `${s.id}\t${s.parentCaseNo||''}\t${s.name}\t${s.address}\t${getStatusText(s.status)}\t${s.start||''}\t${s.end||''}\n`; }); navigator.clipboard.writeText(t).then(()=>showNotification('📋 コピーしました')); }
     
-    // ★修正：暗号化付きJSON書き出し
+    // ★修正：暗号化付きJSON書き出し（合言葉を使用）
     async function exportJSON() {
-        const gasUrl = localStorage.getItem('dx_gas_url');
-        if (!gasUrl || gasUrl.trim() === "") {
-            alert("【セキュリティ警告】\n設定画面で「GAS URL」を登録してください。\n(※データを暗号化するための合言葉として使用します)");
+        const authKey = localStorage.getItem('dx_auth_key');
+        if (!authKey || authKey.trim() === "") {
+            alert("【セキュリティ警告】\n設定画面で「合言葉」を登録してください。\n(※データを暗号化するための鍵として使用します)");
             return;
         }
 
         showNotification('🔒 暗号化して準備中...');
         try {
             const jsonStr = JSON.stringify(sites);
-            const encoded = encodeURIComponent(jsonStr); // 日本語対応
-            const xored = cipher(encoded, gasUrl); // GAS URLを鍵として暗号化
-            const base64 = btoa(xored); // Base64エンコード
+            const encoded = encodeURIComponent(jsonStr); 
+            const xored = cipher(encoded, authKey); 
+            const base64 = btoa(xored); 
 
             const exportObj = {
                 secure_backup: true,
@@ -962,11 +962,11 @@
         } catch (e) { alert("書き出しエラー: " + e); }
     }
 
-    // ★修正：暗号化付きJSON読み込み
+    // ★修正：暗号化付きJSON読み込み（合言葉を使用）
     function importJSON(input) {
         const f = input.files[0];
         if (!f) return;
-        const gasUrl = localStorage.getItem('dx_gas_url');
+        const authKey = localStorage.getItem('dx_auth_key');
 
         const r = new FileReader();
         r.onload = function(e) {
@@ -975,22 +975,21 @@
 
                 // もし暗号化されたファイルなら復号を試みる
                 if (d.secure_backup) {
-                    if (!gasUrl || gasUrl.trim() === "") {
-                        alert("【エラー】復元するための合言葉（GAS URL）が設定欄にありません。先に設定してください。");
+                    if (!authKey || authKey.trim() === "") {
+                        alert("【エラー】復元するための「合言葉」が設定されていません。設定画面で入力してください。");
                         return;
                     }
                     try {
                         const xored = atob(d.data);
-                        const decoded = cipher(xored, gasUrl);
+                        const decoded = cipher(xored, authKey);
                         const jsonStr = decodeURIComponent(decoded);
-                        d = JSON.parse(jsonStr); // 復号成功！
+                        d = JSON.parse(jsonStr); 
                     } catch (err) {
-                        alert("❌ 合言葉（GAS URL）が一致しないか、データが破損しているため復元できません。");
+                        alert("❌ 合言葉が一致しないか、データが破損しているため復元できません。");
                         return;
                     }
                 }
 
-                // ここから先は通常通りの復元処理（過去の暗号化なしファイルもそのまま読めます）
                 if (!Array.isArray(d)) { alert('データ形式エラー'); return; }
 
                 let add = 0, upd = 0;
@@ -1006,7 +1005,7 @@
                 showNotification(`復元: ${upd}件更新, ${add}件追加`);
 
             } catch(e) { alert('読み込みに失敗しました'); }
-            input.value = ''; // リセット
+            input.value = ''; 
         };
         r.readAsText(f);
     }
