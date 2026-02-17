@@ -315,7 +315,7 @@
                 <summary>🔧 システム連携設定 (GAS・カレンダー)</summary>
                 <div class="accordion-content">
                     <p style="font-size:0.8rem; color:#e67e22; margin-top:0;">※ここを変更すると連携が動かなくなる場合があります。</p>
-                    <label>☁️ GAS URL</label>
+                    <label>☁️ GAS URL (★暗号化の合言葉)</label>
                     <input type="text" id="gasUrl" onchange="saveSettings()">
                     <label>🔑 合言葉 (GASと同じにする)</label>
                         <input type="text" id="authKey" placeholder="設定した合言葉を入力" onchange="saveSettings()">
@@ -334,7 +334,7 @@
             <button class="settings-item" onclick="copyToClipboard()">📋 スプレッドシート用コピー</button>
             <button class="settings-item" onclick="exportCSV()">💾 CSV出力</button>
             <hr style="border:0; border-top:1px solid #eee;">
-            <button class="settings-item" onclick="document.getElementById('jsonInput').click()">📥 ファイルから復元</button>
+            <button class="settings-item" onclick="document.getElementById('jsonInput').click()">📥 共有ファイルから復元 (暗号化対応)</button>
         </div>
 
         <a href="help.html" class="settings-item">📖 使い方ガイド</a>
@@ -352,7 +352,7 @@
     </div>
     
     <div style="display:flex; align-items:center;">
-        <span class="fab-label">共有・バックアップ</span>
+        <span class="fab-label">共有・暗号化保存</span>
         <button class="fab-btn share-fab" onclick="handleBackupClick()">📤</button>
     </div>
 </div>
@@ -921,13 +921,99 @@
             }
         }
     }
+    
+    // シンプルな暗号化/復号化エンジン (XORベース)
+    function cipher(text, key) {
+        let res = '';
+        for (let i = 0; i < text.length; i++) {
+            res += String.fromCharCode(text.charCodeAt(i) ^ key.charCodeAt(i % key.length));
+        }
+        return res;
+    }
+
     async function exportCSV() { showNotification('📤 準備中...'); let c = "\uFEFF案件No,親案件No,現場名,住所,ステータス,開始,終了\n"; sites.forEach(s => { c += `"${s.id}","${s.parentCaseNo||''}","${s.name}","${s.address}","${getStatusText(s.status)}","${s.start||''}","${s.end||''}"\n`; }); const f = new File([c], `現場リスト_${getNowStr()}.csv`, { type: "text/csv" }); if (navigator.share && navigator.canShare({ files: [f] })) { try { await navigator.share({ files: [f] }); } catch (e) { forceDL(f); } } else { forceDL(f); } }
     function forceDL(f) { const u = URL.createObjectURL(f); const a = document.createElement("a"); a.href=u; a.download=f.name; document.body.appendChild(a); a.click(); document.body.removeChild(a); showNotification('📥 保存しました'); }
     function copyToClipboard() { let t = ""; sites.forEach(s => { t += `${s.id}\t${s.parentCaseNo||''}\t${s.name}\t${s.address}\t${getStatusText(s.status)}\t${s.start||''}\t${s.end||''}\n`; }); navigator.clipboard.writeText(t).then(()=>showNotification('📋 コピーしました')); }
-    async function exportJSON() { const f = new File([JSON.stringify(sites,null,2)], `backup_${getNowStr()}.json`, {type:"application/json"}); if(navigator.share&&navigator.canShare({files:[f]})) { try{await navigator.share({files:[f]});}catch(e){forceDL(f);} } else { forceDL(f); } }
-    function importJSON(input) { const f=input.files[0]; if(!f)return; const r=new FileReader(); r.onload=function(e){ try{ const d=JSON.parse(e.target.result); if(!Array.isArray(d)){alert('エラー');return;} let add=0,upd=0; d.forEach(n=>{ const i=sites.findIndex(s=>s.id===n.id); if(i!==-1){ if((n.updatedAt||0)>(sites[i].updatedAt||0)){sites[i]=n;upd++;} }else{sites.push(n);add++;} }); sites.sort((a,b)=>(a.id>b.id?-1:1)); localStorage.setItem('dx_sites',JSON.stringify(sites)); renderList(); closeAllModals(); showNotification(`復元: ${upd}件更新, ${add}件追加`); }catch(e){alert('読込失敗');} input.value=''; }; r.readAsText(f); }
+    
+    // ★修正：暗号化付きJSON書き出し
+    async function exportJSON() {
+        const gasUrl = localStorage.getItem('dx_gas_url');
+        if (!gasUrl || gasUrl.trim() === "") {
+            alert("【セキュリティ警告】\n設定画面で「GAS URL」を登録してください。\n(※データを暗号化するための合言葉として使用します)");
+            return;
+        }
+
+        showNotification('🔒 暗号化して準備中...');
+        try {
+            const jsonStr = JSON.stringify(sites);
+            const encoded = encodeURIComponent(jsonStr); // 日本語対応
+            const xored = cipher(encoded, gasUrl); // GAS URLを鍵として暗号化
+            const base64 = btoa(xored); // Base64エンコード
+
+            const exportObj = {
+                secure_backup: true,
+                data: base64
+            };
+
+            const f = new File([JSON.stringify(exportObj, null, 2)], `secure_backup_${getNowStr()}.json`, {type:"application/json"});
+            if (navigator.share && navigator.canShare({files:[f]})) {
+                try { await navigator.share({files:[f]}); } catch(e) { forceDL(f); }
+            } else { forceDL(f); }
+        } catch (e) { alert("書き出しエラー: " + e); }
+    }
+
+    // ★修正：暗号化付きJSON読み込み
+    function importJSON(input) {
+        const f = input.files[0];
+        if (!f) return;
+        const gasUrl = localStorage.getItem('dx_gas_url');
+
+        const r = new FileReader();
+        r.onload = function(e) {
+            try {
+                let d = JSON.parse(e.target.result);
+
+                // もし暗号化されたファイルなら復号を試みる
+                if (d.secure_backup) {
+                    if (!gasUrl || gasUrl.trim() === "") {
+                        alert("【エラー】復元するための合言葉（GAS URL）が設定欄にありません。先に設定してください。");
+                        return;
+                    }
+                    try {
+                        const xored = atob(d.data);
+                        const decoded = cipher(xored, gasUrl);
+                        const jsonStr = decodeURIComponent(decoded);
+                        d = JSON.parse(jsonStr); // 復号成功！
+                    } catch (err) {
+                        alert("❌ 合言葉（GAS URL）が一致しないか、データが破損しているため復元できません。");
+                        return;
+                    }
+                }
+
+                // ここから先は通常通りの復元処理（過去の暗号化なしファイルもそのまま読めます）
+                if (!Array.isArray(d)) { alert('データ形式エラー'); return; }
+
+                let add = 0, upd = 0;
+                d.forEach(n => {
+                    const i = sites.findIndex(s => s.id === n.id);
+                    if (i !== -1) {
+                        if ((n.updatedAt||0) > (sites[i].updatedAt||0)) { sites[i] = n; upd++; }
+                    } else { sites.push(n); add++; }
+                });
+                sites.sort((a,b) => (a.id > b.id ? -1 : 1));
+                localStorage.setItem('dx_sites', JSON.stringify(sites));
+                renderList(); closeAllModals();
+                showNotification(`復元: ${upd}件更新, ${add}件追加`);
+
+            } catch(e) { alert('読み込みに失敗しました'); }
+            input.value = ''; // リセット
+        };
+        r.readAsText(f);
+    }
+
     function deleteAllData() { if(confirm('本当に全削除しますか？')) { sites=[]; localStorage.setItem('dx_sites',JSON.stringify(sites)); renderList(); closeAllModals(); showNotification('🗑️ 全削除完了'); } }
     function showNotification(msg) { const el = document.getElementById('notification'); el.textContent = msg; el.classList.add('show'); setTimeout(() => el.classList.remove('show'), 2000); }
+    
     // ★追加：バックアップボタンの挙動制御
     function handleBackupClick() {
         const gasUrl = localStorage.getItem('dx_gas_url');
@@ -943,12 +1029,12 @@
         }
     }
     function togglePasswordVisibility() {
-    const input = document.getElementById("authKey");
-    if (input.type === "password") {
-        input.type = "text"; // 見えるようにする
-    } else {
-        input.type = "password"; // 隠す
-    }
+        const input = document.getElementById("authKey");
+        if (input.type === "password") {
+            input.type = "text"; // 見えるようにする
+        } else {
+            input.type = "password"; // 隠す
+        }
     }
 </script>
 </body>
