@@ -711,14 +711,19 @@
 
     // クラウド保存（同期バグ修正版）
     async function syncAllDataToCloud() {
+        const authKey = localStorage.getItem('dx_auth_key') || "";
+        // ★追加：合言葉が空の場合はここでストップ
+        if (!authKey || authKey.trim() === "") {
+            alert("合言葉を入力してください。");
+            return false;
+        }
+
         if(!confirm("現在スマホにあるデータで、クラウドを上書き保存しますか？")) return;
         
         const targetUrl = localStorage.getItem('dx_gas_url');
         if(!targetUrl || targetUrl.includes("script.google.com") === false) { 
             alert("GAS URLを設定してください"); return false; 
         }
-        
-        const authKey = localStorage.getItem('dx_auth_key') || "";
 
         // -----------------------------------------------------------
         // 🕵️‍♂️ ステップ1：保存する前に、念のためクラウドの状況をチラ見する
@@ -741,7 +746,7 @@
                 // ユーザーに選択してもらう
                 if (confirm(`⚠️ クラウド側に新しいデータがあります（${cloudDate}）。\n\n保存を中止して、最新データを取り込みますか？\n（[OK]を押すと復元を開始します）`)) {
                     // OKなら、保存はやめて復元へジャンプ
-                    loadFromCloud(); 
+                    downloadFromCloud(); 
                     return false; 
                 } else {
                     // キャンセルなら、「強引に上書き」しようとする（けど、次のGASチェックで止まるかも）
@@ -796,7 +801,7 @@
                 // もし「サーバーに新しいデータがある」という理由なら...
                 if (resJson.error && resJson.error.includes("サーバーに新しいデータ")) {
                     if (confirm("⚠️ 保存できませんでした。\nサーバーに誰かが保存した新しいデータがあります。\n\n最新データを取り込み（復元）しますか？")) {
-                        loadFromCloud(); // 復元へ誘導
+                        downloadFromCloud(); // 復元へ誘導
                     }
                 } else {
                     // それ以外の本物のエラー
@@ -812,7 +817,14 @@
 
     async function downloadFromCloud() {
         const gasUrl = localStorage.getItem('dx_gas_url');
-        const authKey = localStorage.getItem('dx_auth_key') || ""; // 合言葉も忘れずに
+        const authKey = localStorage.getItem('dx_auth_key') || ""; 
+        
+        // ★追加：合言葉が空の場合はここでストップ
+        if (!authKey || authKey.trim() === "") {
+            alert("合言葉を入力してください。");
+            return;
+        }
+        
         if(!gasUrl) { alert("GAS URL設定なし"); return; }
         
         if(!confirm("クラウドデータで上書き復元しますか？")) return;
@@ -938,8 +950,10 @@
     // ★修正：暗号化付きJSON書き出し（合言葉を使用）
     async function exportJSON() {
         const authKey = localStorage.getItem('dx_auth_key');
+        
+        // ★追加：合言葉が空の場合はここでストップ
         if (!authKey || authKey.trim() === "") {
-            alert("【セキュリティ警告】\n設定画面で「合言葉」を登録してください。\n(※データを暗号化するための鍵として使用します)");
+            alert("合言葉を入力してください。");
             return;
         }
 
@@ -976,7 +990,7 @@
                 // もし暗号化されたファイルなら復号を試みる
                 if (d.secure_backup) {
                     if (!authKey || authKey.trim() === "") {
-                        alert("【エラー】復元するための「合言葉」が設定されていません。設定画面で入力してください。");
+                        alert("合言葉を入力してください。");
                         return;
                     }
                     try {
@@ -1015,6 +1029,7 @@
     
     // ★追加：バックアップボタンの挙動制御
     function handleBackupClick() {
+        // ★修正：ここで合言葉を先にチェックすることもできますが、クラウド・ファイルどちらか選ぶ前にストップしないように関数内にチェックを移動しました
         const gasUrl = localStorage.getItem('dx_gas_url');
         
         // クラウド設定がある場合 → 選択画面を出す
