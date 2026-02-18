@@ -11,7 +11,7 @@
     </script>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>職人ギア V22 (スタイリッシュUI・8色版)</title>
+<title>職人ギア V23 (自動結合・リアル縮尺版)</title>
 <script src="https://html2canvas.hertzen.com/dist/html2canvas.min.js"></script>
 <style>
     * { box-sizing: border-box; touch-action: manipulation; }
@@ -71,7 +71,7 @@
         backdrop-filter: blur(4px);
     }
 
-    /* 左：カタログエリア（バッジを廃止してスッキリ！） */
+    /* 左：カタログエリア */
     .palette {
         width: 120px; border-radius: 8px;
         padding: 5px; overflow-y: auto; display: flex; flex-direction: column; gap: 6px;
@@ -113,10 +113,38 @@
     /* カタログ内の箱 */
     .palette .cost-box { 
         height: 38px !important; font-size: 10px; width: 100%; margin: 0;
-        justify-content: center; /* バッジが無くなったので文字を中央へ！ */
+        justify-content: center; 
         padding: 0 5px; text-align: center; cursor: pointer;
     }
     
+    /* ★結合モード用のスタイル（区切り線を消す） */
+    .cost-box.merged-top {
+        border-bottom: none; border-bottom-left-radius: 0; border-bottom-right-radius: 0;
+        box-shadow: none; /* 影も消して一体化 */
+        z-index: 1; /* 重なり順調整 */
+    }
+    .cost-box.merged-middle {
+        border-top: none; border-bottom: none; border-radius: 0;
+        box-shadow: none;
+        z-index: 1;
+    }
+    .cost-box.merged-bottom {
+        border-top: none; border-top-left-radius: 0; border-top-right-radius: 0;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.2); /* 一番下だけ影をつける */
+        z-index: 2;
+    }
+    
+    /* 結合時に文字を隠すクラス */
+    .hide-text span { display: none; }
+    
+    /* 結合グループの親玉（合計表示用） */
+    .merged-group-label {
+        position: absolute; width: 100%; height: 100%; top: 0; left: 0;
+        display: flex; justify-content: space-between; align-items: center; padding: 0 6px;
+        pointer-events: none; /* クリックは下の箱に通す */
+        z-index: 10;
+    }
+
     .dragging-ghost { position: fixed; pointer-events: none; z-index: 9999; opacity: 0.8; transform: scale(1.05); box-shadow: 0 10px 20px rgba(0,0,0,0.3); }
 
     /* モーダル類 */
@@ -126,7 +154,7 @@
     .form-group input, .form-group select { width: 100%; padding: 8px; border: 1px solid #ccc; border-radius: 4px; }
     #site-data-list { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 10px; }
     
-    /* 8色パレット用に2段折り返し設定 */
+    /* 8色パレット */
     .color-palette { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 8px; margin-top: 5px; }
     .color-swatch { width: 32px; height: 32px; border-radius: 50%; cursor: pointer; border: 3px solid transparent; box-shadow: 0 2px 4px rgba(0,0,0,0.2); }
     .color-swatch.selected { border-color: #333; transform: scale(1.15); }
@@ -211,7 +239,10 @@
     </div>
 
 <script>
-    const PIXEL_PER_YEN = 0.0005; 
+    const PIXEL_PER_YEN = 0.0005; // 1円 = 0.0005px (2000円=1px)
+    // ★ここを変更：最低高さを「1px」まで許可（結合するから大丈夫！）
+    const MIN_BOX_HEIGHT = 1; 
+
     const STORAGE_KEY_VARS = 'shokunin_vars_v9';
     const STORAGE_KEY_ITEMS = 'shokunin_items_v9';
     const TAX_RATE = 1.1; 
@@ -220,7 +251,6 @@
     let editingItemId = null; 
     let currentActiveStackBox = null; 
 
-    // ★豪華8色パレットに変更！
     const PRESET_COLORS = [
         { val: '#95a5a6', name: 'グレー' }, { val: '#e74c3c', name: '赤' },
         { val: '#3498db', name: '青' },     { val: '#f1c40f', name: '黄' }, 
@@ -240,7 +270,7 @@
 
     function toggleTax() {
         isTaxIncluded = !isTaxIncluded;
-        recalcTotal();
+        recalcTotal(); // 再計算時に結合ロジックも走る
         if(navigator.vibrate) navigator.vibrate(30);
     }
 
@@ -293,15 +323,12 @@
         paletteItems.forEach((item) => {
             const wrap = document.createElement('div'); wrap.className = 'palette-item-wrap';
             
-            // バッジは生成しません！
             const div = document.createElement('div'); div.className = 'cost-box'; 
             div.style.background = `linear-gradient(135deg, ${item.color}, ${darkenColor(item.color, 20)})`;
             div.innerHTML = `<span>${item.label}</span>`;
             
-            // タップ＆ドラッグの制御
             setupTouchDrag(div, item);
 
-            // PC用：クリックで編集を開く
             div.addEventListener('click', () => openEditItemModal(item.id));
             div.draggable = true;
             div.addEventListener('dragstart', (e) => { e.dataTransfer.effectAllowed = 'copy'; e.dataTransfer.setData('application/json', JSON.stringify(item)); div.style.opacity = '0.5'; });
@@ -310,14 +337,12 @@
             wrap.appendChild(div); sourceZone.appendChild(wrap);
         });
         
-        // パレットの下に小さなヒントを添える
         const hint = document.createElement('div');
         hint.style.cssText = "font-size:9px; color:#aaa; text-align:center; margin-top:10px;";
         hint.innerText = "タップで編集・削除";
         sourceZone.appendChild(hint);
     }
 
-    // ★ドラッグとタップ（編集）を完璧に両立させる処理
     function setupTouchDrag(el, itemData) {
         let ghost = null;
         let startX, startY;
@@ -333,8 +358,6 @@
 
         el.addEventListener('touchmove', (e) => {
             const touch = e.touches[0];
-            
-            // 指が5px以上動いたら「ドラッグ」とみなす
             if (!isDragging && (Math.abs(touch.clientX - startX) > 5 || Math.abs(touch.clientY - startY) > 5)) {
                 isDragging = true;
                 ghost = el.cloneNode(true);
@@ -342,9 +365,8 @@
                 ghost.style.width = el.offsetWidth + 'px'; ghost.style.height = el.offsetHeight + 'px';
                 document.body.appendChild(ghost);
             }
-
             if (isDragging && ghost) {
-                e.preventDefault(); // スクロール防止
+                e.preventDefault(); 
                 ghost.style.left = (touch.clientX - el.offsetWidth/2) + 'px';
                 ghost.style.top = (touch.clientY - el.offsetHeight/2) + 'px';
             }
@@ -353,7 +375,7 @@
         const cleanup = (e) => {
             if (isDragging && ghost) {
                 if (e.type === 'touchend') {
-                    e.preventDefault(); // スマホでの誤クリックを防止
+                    e.preventDefault(); 
                     const touch = e.changedTouches[0];
                     const dropTarget = document.elementFromPoint(touch.clientX, touch.clientY);
                     if (dropTarget && dropTarget.closest('#drop-zone')) { createStackBox(itemData); }
@@ -361,7 +383,6 @@
                 document.body.removeChild(ghost); 
                 ghost = null;
             } else if (!isDragging && e.type === 'touchend') {
-                // 動かさずに指を離した＝「タップした」ので編集画面を開く
                 openEditItemModal(itemData.id);
             }
             isDragging = false;
@@ -373,30 +394,113 @@
 
     function createStackBox(data) {
         const div = document.createElement('div'); div.className = 'cost-box';
+        // ここではまだ色は固定しない（結合時にCSSクラスで制御するため）
         div.style.background = `linear-gradient(135deg, ${data.color}, ${darkenColor(data.color, 20)})`;
+        // 色情報をデータ属性として持っておく（結合判定用）
+        div.dataset.colorCode = data.color;
+        
         div.dataset.label = data.label; div.dataset.unitPrice = data.unitPrice; div.dataset.typeId = data.typeId; 
         
         div.addEventListener('click', () => { openStackDetailModal(div); });
         
-        stackContainer.appendChild(div); recalcSingleBox(div); recalcTotal();
+        stackContainer.appendChild(div); 
+        recalcTotal(); // 追加したら即再計算＆結合処理
     }
 
+    // 単体の計算（高さ決定）
     function recalcSingleBox(box) {
         const typeId = box.dataset.typeId; const unitPrice = parseFloat(box.dataset.unitPrice);
         let multiplier = 1; 
         if (typeId !== 'fixed') { const variable = siteVariables.find(v => v.id === typeId); multiplier = variable ? parseFloat(variable.val) : 0; }
         const currentPrice = unitPrice * multiplier;
         box.dataset.currentPrice = currentPrice;
-        let height = currentPrice * PIXEL_PER_YEN; if (height < 24) height = 24; box.style.height = `${height}px`;
+        
+        // ★修正：最低高さを 1px に（結合前提なので小さくてOK）
+        let height = currentPrice * PIXEL_PER_YEN; 
+        if (height < MIN_BOX_HEIGHT) height = MIN_BOX_HEIGHT; 
+        
+        box.style.height = `${height}px`;
         box.innerHTML = `<span>${box.dataset.label}</span><span>¥${Math.round(currentPrice).toLocaleString()}</span>`;
+    }
+
+    // ★★★ 自動結合（ぷよぷよモード）のロジック ★★★
+    function mergeStacks() {
+        const boxes = Array.from(stackContainer.children).reverse(); // 上から順に（HTML上はcolumn-reverseなので末尾から）
+        if (boxes.length === 0) return;
+
+        // まずリセット（全クラス削除、テキスト表示、ラベル削除）
+        boxes.forEach(box => {
+            box.classList.remove('merged-top', 'merged-middle', 'merged-bottom', 'hide-text');
+            const label = box.querySelector('.merged-group-label');
+            if(label) label.remove();
+        });
+
+        let currentGroup = [];
+        
+        // グループ化処理
+        for (let i = 0; i < boxes.length; i++) {
+            const box = boxes[i];
+            const prevBox = currentGroup.length > 0 ? currentGroup[currentGroup.length - 1] : null;
+
+            // 色が同じならグループに追加
+            if (prevBox && prevBox.dataset.colorCode === box.dataset.colorCode) {
+                currentGroup.push(box);
+            } else {
+                // 色が変わったら前のグループを処理して、新しいグループ開始
+                if (currentGroup.length > 0) processGroup(currentGroup);
+                currentGroup = [box];
+            }
+        }
+        // 最後のグループを処理
+        if (currentGroup.length > 0) processGroup(currentGroup);
+    }
+
+    function processGroup(group) {
+        // 1個だけなら何もしない
+        if (group.length < 2) return;
+
+        // 合計金額と代表ラベル（一番上の箱の名前を採用、または「外壁 他」など）
+        let totalGroupPrice = 0;
+        let groupLabel = group[0].dataset.label;
+        if(group.length > 1) groupLabel += " 他";
+
+        // グループ内の各箱を加工
+        group.forEach((box, index) => {
+            totalGroupPrice += parseFloat(box.dataset.currentPrice || 0);
+            
+            // 文字を隠す
+            box.classList.add('hide-text');
+
+            if (index === 0) {
+                box.classList.add('merged-top'); // 一番上
+            } else if (index === group.length - 1) {
+                box.classList.add('merged-bottom'); // 一番下
+            } else {
+                box.classList.add('merged-middle'); // 真ん中
+            }
+        });
+
+        // 一番上の箱に「合計ラベル」を被せる
+        const topBox = group[0];
+        const labelDiv = document.createElement('div');
+        labelDiv.className = 'merged-group-label';
+        labelDiv.innerHTML = `<span>${groupLabel}</span><span>¥${Math.round(totalGroupPrice).toLocaleString()}</span>`;
+        topBox.appendChild(labelDiv);
     }
 
     function recalcTotal() {
         let total = 0; const boxes = stackContainer.querySelectorAll('.cost-box');
-        boxes.forEach(box => { recalcSingleBox(box); total += parseFloat(box.dataset.currentPrice); });
+        boxes.forEach(box => { 
+            recalcSingleBox(box); 
+            total += parseFloat(box.dataset.currentPrice); 
+        });
+        
         let displayTotal = isTaxIncluded ? Math.round(total * TAX_RATE) : total;
         document.getElementById('tax-label').innerText = isTaxIncluded ? "税込合計" : "税抜合計";
         document.getElementById('total-price').innerText = displayTotal.toLocaleString();
+
+        // ★計算後に結合処理を実行！
+        mergeStacks();
     }
 
     // --- 積み木の内訳・削除モーダル ---
@@ -482,7 +586,7 @@
         document.getElementById('item-modal-title').innerText = "部材カタログ追加";
         document.getElementById('m-name').value = ''; document.getElementById('m-price').value = '';
         document.getElementById('modal-submit-btn').innerText = '追加';
-        document.getElementById('modal-delete-btn').style.display = 'none'; // 追加時はゴミ箱を隠す
+        document.getElementById('modal-delete-btn').style.display = 'none'; 
         
         populateItemModalSelects(); initColorSwatches('#95a5a6'); 
         document.getElementById('itemModal').style.display = 'flex';
@@ -497,7 +601,7 @@
         populateItemModalSelects(); document.getElementById('m-type').value = item.typeId;
         initColorSwatches(item.color); 
         document.getElementById('modal-submit-btn').innerText = '更新';
-        document.getElementById('modal-delete-btn').style.display = 'block'; // 編集時はゴミ箱を表示
+        document.getElementById('modal-delete-btn').style.display = 'block'; 
         
         document.getElementById('itemModal').style.display = 'flex';
     }
@@ -505,7 +609,6 @@
     window.applyPresetName = function() { const val = document.getElementById('m-name-preset').value; if (val) document.getElementById('m-name').value = val; }
     function closeItemModal() { document.getElementById('itemModal').style.display = 'none'; }
     
-    // ★追加：部材の削除処理
     window.deleteItemFromModal = function() {
         if(confirm("この部材をカタログから削除しますか？\n（すでに積み上げた箱は消えません）")) {
             paletteItems = paletteItems.filter(i => i.id !== editingItemId);
