@@ -11,7 +11,7 @@
     </script>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>職人ギア V24 (結合・内訳表示版)</title>
+<title>職人ギア V25 (リアル縮尺・文字最適化版)</title>
 <script src="https://html2canvas.hertzen.com/dist/html2canvas.min.js"></script>
 <style>
     * { box-sizing: border-box; touch-action: manipulation; }
@@ -111,32 +111,15 @@
         -webkit-touch-callout: none; -webkit-user-select: none; user-select: none;
         overflow: hidden; /* はみ出し防止 */
     }
+    /* 文字がはみ出さないように整理 */
+    .cost-box span { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; padding: 0 2px; }
+
     /* カタログ内の箱 */
     .palette .cost-box { 
         height: 38px !important; font-size: 10px; width: 100%; margin: 0;
         justify-content: center; 
         padding: 0 5px; text-align: center; cursor: pointer;
     }
-    
-    /* ★結合モード用（文字は残すが、境界線を薄くする） */
-    .cost-box.merged-top {
-        border-bottom: 1px solid rgba(255,255,255,0.2); /* 薄い区切り線 */
-        border-bottom-left-radius: 0; border-bottom-right-radius: 0;
-        box-shadow: none; z-index: 1;
-    }
-    .cost-box.merged-middle {
-        border-top: none; border-bottom: 1px solid rgba(255,255,255,0.2);
-        border-radius: 0;
-        box-shadow: none; z-index: 1;
-    }
-    .cost-box.merged-bottom {
-        border-top: none; 
-        border-top-left-radius: 0; border-top-right-radius: 0;
-        box-shadow: 0 2px 4px rgba(0,0,0,0.2); z-index: 2;
-    }
-    
-    /* 中身の文字（極端に小さい時は非表示にするなど調整可能だが、今回は表示） */
-    .cost-box span { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 
     .dragging-ghost { position: fixed; pointer-events: none; z-index: 9999; opacity: 0.8; transform: scale(1.05); box-shadow: 0 10px 20px rgba(0,0,0,0.3); }
 
@@ -233,7 +216,7 @@
 
 <script>
     const PIXEL_PER_YEN = 0.0005; // 1円 = 0.0005px (2000円=1px)
-    // ★最低高さを「1px」まで許可（結合するから大丈夫！）
+    // ★最低高さを「1px」まで許可してリアルな縮尺を維持
     const MIN_BOX_HEIGHT = 1; 
 
     const STORAGE_KEY_VARS = 'shokunin_vars_v9';
@@ -263,7 +246,7 @@
 
     function toggleTax() {
         isTaxIncluded = !isTaxIncluded;
-        recalcTotal(); // 再計算時に結合ロジックも走る
+        recalcTotal();
         if(navigator.vibrate) navigator.vibrate(30);
     }
 
@@ -387,20 +370,15 @@
 
     function createStackBox(data) {
         const div = document.createElement('div'); div.className = 'cost-box';
-        // ここではまだ色は固定しない（結合時にCSSクラスで制御するため）
         div.style.background = `linear-gradient(135deg, ${data.color}, ${darkenColor(data.color, 20)})`;
-        // 色情報をデータ属性として持っておく（結合判定用）
-        div.dataset.colorCode = data.color;
-        
         div.dataset.label = data.label; div.dataset.unitPrice = data.unitPrice; div.dataset.typeId = data.typeId; 
         
         div.addEventListener('click', () => { openStackDetailModal(div); });
         
         stackContainer.appendChild(div); 
-        recalcTotal(); // 追加したら即再計算＆結合処理
+        recalcTotal();
     }
 
-    // 単体の計算（高さ決定）
     function recalcSingleBox(box) {
         const typeId = box.dataset.typeId; const unitPrice = parseFloat(box.dataset.unitPrice);
         let multiplier = 1; 
@@ -408,89 +386,12 @@
         const currentPrice = unitPrice * multiplier;
         box.dataset.currentPrice = currentPrice;
         
-        // ★修正：最低高さを 1px に（結合前提なので小さくてOK）
         let height = currentPrice * PIXEL_PER_YEN; 
         if (height < MIN_BOX_HEIGHT) height = MIN_BOX_HEIGHT; 
         
         box.style.height = `${height}px`;
         box.innerHTML = `<span>${box.dataset.label}</span><span>¥${Math.round(currentPrice).toLocaleString()}</span>`;
     }
-
-    // ★★★ 自動結合（ぷよぷよモード）のロジック ★★★
-    function mergeStacks() {
-        const boxes = Array.from(stackContainer.children).reverse(); // 上から順に
-        if (boxes.length === 0) return;
-
-        // まずリセット
-        boxes.forEach(box => {
-            box.classList.remove('merged-top', 'merged-middle', 'merged-bottom');
-            // hide-text は削除したのでここでも消さない
-            const label = box.querySelector('.merged-group-label');
-            if(label) label.remove();
-        });
-
-        let currentGroup = [];
-        
-        // グループ化処理
-        for (let i = 0; i < boxes.length; i++) {
-            const box = boxes[i];
-            const prevBox = currentGroup.length > 0 ? currentGroup[currentGroup.length - 1] : null;
-
-            // 色が同じならグループに追加
-            if (prevBox && prevBox.dataset.colorCode === box.dataset.colorCode) {
-                currentGroup.push(box);
-            } else {
-                if (currentGroup.length > 0) processGroup(currentGroup);
-                currentGroup = [box];
-            }
-        }
-        if (currentGroup.length > 0) processGroup(currentGroup);
-    }
-
-    function processGroup(group) {
-        if (group.length < 2) return;
-
-        // 1. 金額を合算する
-        let totalGroupPrice = 0;
-        let labels = new Set(); // 重複しないようにラベルを集める
-        
-        group.forEach(box => {
-            totalGroupPrice += parseFloat(box.dataset.currentPrice || 0);
-            labels.add(box.dataset.label);
-        });
-
-        // 2. ラベルを決める
-        // 例: 全部「タンク」なら「タンク」、混ざってれば「タンク 他」
-        let labelsArray = Array.from(labels);
-        let displayLabel = labelsArray[0];
-        if (labelsArray.length > 1) {
-            displayLabel += " 他";
-        }
-
-        // 3. 表示を更新する
-        group.forEach((box, index) => {
-            // まず文字を全部消す（一旦クリア）
-            box.innerHTML = '';
-            
-            // クラスを付与（枠線を消して結合感を出す）
-            if (index === 0) {
-                box.classList.add('merged-top'); // 一番上
-            } else if (index === group.length - 1) {
-                box.classList.add('merged-bottom'); // 一番下
-                
-                // ★一番下の箱にだけ、合算した情報を表示する！
-                // （下の方が積み上げの土台として安定して見えるため）
-                box.innerHTML = `<span>${displayLabel}</span><span>¥${Math.round(totalGroupPrice).toLocaleString()}</span>`;
-                
-            } else {
-                box.classList.add('merged-middle'); // 真ん中
-            }
-        });
-    }
-
-        // ★修正：文字を表示するので、「合計ラベル」を被せる処理は削除します。
-        // これで、結合された見た目の中で内訳の文字がそのまま表示されます。
-    
 
     function recalcTotal() {
         let total = 0; const boxes = stackContainer.querySelectorAll('.cost-box');
@@ -502,9 +403,6 @@
         let displayTotal = isTaxIncluded ? Math.round(total * TAX_RATE) : total;
         document.getElementById('tax-label').innerText = isTaxIncluded ? "税込合計" : "税抜合計";
         document.getElementById('total-price').innerText = displayTotal.toLocaleString();
-
-        // ★計算後に結合処理を実行！
-        mergeStacks();
     }
 
     // --- 積み木の内訳・削除モーダル ---
