@@ -437,12 +437,25 @@
         <span style="font-size: 11px; font-weight: normal; color: #666;">（数秒かかります）</span>
     </div>
 
-    <div id="receiptResult" style="display: none; margin-top: 15px; padding: 15px; background: white; border: 1px solid #00C853; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.05);">
+    <div id="receiptResult" style="display: none; margin-top: 15px; padding: 15px; background: white; border: 1px solid #00C853; border-radius: 8px;">
         <p style="margin: 0 0 10px 0; font-weight: bold; color: #333; border-bottom: 1px solid #eee; padding-bottom: 5px;">✅ 読み取り結果</p>
         <p style="margin: 8px 0; font-size: 1.1rem;">📅 日付: <strong id="resDate" style="color: #0056b3;"></strong></p>
-        <p style="margin: 8px 0; font-size: 1.1rem;">💰 金額: <strong id="resAmount" style="color: #d9534f; font-size: 1.3rem;"></strong> <span style="font-size: 0.9rem;">円</span></p>
+        <p style="margin: 8px 0; font-size: 1.1rem;">💰 金額: <strong id="resAmount" style="color: #d9534f; font-size: 1.3rem;"></strong> 円</p>
         <p style="margin: 8px 0; font-size: 1.1rem;">🏬 店名: <strong id="resShop" style="color: #333;"></strong></p>
-        <p style="font-size: 11px; color: #888; margin-top: 15px; text-align: right;">※このデータがスワイプ画面へ連携されます</p>
+        
+        <div style="margin-top: 15px; padding-top: 10px; border-top: 1px dashed #ccc;">
+            <label style="font-size: 1rem; font-weight: bold; color: #e67e22;">💡 AI推測科目 (タップで変更可):</label><br>
+            <select id="resCategory" style="width: 100%; padding: 10px; margin-top: 5px; font-size: 1.1rem; border: 2px solid #e67e22; border-radius: 5px; background: #fffaf0;">
+                <option value="材料費">材料費</option>
+                <option value="外注費">外注費</option>
+                <option value="消耗品費">消耗品費</option>
+                <option value="燃料費">燃料費</option>
+                <option value="接待交際費">接待交際費</option>
+                <option value="会議費">会議費</option>
+                <option value="通信費">通信費</option>
+                <option value="雑費">雑費</option>
+            </select>
+        </div>
     </div>
 
     <div id="actionButtons" style="display: none; margin-top: 15px; flex-direction: column; gap: 10px;">
@@ -545,6 +558,10 @@
             document.getElementById('resDate').textContent = data.date || "不明";
             document.getElementById('resAmount').textContent = data.amount || "0";
             document.getElementById('resShop').textContent = data.shop || "不明";
+            // ★AIの推測科目をプルダウンに自動セット！
+            if (currentReceipt.category) {
+                document.getElementById('resCategory').value = currentReceipt.category;
+            }
             
             document.getElementById('receiptLoading').style.display = 'none';
             document.getElementById('receiptResult').style.display = 'block';
@@ -567,21 +584,23 @@
         let date = currentReceipt.date;
         let amount = currentReceipt.amount;
         let shop = currentReceipt.shop;
-        let uniqueId = "REC-" + Date.now(); // 重複防止用のID
+        let uniqueId = "REC-" + Date.now();
+        // ★画面のプルダウンで選ばれている科目を取得
+        let finalCategory = document.getElementById('resCategory').value; 
 
         if (type === "site") {
-            // 現場なら、現場名を聞き出す
             let siteName = prompt("どの現場の経費ですか？\n(例: 鈴木邸)", "〇〇邸");
-            if (!siteName) return; // キャンセルしたら止める
-            record = [uniqueId, date, "会社(塗装)", "経費", "材料費", amount, "10%", siteName, shop, "未定"];
+            if (!siteName) return;
+            // finalCategory を使う！
+            record = [uniqueId, date, "会社(塗装)", "経費", finalCategory, amount, "10%", siteName, shop, "未定"];
         } 
         else if (type === "company") {
-            // 共通経費（現場なし）
-            record = [uniqueId, date, "会社(塗装)", "経費", "消耗品費", amount, "10%", "共通経費", shop, "未定"];
+            // finalCategory を使う！
+            record = [uniqueId, date, "会社(塗装)", "経費", finalCategory, amount, "10%", "共通経費", shop, "未定"];
         } 
         else if (type === "personal") {
-            // 配達の自腹（免税）
-            record = [uniqueId, date, "個人(配達)", "経費", "消耗品費", amount, "0%(免税)", "冬期配達", shop, "未定"];
+            // 配達は消耗品費などで固定しても良いですが、一応 finalCategory を使います
+            record = [uniqueId, date, "個人(配達)", "経費", finalCategory, amount, "0%(免税)", "冬期配達", shop, "未定"];
         }
 
         // 送信中UI表示
