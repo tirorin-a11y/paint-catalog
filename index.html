@@ -444,11 +444,30 @@
         <p style="margin: 8px 0; font-size: 1.1rem;">🏬 店名: <strong id="resShop" style="color: #333;"></strong></p>
         <p style="font-size: 11px; color: #888; margin-top: 15px; text-align: right;">※このデータがスワイプ画面へ連携されます</p>
     </div>
-</section>
+
+    <div id="actionButtons" style="display: none; margin-top: 15px; flex-direction: column; gap: 10px;">
+        <button onclick="saveRecord('site')" style="padding:15px; background:#00C853; color:white; border:none; border-radius:8px; font-weight:bold; font-size:1.1rem; box-shadow: 0 4px 6px rgba(0,0,0,0.1); cursor:pointer;">
+            🟩 現場の経費にする（材料・外注など）
+        </button>
+        <button onclick="saveRecord('company')" style="padding:15px; background:#0056b3; color:white; border:none; border-radius:8px; font-weight:bold; font-size:1.1rem; box-shadow: 0 4px 6px rgba(0,0,0,0.1); cursor:pointer;">
+            🟦 会社の共通経費にする（消耗品・ガソリン）
+        </button>
+        <button onclick="saveRecord('personal')" style="padding:15px; background:#e67e22; color:white; border:none; border-radius:8px; font-weight:bold; font-size:1.1rem; box-shadow: 0 4px 6px rgba(0,0,0,0.1); cursor:pointer;">
+            🟧 冬期配達の自腹（個人事業・免税）
+        </button>
+    </div>
+    
+    <div id="saveLoading" style="display:none; text-align:center; color:#00C853; font-weight:bold; margin-top:15px;">
+        💾 スプレッドシートに記帳中...
+    </div>
+    </section>
 
 <script>
-    // ★先ほどGASでコピーした「ウェブアプリのURL」をここに貼ります
+    // ★社長のGASウェブアプリURL（そのままです）
     const GAS_WEBAPP_URL = "https://script.google.com/macros/s/AKfycbw1tPC_76WP04Nf28lbrBhj_sJm1ZbwZAq8C39c1B3lmU0FdyvxImkO6AXaUoeWCBT7lA/exec";
+
+    // 【追加】読み取ったデータを一時保存する変数
+    let currentReceipt = null;
 
     document.getElementById('cameraBtn').addEventListener('click', function() {
         document.getElementById('receiptFileInput').click();
@@ -462,12 +481,18 @@
         const loading = document.getElementById('receiptLoading');
         const resultArea = document.getElementById('receiptResult');
         
+        // 【追加】新しく撮り直した時はボタン類を一旦隠す
+        const actionBtns = document.getElementById('actionButtons');
+        const saveLoading = document.getElementById('saveLoading');
+        if(actionBtns) actionBtns.style.display = 'none';
+        if(saveLoading) saveLoading.style.display = 'none';
+        
         preview.style.display = 'block';
         preview.src = URL.createObjectURL(file);
         loading.style.display = 'block';
         resultArea.style.display = 'none';
 
-        // 画像の軽量化処理（前回のまま）
+        // 画像の軽量化処理
         const reader = new FileReader();
         reader.onload = function(event) {
             const img = new Image();
@@ -490,7 +515,7 @@
                 const compressedDataUrl = canvas.toDataURL('image/jpeg', 0.8);
                 const base64Data = compressedDataUrl.split(',')[1];
                 
-                // 軽量化した画像をGASの金庫へ送信！
+                // 軽量化した画像をGASの金庫へ送信
                 sendToGAS(base64Data);
             };
             img.src = event.target.result;
@@ -498,10 +523,8 @@
         reader.readAsDataURL(file);
     });
 
-    // 直接Geminiではなく、GASにデータを送って結果をもらう関数
     async function sendToGAS(base64Image) {
         try {
-            // GASへPOST送信（CORS回避のため text/plain で送るのが鉄則）
             const response = await fetch(GAS_WEBAPP_URL, {
                 method: 'POST',
                 headers: { 'Content-Type': 'text/plain' },
@@ -510,19 +533,24 @@
             
             const result = await response.json();
             
-            // GASからの返事がエラーだった場合
             if (result.status === "error") {
                 throw new Error(result.message);
             }
 
-            // 成功した場合、データを画面に表示
             const data = result.data;
+            
+            // 【追加】データを変数に保存
+            currentReceipt = data;
+
             document.getElementById('resDate').textContent = data.date || "不明";
             document.getElementById('resAmount').textContent = data.amount || "0";
             document.getElementById('resShop').textContent = data.shop || "不明";
             
             document.getElementById('receiptLoading').style.display = 'none';
             document.getElementById('receiptResult').style.display = 'block';
+            
+            // 【追加】仕分けボタンを出現させる！
+            document.getElementById('actionButtons').style.display = 'flex';
 
         } catch (error) {
             console.error("システムエラー:", error);
@@ -530,6 +558,59 @@
             document.getElementById('receiptLoading').style.display = 'none';
         }
     }
+
+    // ▼▼ ここから追加：魔法の仕分け＆保存機能 ▼▼
+    async function saveRecord(type) {
+        if(!currentReceipt) return;
+
+        let record = [];
+        let date = currentReceipt.date;
+        let amount = currentReceipt.amount;
+        let shop = currentReceipt.shop;
+        let uniqueId = "REC-" + Date.now(); // 重複防止用のID
+
+        if (type === "site") {
+            // 現場なら、現場名を聞き出す
+            let siteName = prompt("どの現場の経費ですか？\n(例: 鈴木邸)", "〇〇邸");
+            if (!siteName) return; // キャンセルしたら止める
+            record = [uniqueId, date, "会社(塗装)", "経費", "材料費", amount, "10%", siteName, shop, "未定"];
+        } 
+        else if (type === "company") {
+            // 共通経費（現場なし）
+            record = [uniqueId, date, "会社(塗装)", "経費", "消耗品費", amount, "10%", "共通経費", shop, "未定"];
+        } 
+        else if (type === "personal") {
+            // 配達の自腹（免税）
+            record = [uniqueId, date, "個人(配達)", "経費", "消耗品費", amount, "0%(免税)", "冬期配達", shop, "未定"];
+        }
+
+        // 送信中UI表示
+        document.getElementById('actionButtons').style.display = 'none';
+        document.getElementById('saveLoading').style.display = 'block';
+
+        try {
+            // 今回は「保存してくれ(action: "save")」という合言葉とデータを送る
+            const response = await fetch(GAS_WEBAPP_URL, {
+                method: 'POST',
+                headers: { 'Content-Type': 'text/plain' },
+                body: JSON.stringify({ action: "save", record: record })
+            });
+            
+            const result = await response.json();
+            if (result.status === "error") throw new Error(result.message);
+
+            // 成功したら完了アラートを出して画面をリセット
+            alert("✅ スプレッドシートに記帳しました！");
+            document.getElementById('saveLoading').style.display = 'none';
+            document.getElementById('receiptResult').style.display = 'none';
+
+        } catch (error) {
+            alert("保存エラー: " + error.message);
+            document.getElementById('saveLoading').style.display = 'none';
+            document.getElementById('actionButtons').style.display = 'flex'; // 失敗時はボタンを戻す
+        }
+    }
+    // ▲▲ ここまで追加 ▲▲
 </script>
 </body>
 </html>
