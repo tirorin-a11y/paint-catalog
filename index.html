@@ -537,6 +537,13 @@
     });
 
     async function sendToGAS(base64Image) {
+        // ★★★ try { の直前に、以下のエラーチェックを追加してください ★★★
+        if (!GAS_WEBAPP_URL) {
+            alert("⚠️ 経費自動記帳用のGAS URLが設定されていません。\n設定画面から登録してください。");
+            document.getElementById('receiptLoading').style.display = 'none';
+            return;
+        }
+        // ★★★ ここまで ★★★
         try {
             const response = await fetch(GAS_WEBAPP_URL, {
                 method: 'POST',

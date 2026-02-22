@@ -313,16 +313,21 @@
         <div class="manager-only">
             <details class="accordion-box">
                 <summary>🔧 システム連携設定 (GAS・カレンダー)</summary>
-                <div class="accordion-content">
-                    <p style="font-size:0.8rem; color:#e67e22; margin-top:0;">※ここを変更すると連携が動かなくなる場合があります。</p>
-                    <label>☁️ GAS URL</label>
-                    <input type="text" id="gasUrl" onchange="saveSettings()">
-                    <label>🔑 合言葉 (★ローカル暗号化にも使用)</label>
+                    <div class="accordion-content">
+                        <p style="font-size:0.8rem; color:#e67e22; margin-top:0;">※ここを変更すると連携が動かなくなる場合があります。</p>
+                        
+                        <label>☁️ 工程表・日報用 GAS URL</label>
+                        <input type="text" id="gasUrl" placeholder="https://script.google.com/macros/s/xxxx/exec" onchange="saveSettings()">
+                        
+                        <label>💰 経費自動記帳用 GAS URL</label>
+                        <input type="text" id="settingExpenseGas" placeholder="https://script.google.com/macros/s/xxxx/exec" onchange="saveSettings()">
+                        
+                        <label>🔑 合言葉 (★ローカル暗号化にも使用)</label>
                         <input type="text" id="authKey" placeholder="設定した合言葉を入力" onchange="saveSettings()">
                         
-                    <label>📅 カレンダーID</label>
-                    <input type="text" id="calendarId" onchange="saveSettings()">
-                </div>
+                        <label>📅 カレンダーID</label>
+                        <input type="text" id="calendarId" placeholder="xxxxx@group.calendar.google.com" onchange="saveSettings()">
+                    </div>
             </details>
         </div>
         
@@ -406,7 +411,12 @@
         if(localStorage.getItem('dx_auth_key')) {
             document.getElementById('authKey').value = localStorage.getItem('dx_auth_key');
         }
-        
+        // ★★★ ここに以下の3行を追加してください ★★★
+        if(localStorage.getItem('expenseGasUrl')) {
+            document.getElementById('settingExpenseGas').value = localStorage.getItem('expenseGasUrl');
+        }
+        // ★★★ ここまで ★★★
+
         checkAutoLost();
         
         // --- 自動更新ロジック ---
@@ -444,6 +454,8 @@
         localStorage.setItem('dx_gas_url', document.getElementById('gasUrl').value);
         localStorage.setItem('dx_calendar_id', document.getElementById('calendarId').value);
         localStorage.setItem('dx_auth_key', document.getElementById('authKey').value);
+        // ★ここに追加：経費GASのURLをスマホの奥に記憶させる
+        localStorage.setItem('expenseGasUrl', document.getElementById('settingExpenseGas').value);
         showNotification('⚙️ 設定を保存しました');
     }
 
