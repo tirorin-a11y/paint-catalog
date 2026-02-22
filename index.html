@@ -421,7 +421,7 @@
         🤖 AIレシート自動仕訳マシーン
     </h2>
     <p style="font-size: 12px; color: #666; margin-bottom: 15px;">
-        ※カメラでレシートを撮影すると、AIが解析し、スプレッドシート（仕訳表）へ直接データを送ります。
+        ※カメラでレシートを撮影すると、AIが解析し、仕訳データ化します。（APIキー隠蔽・安全仕様）
     </p>
     
     <input type="file" accept="image/*" capture="environment" id="receiptFileInput" style="display: none;">
@@ -433,139 +433,104 @@
     <img id="receiptPreview" src="" style="max-width: 100%; height: auto; margin-top: 15px; border-radius: 8px; display: none; border: 1px solid #ccc;">
     
     <div id="receiptLoading" style="display: none; color: #0056b3; font-weight: bold; text-align: center; margin-top: 20px;">
-        <span style="font-size: 1.5rem;">⏳</span><br>AIが文字と金額を解析中...<br>
+        <span style="font-size: 1.5rem;">⏳</span><br>GASの金庫へ転送＆AI解析中...<br>
+        <span style="font-size: 11px; font-weight: normal; color: #666;">（数秒かかります）</span>
     </div>
 
     <div id="receiptResult" style="display: none; margin-top: 15px; padding: 15px; background: white; border: 1px solid #00C853; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.05);">
-        <p style="margin: 0 0 10px 0; font-weight: bold; color: #333; border-bottom: 1px solid #eee; padding-bottom: 5px;">✅ 読み取り成功！</p>
+        <p style="margin: 0 0 10px 0; font-weight: bold; color: #333; border-bottom: 1px solid #eee; padding-bottom: 5px;">✅ 読み取り結果</p>
         <p style="margin: 8px 0; font-size: 1.1rem;">📅 日付: <strong id="resDate" style="color: #0056b3;"></strong></p>
         <p style="margin: 8px 0; font-size: 1.1rem;">💰 金額: <strong id="resAmount" style="color: #d9534f; font-size: 1.3rem;"></strong> <span style="font-size: 0.9rem;">円</span></p>
         <p style="margin: 8px 0; font-size: 1.1rem;">🏬 店名: <strong id="resShop" style="color: #333;"></strong></p>
-        
-        <button id="sendToSheetBtn" style="width: 100%; padding: 12px; margin-top: 15px; background: #0056b3; color: white; border: none; border-radius: 6px; font-size: 1.1rem; font-weight: bold; cursor: pointer;">
-            📤 このデータを仕訳表に送る
-        </button>
-        <p id="sendStatus" style="display: none; text-align: center; margin-top: 10px; font-weight: bold; color: #00C853;"></p>
+        <p style="font-size: 11px; color: #888; margin-top: 15px; text-align: right;">※このデータがスワイプ画面へ連携されます</p>
     </div>
 </section>
 
 <script>
-    // ▼山岡社長のAPIキー群▼
-    const GEMINI_API_KEY_FRONT = "AIzaSyBXj4BObGqsXTt_ReRsSp8RsrZaSSH4Fbw";
-    // 取得したGASのURL（仕訳表への直通ルート）
-    const GAS_SHEET_URL = "https://script.google.com/macros/s/AKfycbzNkH_lTn4ffVWopZbCPvH846OWeXXpPoxa-W3gir-VVluRxtHCUnn09xQ1npDlEEiOzw/exec";
+    // ★社長が新設した「安全な金庫（GAS）」のURL
+    const GAS_RECEIPT_API_URL = "https://script.google.com/macros/s/AKfycbzpCKOztG5SzRyRsUNzam3zS-Vs3uR5P4b2F00oy0F68EO7A_p_JpmouwvL8VvQKcyHRg/exec";
 
-    // 読み取ったデータを一時保存する変数
-    let scannedReceiptData = null;
-
+    // ボタンを押したらカメラを起動
     document.getElementById('cameraBtn').addEventListener('click', function() {
         document.getElementById('receiptFileInput').click();
     });
 
+    // 写真が撮影されたら発火
     document.getElementById('receiptFileInput').addEventListener('change', function(e) {
         const file = e.target.files[0];
         if (!file) return;
 
-        // 初期化
+        // UIの切り替え
         document.getElementById('receiptPreview').style.display = 'block';
         document.getElementById('receiptPreview').src = URL.createObjectURL(file);
         document.getElementById('receiptLoading').style.display = 'block';
         document.getElementById('receiptResult').style.display = 'none';
-        document.getElementById('sendStatus').style.display = 'none';
-        document.getElementById('sendToSheetBtn').style.display = 'block';
-        scannedReceiptData = null;
 
+        // スマホの巨大な画像を自動で圧縮・軽量化する
         const reader = new FileReader();
         reader.onload = function(event) {
             const img = new Image();
             img.onload = function() {
                 const canvas = document.createElement('canvas');
                 const MAX_WIDTH = 1000;
-                let width = img.width, height = img.height;
-                if (width > MAX_WIDTH) { height = Math.round((height * MAX_WIDTH) / width); width = MAX_WIDTH; }
-                canvas.width = width; canvas.height = height;
+                let width = img.width;
+                let height = img.height;
+
+                if (width > MAX_WIDTH) {
+                    height = Math.round((height * MAX_WIDTH) / width);
+                    width = MAX_WIDTH;
+                }
+                canvas.width = width;
+                canvas.height = height;
+                
                 const ctx = canvas.getContext('2d');
                 ctx.drawImage(img, 0, 0, width, height);
-                const base64Data = canvas.toDataURL('image/jpeg', 0.8).split(',')[1];
-                analyzeWithGemini(base64Data);
+
+                const compressedDataUrl = canvas.toDataURL('image/jpeg', 0.8);
+                const base64Data = compressedDataUrl.split(',')[1];
+                
+                // 軽くなったデータをGASへ送信！
+                analyzeWithGAS(base64Data);
             };
             img.src = event.target.result;
         };
         reader.readAsDataURL(file);
     });
 
-    async function analyzeWithGemini(base64Image) {
-        const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${GEMINI_API_KEY_FRONT}`;
-        const promptText = `あなたは建設業の経理担当AIです。画像のレシート・納品書から、1.日付(YYYY/MM/DD) 2.合計金額(数字のみ) 3.支払先 を抽出しなさい。回答は純粋なJSON形式のみ(マークダウン不要)。例: {"date": "2026/02/22", "amount": 5500, "shop": "DCMホーマック"}`;
-        
+    // GASの金庫に画像をぶん投げて結果をもらう魔法の関数
+    async function analyzeWithGAS(base64Image) {
         try {
-            const response = await fetch(url, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ "contents": [{ "parts": [{ "text": promptText }, { "inline_data": { "mime_type": "image/jpeg", "data": base64Image } }] }] })
-            });
-            
-            // ★ここを修正：エラーの詳細な原因を画面に出すようにしました
-            if (!response.ok) {
-                const errData = await response.json();
-                throw new Error(errData.error?.message || "通信エラー（詳細不明）");
-            }
+            const payload = { base64Image: base64Image };
 
-            const data = await response.json();
-            
-            let aiText = data.candidates[0].content.parts[0].text;
-            aiText = aiText.replace(/```json/g, "").replace(/```/g, "").trim();
-            const resultObj = JSON.parse(aiText);
-            
-            // データを変数に保存
-            scannedReceiptData = resultObj;
-            
-            document.getElementById('resDate').textContent = resultObj.date || "不明";
-            document.getElementById('resAmount').textContent = resultObj.amount || "0";
-            document.getElementById('resShop').textContent = resultObj.shop || "不明";
-            document.getElementById('receiptLoading').style.display = 'none';
-            document.getElementById('receiptResult').style.display = 'block';
-
-        } catch (error) {
-            // ★エラーメッセージをそのままアラートで表示します
-            alert("読み取り失敗:\n" + error.message);
-            document.getElementById('receiptLoading').style.display = 'none';
-        }
-    }
-
-    // ★ スプレッドシートへ送信する処理 ★
-    document.getElementById('sendToSheetBtn').addEventListener('click', async function() {
-        if (!scannedReceiptData) return;
-        
-        const btn = document.getElementById('sendToSheetBtn');
-        const statusMsg = document.getElementById('sendStatus');
-        
-        btn.innerText = "🚀 送信中...";
-        btn.disabled = true;
-
-        try {
-            // text/plainにすることでCORSエラー(通信ブロック)を回避してGASへ送る
-            const response = await fetch(GAS_SHEET_URL, {
+            // ★裏参謀の工夫：CORS（通信拒否）エラーを防ぐため、あえて text/plain で送る
+            const response = await fetch(GAS_RECEIPT_API_URL, {
                 method: 'POST',
                 headers: { 'Content-Type': 'text/plain' },
-                body: JSON.stringify(scannedReceiptData)
+                body: JSON.stringify(payload)
             });
             
             const result = await response.json();
             
-            if(result.status === "success") {
-                btn.style.display = 'none';
-                statusMsg.style.display = 'block';
-                statusMsg.innerText = "🎉 記帳完了！スプレッドシートを確認してください。";
-            } else {
+            // GAS側でエラーが起きた場合の処理
+            if (result.status === "error") {
                 throw new Error(result.message);
             }
-        } catch(error) {
-            alert("送信エラー: " + error.message);
-            btn.innerText = "📤 再試行する";
-            btn.disabled = false;
+
+            // 成功した場合：画面に結果を表示
+            const resultObj = result.data;
+            document.getElementById('resDate').textContent = resultObj.date || "不明";
+            document.getElementById('resAmount').textContent = resultObj.amount || "0";
+            document.getElementById('resShop').textContent = resultObj.shop || "不明";
+            
+            document.getElementById('receiptLoading').style.display = 'none';
+            document.getElementById('receiptResult').style.display = 'block';
+
+        } catch (error) {
+            console.error("GAS API Error:", error);
+            alert("読み取りに失敗しました。\n詳細なエラー原因: " + error.message);
+            document.getElementById('receiptLoading').style.display = 'none';
         }
-    });
+    }
 </script>
 </body>
 </html>
