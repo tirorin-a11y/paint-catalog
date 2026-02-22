@@ -973,7 +973,6 @@
     async function exportJSON() {
         const authKey = localStorage.getItem('dx_auth_key');
         
-        // ★追加：合言葉が空の場合はここでストップ
         if (!authKey || authKey.trim() === "") {
             alert("合言葉を入力してください。");
             return;
@@ -983,7 +982,10 @@
         try {
             const jsonStr = JSON.stringify(sites);
             const encoded = encodeURIComponent(jsonStr); 
-            const xored = cipher(encoded, authKey); 
+            // ★追加：合言葉（日本語）をシステムが読める安全な半角文字に変換する
+            const encodedKey = encodeURIComponent(authKey); 
+            
+            const xored = cipher(encoded, encodedKey); 
             const base64 = btoa(xored); 
 
             const exportObj = {
@@ -995,7 +997,7 @@
             if (navigator.share && navigator.canShare({files:[f]})) {
                 try { await navigator.share({files:[f]}); } catch(e) { forceDL(f); }
             } else { forceDL(f); }
-        } catch (e) { alert("書き出しエラー: " + e); }
+        } catch (e) { alert("書き出しエラー: " + e.message); }
     }
 
     // ★修正：暗号化付きJSON読み込み（合言葉を使用）
@@ -1016,8 +1018,11 @@
                         return;
                     }
                     try {
+                        // ★追加：合言葉（日本語）をシステムが読める安全な半角文字に変換する
+                        const encodedKey = encodeURIComponent(authKey);
+
                         const xored = atob(d.data);
-                        const decoded = cipher(xored, authKey);
+                        const decoded = cipher(xored, encodedKey);
                         const jsonStr = decodeURIComponent(decoded);
                         d = JSON.parse(jsonStr); 
                     } catch (err) {
@@ -1045,7 +1050,7 @@
         };
         r.readAsText(f);
     }
-
+    
     function deleteAllData() { if(confirm('本当に全削除しますか？')) { sites=[]; localStorage.setItem('dx_sites',JSON.stringify(sites)); renderList(); closeAllModals(); showNotification('🗑️ 全削除完了'); } }
     function showNotification(msg) { const el = document.getElementById('notification'); el.textContent = msg; el.classList.add('show'); setTimeout(() => el.classList.remove('show'), 2000); }
     
