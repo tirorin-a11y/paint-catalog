@@ -982,7 +982,6 @@
         try {
             const jsonStr = JSON.stringify(sites);
             const encoded = encodeURIComponent(jsonStr); 
-            // ★追加：合言葉（日本語）をシステムが読める安全な半角文字に変換する
             const encodedKey = encodeURIComponent(authKey); 
             
             const xored = cipher(encoded, encodedKey); 
@@ -993,7 +992,14 @@
                 data: base64
             };
 
-            const f = new File([JSON.stringify(exportObj, null, 2)], `secure_backup_${getNowStr()}.json`, {type:"application/json"});
+            // ★追加：スマホかPCかを自動判定する
+            const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+            const prefix = isMobile ? "【スマホ】" : "【PC】";
+            // ★ファイル名を設定
+            const fileName = `${prefix}職人ギア_バックアップ_${getNowStr()}.json`;
+
+            const f = new File([JSON.stringify(exportObj, null, 2)], fileName, {type:"application/json"});
+            
             if (navigator.share && navigator.canShare({files:[f]})) {
                 try { await navigator.share({files:[f]}); } catch(e) { forceDL(f); }
             } else { forceDL(f); }
@@ -1050,7 +1056,7 @@
         };
         r.readAsText(f);
     }
-    
+
     function deleteAllData() { if(confirm('本当に全削除しますか？')) { sites=[]; localStorage.setItem('dx_sites',JSON.stringify(sites)); renderList(); closeAllModals(); showNotification('🗑️ 全削除完了'); } }
     function showNotification(msg) { const el = document.getElementById('notification'); el.textContent = msg; el.classList.add('show'); setTimeout(() => el.classList.remove('show'), 2000); }
     
