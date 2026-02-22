@@ -476,12 +476,11 @@
     </section>
 
 <script>
-    // ★社長のGASウェブアプリURL（そのままです）
-    const GAS_WEBAPP_URL = "https://script.google.com/macros/s/AKfycbw1tPC_76WP04Nf28lbrBhj_sJm1ZbwZAq8C39c1B3lmU0FdyvxImkO6AXaUoeWCBT7lA/exec";
+    // ★設定画面（navi.html）で保存した記憶からURLを呼び出す！
+    const GAS_WEBAPP_URL = localStorage.getItem("expenseGasUrl") || "";
 
     // 【追加】読み取ったデータを一時保存する変数
     let currentReceipt = null;
-
     document.getElementById('cameraBtn').addEventListener('click', function() {
         document.getElementById('receiptFileInput').click();
     });
