@@ -992,11 +992,18 @@
                 data: base64
             };
 
-            // ★追加：スマホかPCかを自動判定する
+            // スマホかPCかを自動判定する
             const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
             const prefix = isMobile ? "【スマホ】" : "【PC】";
-            // ★ファイル名を設定
-            const fileName = `${prefix}職人ギア_バックアップ_${getNowStr()}.json`;
+            
+            // ★追加：設定画面の「報告者名」を取得。もし空っぽなら「職人」にする
+            let reporter = localStorage.getItem('dx_reporter_name');
+            if (!reporter || reporter.trim() === "") {
+                reporter = "職人";
+            }
+            
+            // ★ファイル名に「報告者名」を合体させる！
+            const fileName = `${prefix}職人ギア_${reporter}_${getNowStr()}.json`;
 
             const f = new File([JSON.stringify(exportObj, null, 2)], fileName, {type:"application/json"});
             
