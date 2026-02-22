@@ -505,7 +505,12 @@
                 body: JSON.stringify({ "contents": [{ "parts": [{ "text": promptText }, { "inline_data": { "mime_type": "image/jpeg", "data": base64Image } }] }] })
             });
             
-            if (!response.ok) throw new Error("通信エラー");
+            // ★ここを修正：エラーの詳細な原因を画面に出すようにしました
+            if (!response.ok) {
+                const errData = await response.json();
+                throw new Error(errData.error?.message || "通信エラー（詳細不明）");
+            }
+
             const data = await response.json();
             
             let aiText = data.candidates[0].content.parts[0].text;
@@ -522,7 +527,8 @@
             document.getElementById('receiptResult').style.display = 'block';
 
         } catch (error) {
-            alert("読み取り失敗: " + error.message);
+            // ★エラーメッセージをそのままアラートで表示します
+            alert("読み取り失敗:\n" + error.message);
             document.getElementById('receiptLoading').style.display = 'none';
         }
     }
