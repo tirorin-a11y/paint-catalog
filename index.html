@@ -505,7 +505,7 @@
 
     // Gemini APIを直接叩く魔法の関数
     async function analyzeWithGemini(base64Image) {
-        const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${GEMINI_API_KEY_FRONT}`;
+        const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${GEMINI_API_KEY_FRONT}`;
         
         const promptText = `
             あなたは建設業の経理担当AIです。渡されたレシートまたは納品書の画像から、以下の3つの情報を抽出しなさい。
