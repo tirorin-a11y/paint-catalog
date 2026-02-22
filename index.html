@@ -447,26 +447,27 @@
 </section>
 
 <script>
-    // ★社長が新設した「安全な金庫（GAS）」のURL
-    const GAS_RECEIPT_API_URL = "https://script.google.com/macros/s/AKfycbw1tPC_76WP04Nf28lbrBhj_sJm1ZbwZAq8C39c1B3lmU0FdyvxImkO6AXaUoeWCBT7lA/exec";
+    // ★先ほどGASでコピーした「ウェブアプリのURL」をここに貼ります
+    const GAS_WEBAPP_URL = "https://script.google.com/macros/s/AKfycbw1tPC_76WP04Nf28lbrBhj_sJm1ZbwZAq8C39c1B3lmU0FdyvxImkO6AXaUoeWCBT7lA/exec";
 
-    // ボタンを押したらカメラを起動
     document.getElementById('cameraBtn').addEventListener('click', function() {
         document.getElementById('receiptFileInput').click();
     });
 
-    // 写真が撮影されたら発火
     document.getElementById('receiptFileInput').addEventListener('change', function(e) {
         const file = e.target.files[0];
         if (!file) return;
 
-        // UIの切り替え
-        document.getElementById('receiptPreview').style.display = 'block';
-        document.getElementById('receiptPreview').src = URL.createObjectURL(file);
-        document.getElementById('receiptLoading').style.display = 'block';
-        document.getElementById('receiptResult').style.display = 'none';
+        const preview = document.getElementById('receiptPreview');
+        const loading = document.getElementById('receiptLoading');
+        const resultArea = document.getElementById('receiptResult');
+        
+        preview.style.display = 'block';
+        preview.src = URL.createObjectURL(file);
+        loading.style.display = 'block';
+        resultArea.style.display = 'none';
 
-        // スマホの巨大な画像を自動で圧縮・軽量化する
+        // 画像の軽量化処理（前回のまま）
         const reader = new FileReader();
         reader.onload = function(event) {
             const img = new Image();
@@ -489,44 +490,42 @@
                 const compressedDataUrl = canvas.toDataURL('image/jpeg', 0.8);
                 const base64Data = compressedDataUrl.split(',')[1];
                 
-                // 軽くなったデータをGASへ送信！
-                analyzeWithGAS(base64Data);
+                // 軽量化した画像をGASの金庫へ送信！
+                sendToGAS(base64Data);
             };
             img.src = event.target.result;
         };
         reader.readAsDataURL(file);
     });
 
-    // GASの金庫に画像をぶん投げて結果をもらう魔法の関数
-    async function analyzeWithGAS(base64Image) {
+    // 直接Geminiではなく、GASにデータを送って結果をもらう関数
+    async function sendToGAS(base64Image) {
         try {
-            const payload = { base64Image: base64Image };
-
-            // ★裏参謀の工夫：CORS（通信拒否）エラーを防ぐため、あえて text/plain で送る
-            const response = await fetch(GAS_RECEIPT_API_URL, {
+            // GASへPOST送信（CORS回避のため text/plain で送るのが鉄則）
+            const response = await fetch(GAS_WEBAPP_URL, {
                 method: 'POST',
                 headers: { 'Content-Type': 'text/plain' },
-                body: JSON.stringify(payload)
+                body: JSON.stringify({ image: base64Image })
             });
             
             const result = await response.json();
             
-            // GAS側でエラーが起きた場合の処理
+            // GASからの返事がエラーだった場合
             if (result.status === "error") {
                 throw new Error(result.message);
             }
 
-            // 成功した場合：画面に結果を表示
-            const resultObj = result.data;
-            document.getElementById('resDate').textContent = resultObj.date || "不明";
-            document.getElementById('resAmount').textContent = resultObj.amount || "0";
-            document.getElementById('resShop').textContent = resultObj.shop || "不明";
+            // 成功した場合、データを画面に表示
+            const data = result.data;
+            document.getElementById('resDate').textContent = data.date || "不明";
+            document.getElementById('resAmount').textContent = data.amount || "0";
+            document.getElementById('resShop').textContent = data.shop || "不明";
             
             document.getElementById('receiptLoading').style.display = 'none';
             document.getElementById('receiptResult').style.display = 'block';
 
         } catch (error) {
-            console.error("GAS API Error:", error);
+            console.error("システムエラー:", error);
             alert("読み取りに失敗しました。\n詳細なエラー原因: " + error.message);
             document.getElementById('receiptLoading').style.display = 'none';
         }
