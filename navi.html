@@ -449,27 +449,26 @@
     }
 
     function saveSettings() {
-        // ★入力された経費GASのURLを取得
-        const expenseUrl = document.getElementById('settingExpenseGas').value;
-
-        // ★★★ 空っぽチェックの壁 ★★★
-        if (expenseUrl.trim() === "") {
-            alert("⚠️ エラー：経費GASのURLが未入力です！");
-            return; // ここで保存処理を強制ストップさせる
+        // 合言葉だけは暗号化のために必須チェックする
+        const authKeyVal = document.getElementById('authKey').value.trim();
+        if (authKeyVal === "") {
+            alert("⚠️ エラー：『合言葉』はデータの暗号化に必須のため、必ず入力してください！");
+            document.getElementById('authKey').focus();
+            return; // 合言葉がない時だけストップ
         }
 
-        // （その他の設定値も取得して保存...）
+        // あとは「入力されたもの」だけを無言でそのまま保存する（空っぽなら空っぽとして保存）
         localStorage.setItem('dx_reporter_name', document.getElementById('reporterName').value);
         localStorage.setItem('dx_manager_email', document.getElementById('managerEmail').value);
         localStorage.setItem('dx_gas_url', document.getElementById('gasUrl').value);
         localStorage.setItem('dx_calendar_id', document.getElementById('calendarId').value);
         localStorage.setItem('dx_auth_key', document.getElementById('authKey').value);
-        
-        // 空っぽじゃなければ、晴れて保存！
-        localStorage.setItem('expenseGasUrl', expenseUrl);
+        localStorage.setItem('expenseGasUrl', document.getElementById('settingExpenseGas').value);
 
+        // 保存完了の控えめな通知だけ出す
         showNotification('⚙️ 設定を保存しました');
     }
+    
     function setFilter(status, btn) {
         currentFilter = status;
         
