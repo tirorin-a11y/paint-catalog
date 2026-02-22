@@ -548,7 +548,11 @@
             const response = await fetch(GAS_WEBAPP_URL, {
                 method: 'POST',
                 headers: { 'Content-Type': 'text/plain' },
-                body: JSON.stringify({ image: base64Image })
+                // ★荷物に authKey を追加して送る！
+                body: JSON.stringify({ 
+                    image: base64Image,
+                    authKey: localStorage.getItem('dx_auth_key') || ""
+                }) 
             });
             
             const result = await response.json();
@@ -619,7 +623,12 @@
             const response = await fetch(GAS_WEBAPP_URL, {
                 method: 'POST',
                 headers: { 'Content-Type': 'text/plain' },
-                body: JSON.stringify({ action: "save", record: record })
+                // ★荷物に authKey を追加して送る！
+                body: JSON.stringify({ 
+                    action: "save", 
+                    record: record,
+                    authKey: localStorage.getItem('dx_auth_key') || ""
+                })
             });
             
             const result = await response.json();
