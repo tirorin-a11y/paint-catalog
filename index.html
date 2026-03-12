@@ -126,6 +126,32 @@
         .pdf-link { color: #d9534f; font-size: 0.9rem; font-weight: bold; text-decoration: none; }
         .badge-stop { color: #d9534f; border: 1px solid #d9534f; font-size: 0.7rem; padding: 1px 3px; border-radius: 3px; }
         .loading-msg { text-align: center; color: #666; padding: 20px; }
+
+        /* ▼▼ 追加: グループ化用フレームのスタイル ▼▼ */
+        .feature-group {
+            border: 2px dashed #ccc;
+            border-radius: 10px;
+            padding: 15px;
+            margin-bottom: 25px;
+            background: #ffffff;
+        }
+        .feature-group.active {
+            border: 2px solid #00C853;
+            background: #f4fff4;
+        }
+        .feature-group.wip {
+            border: 2px dashed #e67e22;
+            background: #fff8f0;
+        }
+        .group-label {
+            font-weight: bold;
+            font-size: 1.1rem;
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        /* ▲▲ ここまで ▲▲ */
     </style>
 </head>
 <meta name="google-site-verification" content="CSTsZKSKyMwJQeHbuohGlSGdCP7PkqBNgKAivoCvs3U" />
@@ -137,22 +163,90 @@
 
     <main>
         
-        <div class="nav-area">
-            <a href="navi.html" class="nav-btn-large btn-navi">
-                🚗 現場ナビ
-            </a>
-            <a href="manager.html" class="nav-btn-large btn-manager">
-                📊 工程管理
-            </a>
-            <a href="simulator.html" class="nav-btn-large btn-sim">
-                💰 見積シミュレータ
-            </a>
+        <div class="feature-group active">
+            <div class="group-label" style="color: #00C853;">✅ 現場ギア（完成）</div>
+            <div class="nav-area" style="margin-bottom: 0;">
+                <a href="navi.html" class="nav-btn-large btn-navi">
+                    🚗 現場ナビ
+                </a>
+                <a href="manager.html" class="nav-btn-large btn-manager">
+                    📊 工程管理
+                </a>
+            </div>
         </div>
+        <div class="feature-group wip">
+            <div class="group-label" style="color: #e67e22;">🚧 工事中（テスト・開発中）</div>
+            
+            <div class="nav-area" style="margin-bottom: 15px;">
+                <a href="simulator.html" class="nav-btn-large btn-sim" style="opacity: 0.8;">
+                    💰 見積シミュレータ
+                </a>
+            </div>
 
+            <section class="tool-section" style="margin-top: 0; border: 2px dashed #e67e22; background-color: #ffffff; box-shadow: none; margin-bottom: 0;">
+                <h2 style="color: #e67e22; font-size: 1.2rem; display: flex; align-items: center; gap: 8px; border-bottom: 1px dashed #e67e22;">
+                    🤖 AIレシート自動仕訳マシーン
+                </h2>
+                <p style="font-size: 12px; color: #666; margin-bottom: 15px;">
+                    ※カメラでレシートを撮影すると、AIが解析し、仕訳データ化します。（APIキー隠蔽・安全仕様）
+                </p>
+                
+                <input type="file" accept="image/*" capture="environment" id="receiptFileInput" style="display: none;">
+                
+                <button id="cameraBtn" style="width: 100%; padding: 15px; background: #e67e22; color: white; border: none; border-radius: 8px; font-size: 1.1rem; font-weight: bold; cursor: pointer; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">
+                    📸 レシート・納品書を撮影
+                </button>
+
+                <img id="receiptPreview" src="" style="max-width: 100%; height: auto; margin-top: 15px; border-radius: 8px; display: none; border: 1px solid #ccc;">
+                
+                <div id="receiptLoading" style="display: none; color: #0056b3; font-weight: bold; text-align: center; margin-top: 20px;">
+                    <span style="font-size: 1.5rem;">⏳</span><br>GASの金庫へ転送＆AI解析中...<br>
+                    <span style="font-size: 11px; font-weight: normal; color: #666;">（数秒かかります）</span>
+                </div>
+
+                <div id="receiptResult" style="display: none; margin-top: 15px; padding: 15px; background: white; border: 1px solid #e67e22; border-radius: 8px;">
+                    <p style="margin: 0 0 10px 0; font-weight: bold; color: #333; border-bottom: 1px solid #eee; padding-bottom: 5px;">✅ 読み取り結果</p>
+                    <p style="margin: 8px 0; font-size: 1.1rem;">📅 日付: <strong id="resDate" style="color: #0056b3;"></strong></p>
+                    <p style="margin: 8px 0; font-size: 1.1rem;">💰 金額: <strong id="resAmount" style="color: #d9534f; font-size: 1.3rem;"></strong> 円</p>
+                    <p style="margin: 8px 0; font-size: 1.1rem;">🏬 店名: <strong id="resShop" style="color: #333;"></strong></p>
+                    
+                    <div style="margin-top: 15px; padding-top: 10px; border-top: 1px dashed #ccc;">
+                        <label style="font-size: 1rem; font-weight: bold; color: #e67e22;">💡 AI推測科目 (タップで変更可):</label><br>
+                        <select id="resCategory" style="width: 100%; padding: 10px; margin-top: 5px; font-size: 1.1rem; border: 2px solid #e67e22; border-radius: 5px; background: #fffaf0;">
+                            <option value="材料費">材料費</option>
+                            <option value="外注費">外注費</option>
+                            <option value="消耗品費">消耗品費</option>
+                            <option value="燃料費">燃料費</option>
+                            <option value="接待交際費">接待交際費</option>
+                            <option value="会議費">会議費</option>
+                            <option value="通信費">通信費</option>
+                            <option value="雑費">雑費</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div id="actionButtons" style="display: none; margin-top: 15px; flex-direction: column; gap: 10px;">
+                    <button onclick="saveRecord('site')" style="padding:15px; background:#00C853; color:white; border:none; border-radius:8px; font-weight:bold; font-size:1.1rem; box-shadow: 0 4px 6px rgba(0,0,0,0.1); cursor:pointer;">
+                        🟩 現場の経費にする（材料・外注など）
+                    </button>
+                    <button onclick="saveRecord('company')" style="padding:15px; background:#0056b3; color:white; border:none; border-radius:8px; font-weight:bold; font-size:1.1rem; box-shadow: 0 4px 6px rgba(0,0,0,0.1); cursor:pointer;">
+                        🟦 会社の共通経費にする（消耗品・ガソリン）
+                    </button>
+                    <button onclick="saveRecord('personal')" style="padding:15px; background:#e67e22; color:white; border:none; border-radius:8px; font-weight:bold; font-size:1.1rem; box-shadow: 0 4px 6px rgba(0,0,0,0.1); cursor:pointer;">
+                        🟧 冬期配達の自腹（個人事業・免税）
+                    </button>
+                </div>
+                
+                <div id="saveLoading" style="display:none; text-align:center; color:#00C853; font-weight:bold; margin-top:15px;">
+                    💾 スプレッドシートに記帳中...
+                </div>
+            </section>
+        </div>
         <section class="tool-section">
             <h2>📢 更新情報</h2>
             <div class="news-scroll-box">
                 <ul>
+                    <li><strong>2026.03.13</strong> : 「現場ギア（現場ナビ・工程管理）」が完成しました！</li>
                     <li><strong>2026.02.10</strong> : 積み上げ式の「見積シミュレータ」機能を追加しました！</li>
                     <li><strong>2025.11.24</strong> : 検索結果に「一般名称」を表示するように改良！</li>
                     <li><strong>2025.11.16</strong> : 絞り込み機能を4大分類（大分類・用途・タイプ・樹脂）に再構築。</li>
@@ -415,65 +509,6 @@
         }
     }
 </script>
-
-<section class="tool-section" style="margin-top: 30px; border: 2px solid #00C853; background-color: #fafffa;">
-    <h2 style="color: #00C853; font-size: 1.2rem; display: flex; align-items: center; gap: 8px;">
-        🤖 AIレシート自動仕訳マシーン
-    </h2>
-    <p style="font-size: 12px; color: #666; margin-bottom: 15px;">
-        ※カメラでレシートを撮影すると、AIが解析し、仕訳データ化します。（APIキー隠蔽・安全仕様）
-    </p>
-    
-    <input type="file" accept="image/*" capture="environment" id="receiptFileInput" style="display: none;">
-    
-    <button id="cameraBtn" style="width: 100%; padding: 15px; background: #00C853; color: white; border: none; border-radius: 8px; font-size: 1.1rem; font-weight: bold; cursor: pointer; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">
-        📸 レシート・納品書を撮影
-    </button>
-
-    <img id="receiptPreview" src="" style="max-width: 100%; height: auto; margin-top: 15px; border-radius: 8px; display: none; border: 1px solid #ccc;">
-    
-    <div id="receiptLoading" style="display: none; color: #0056b3; font-weight: bold; text-align: center; margin-top: 20px;">
-        <span style="font-size: 1.5rem;">⏳</span><br>GASの金庫へ転送＆AI解析中...<br>
-        <span style="font-size: 11px; font-weight: normal; color: #666;">（数秒かかります）</span>
-    </div>
-
-    <div id="receiptResult" style="display: none; margin-top: 15px; padding: 15px; background: white; border: 1px solid #00C853; border-radius: 8px;">
-        <p style="margin: 0 0 10px 0; font-weight: bold; color: #333; border-bottom: 1px solid #eee; padding-bottom: 5px;">✅ 読み取り結果</p>
-        <p style="margin: 8px 0; font-size: 1.1rem;">📅 日付: <strong id="resDate" style="color: #0056b3;"></strong></p>
-        <p style="margin: 8px 0; font-size: 1.1rem;">💰 金額: <strong id="resAmount" style="color: #d9534f; font-size: 1.3rem;"></strong> 円</p>
-        <p style="margin: 8px 0; font-size: 1.1rem;">🏬 店名: <strong id="resShop" style="color: #333;"></strong></p>
-        
-        <div style="margin-top: 15px; padding-top: 10px; border-top: 1px dashed #ccc;">
-            <label style="font-size: 1rem; font-weight: bold; color: #e67e22;">💡 AI推測科目 (タップで変更可):</label><br>
-            <select id="resCategory" style="width: 100%; padding: 10px; margin-top: 5px; font-size: 1.1rem; border: 2px solid #e67e22; border-radius: 5px; background: #fffaf0;">
-                <option value="材料費">材料費</option>
-                <option value="外注費">外注費</option>
-                <option value="消耗品費">消耗品費</option>
-                <option value="燃料費">燃料費</option>
-                <option value="接待交際費">接待交際費</option>
-                <option value="会議費">会議費</option>
-                <option value="通信費">通信費</option>
-                <option value="雑費">雑費</option>
-            </select>
-        </div>
-    </div>
-
-    <div id="actionButtons" style="display: none; margin-top: 15px; flex-direction: column; gap: 10px;">
-        <button onclick="saveRecord('site')" style="padding:15px; background:#00C853; color:white; border:none; border-radius:8px; font-weight:bold; font-size:1.1rem; box-shadow: 0 4px 6px rgba(0,0,0,0.1); cursor:pointer;">
-            🟩 現場の経費にする（材料・外注など）
-        </button>
-        <button onclick="saveRecord('company')" style="padding:15px; background:#0056b3; color:white; border:none; border-radius:8px; font-weight:bold; font-size:1.1rem; box-shadow: 0 4px 6px rgba(0,0,0,0.1); cursor:pointer;">
-            🟦 会社の共通経費にする（消耗品・ガソリン）
-        </button>
-        <button onclick="saveRecord('personal')" style="padding:15px; background:#e67e22; color:white; border:none; border-radius:8px; font-weight:bold; font-size:1.1rem; box-shadow: 0 4px 6px rgba(0,0,0,0.1); cursor:pointer;">
-            🟧 冬期配達の自腹（個人事業・免税）
-        </button>
-    </div>
-    
-    <div id="saveLoading" style="display:none; text-align:center; color:#00C853; font-weight:bold; margin-top:15px;">
-        💾 スプレッドシートに記帳中...
-    </div>
-    </section>
 
 <script>
     // ★設定画面（navi.html）で保存した記憶からURLを呼び出す！
