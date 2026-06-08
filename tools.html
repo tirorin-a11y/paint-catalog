@@ -1776,7 +1776,10 @@ function fetchMaterialMasterBg() {
     fetch(gasUrl, {
         method: 'POST',
         headers: { 'Content-Type': 'text/plain' }, 
-        body: JSON.stringify({ type: "getMaterials" })
+        body: JSON.stringify({ 
+            type: "getMaterials",
+            authKey: "うっきうき"  // ★ジェイミー痛恨のミス：ここを追加しました！
+        })
     })
     .then(res => res.json())
     .then(data => {
@@ -1784,6 +1787,9 @@ function fetchMaterialMasterBg() {
             materialMasterCache = data.data;
             // 次回用にスマホに保存しておく
             localStorage.setItem('dx_material_master', JSON.stringify(materialMasterCache));
+            console.log("マスターデータ受信成功！件数:", materialMasterCache.length);
+        } else {
+            console.log("GASからのエラー:", data.error);
         }
     })
     .catch(e => console.log("マスターのバックグラウンド更新をスキップしました"));
