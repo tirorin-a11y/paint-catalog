@@ -261,6 +261,13 @@
         <div class="btn-text"><h3>しゃべる日報</h3><p>声で入力、履歴から送信</p></div>
         <span style="font-size:1.5rem; color:#a5d6a7;">＞</span>
     </div>
+
+    <div class="tool-btn" onclick="openModal('material')">
+        <div class="btn-icon">📦</div>
+        <div class="btn-text"><h3>資材・実績の記録</h3><p>使用量や木材寸法を送信</p></div>
+        <span style="font-size:1.5rem; color:#a5d6a7;">＞</span>
+    </div>
+
     </div>
 
     <div id="sec-support" class="section-header section-support">🧰 現場サポート</div>
@@ -364,6 +371,50 @@
     <button class="btn-close" onclick="closeAllModals()">閉じる</button>
 </div>
 
+<div id="materialModal" class="modal-box" style="background:#f4f9f4;">
+    <h3 style="margin-top:0;">📦 資材・実績の記録</h3>
+    
+    <label style="margin-top:0;">🔍 資材検索 (名前かコードを入力):</label>
+    <div style="position: relative; margin-bottom: 10px;">
+        <input type="text" id="log-material-search" placeholder="例: ビーズ" style="width: 100%; padding: 12px; box-sizing: border-box; border: 1px solid #ccc; border-radius: 6px;" oninput="searchMaterial()" onfocus="searchMaterial()">
+        <div id="material-suggestions" style="position: absolute; top: 100%; left: 0; right: 0; background: white; border: 1px solid #ccc; border-top: none; max-height: 180px; overflow-y: auto; z-index: 200; display: none; box-shadow: 0 4px 6px rgba(0,0,0,0.1);"></div>
+    </div>
+    
+    <label style="margin-top:0; font-size: 0.9rem; color: #555;">資材コード (自動入力):</label>
+    <input type="text" id="log-material-code" placeholder="上の検索から選んでください" style="width: 100%; margin-bottom: 15px; background-color: #e0e0e0; color: #555;" readonly>
+    <label>現場総使用量 (kg/L/本):</label>
+    <input type="number" id="log-total-usage" placeholder="例: 10" style="width: 100%; margin-bottom: 15px;" step="0.1">
+
+    <div style="margin-bottom: 15px; display: flex; flex-direction: column; gap: 8px;">
+        <label style="margin:0; font-weight:normal; cursor:pointer;">
+            <input type="radio" name="inputMode" value="direct" checked onchange="toggleInputMode()"> 🅰️ 直入力（外壁・屋根など）
+        </label>
+        <label style="margin:0; font-weight:normal; cursor:pointer;">
+            <input type="radio" name="inputMode" value="dimension" onchange="toggleInputMode()"> 🅱️ 寸法入力（木部・役物など）
+        </label>
+    </div>
+
+    <div id="area-direct" style="background: #ffffff; padding: 10px; border-radius: 8px; border: 1px solid #ddd;">
+        <label style="margin-top:0;">直入力面積 (㎡):</label>
+        <input type="number" id="log-direct-area" placeholder="例: 120" style="width: 100%;" step="0.1">
+    </div>
+
+    <div id="area-dimension" style="display: none; background: #eef7e6; padding: 10px; border-radius: 8px; border: 1px solid #c5e1a5;">
+        <div style="display: flex; gap: 5px; margin-bottom: 10px;">
+            <div style="flex: 1;"><label style="margin-top:0; font-size:0.8rem;">厚み(mm)</label><input type="number" id="log-thickness" style="width: 100%;"></div>
+            <div style="flex: 1;"><label style="margin-top:0; font-size:0.8rem;">幅(mm)</label><input type="number" id="log-width" style="width: 100%;"></div>
+            <div style="flex: 1;"><label style="margin-top:0; font-size:0.8rem;">長さ(mm)</label><input type="number" id="log-length" style="width: 100%;"></div>
+        </div>
+        <label style="margin-top:0;">数量 (本/枚):</label>
+        <input type="number" id="log-quantity" placeholder="例: 12" style="width: 100%;">
+    </div>
+
+    <button class="save-btn" onclick="submitMaterialLog(event)" style="background-color: #2e7d32; margin-top: 20px; font-size: 1.1rem;">
+        📤 実績を送信する
+    </button>
+    <button class="btn-close" onclick="closeAllModals()" style="margin-top: 10px;">閉じる</button>
+</div>
+
 <div id="calSelectModal" class="modal-box" style="text-align:center;">
     <h3>📅 カレンダー機能</h3>
     <p style="font-size:0.9rem; color:#666;">操作を選んでください</p>
@@ -445,12 +496,15 @@
         localStorage.setItem('dx_company_name', val);
     }
 
+    // ★修正：openModal に material 用の分岐を追加
     function openModal(type) { 
         document.getElementById('overlay').classList.add('show'); 
         if(type === 'camera') openCameraModal(); 
         if(type === 'report') { document.getElementById('reportModal').classList.add('show'); renderReportHistory(); } 
         if(type === 'calSelect') { document.getElementById('calSelectModal').classList.add('show'); }
+        if(type === 'material') { document.getElementById('materialModal').classList.add('show'); }
     }
+    
     function openCameraModal() { document.getElementById('overlay').classList.add('show'); document.getElementById('cameraModal').classList.add('show'); drawBoard(); }
     function openForm() { document.getElementById('overlay').classList.add('show'); document.getElementById('inputForm').classList.add('show'); document.getElementById('siteName').value = currentSite ? currentSite.name : ''; document.getElementById('address').value = currentSite ? currentSite.address : ''; document.getElementById('status').value = currentSite ? currentSite.status : 'estimate'; }
     function closeAllModals() { document.querySelectorAll('.modal-box').forEach(el => el.classList.remove('show')); document.getElementById('overlay').classList.remove('show'); stopSpeech(); if(document.getElementById('photoPreviewArea').style.display==='flex') retakePhoto(); }
@@ -1146,7 +1200,6 @@
         isSliderMode = false;
         
 
-
         dirCenterTimer = setTimeout(() => {
             isSliderMode = true; // スライダーモード発動
             if(navigator.vibrate) navigator.vibrate(50);
@@ -1442,7 +1495,7 @@
         const body = `${currentSite ? currentSite.name : '現場'}\n\n${text}\n\n--\nSent from 職人ギア`;
         const mailUrl = `mailto:${mailTo}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
         window.location.href = mailUrl;
-    }    function getNextNum(year) {
+    }   function getNextNum(year) {
         let max = 0;
         sites.forEach(s => {
             if (s.id && s.id.startsWith(year + '-')) {
@@ -1633,6 +1686,157 @@ document.addEventListener('DOMContentLoaded', () => {
     if (siteId && cameraLink) {
         // リンク先を "camera.html?id=123" のように書き換える
         cameraLink.href = `camera.html?id=${siteId}`;
+    }
+});
+
+// --- ★新規追加：資材・実績入力システム用関数 ---
+function toggleInputMode() {
+    const mode = document.querySelector('input[name="inputMode"]:checked').value;
+    if (mode === 'direct') {
+        document.getElementById('area-direct').style.display = 'block';
+        document.getElementById('area-dimension').style.display = 'none';
+    } else {
+        document.getElementById('area-direct').style.display = 'none';
+        document.getElementById('area-dimension').style.display = 'block';
+    }
+}
+
+async function submitMaterialLog(event) {
+    const gasUrl = localStorage.getItem('dx_gas_url');
+    if (!gasUrl) { 
+        alert("【設定エラー】\nナビ画面の設定から「GAS URL」を登録してください。"); 
+        return; 
+    }
+
+    // GASのdoPostで処理を分岐させるための「type: "material"」を指定
+    const logData = {
+        type: "material", 
+        ankenNo: currentSite ? currentSite.id : "未定",
+        materialCode: document.getElementById('log-material-code').value,
+        totalUsage: document.getElementById('log-total-usage').value,
+        directArea: document.getElementById('log-direct-area').value,
+        thickness: document.getElementById('log-thickness').value,
+        width: document.getElementById('log-width').value,
+        length: document.getElementById('log-length').value,
+        quantity: document.getElementById('log-quantity').value,
+        authKey: localStorage.getItem('dx_auth_key') || ""
+    };
+
+    if (!logData.materialCode) {
+        alert("資材コードを入力してください。");
+        return;
+    }
+
+    const btn = event.target;
+    const originalText = btn.innerHTML;
+    btn.innerHTML = "⏳ 送信中...";
+    btn.disabled = true;
+
+    try {
+        const response = await fetch(gasUrl, { 
+            method: 'POST', 
+            headers: { 'Content-Type': 'text/plain' }, 
+            body: JSON.stringify(logData) 
+        });
+        const resText = await response.text(); 
+        const resJson = JSON.parse(resText);
+        
+        if (resJson.result === "success" || resJson.success === true) { 
+            alert("✅ 実績を記録しました！"); 
+            // 送信完了後、入力欄をクリアする
+            document.getElementById('log-material-code').value = '';
+            document.getElementById('log-total-usage').value = '';
+            document.getElementById('log-direct-area').value = '';
+            document.getElementById('log-thickness').value = '';
+            document.getElementById('log-width').value = '';
+            document.getElementById('log-length').value = '';
+            document.getElementById('log-quantity').value = '';
+            closeAllModals(); // モーダルを閉じる
+        } else { 
+            throw new Error(resJson.message || resJson.error || "サーバーエラー"); 
+        }
+    } catch(e) { 
+        alert("通信エラーが発生しました: " + e.message); 
+    } finally {
+        btn.innerHTML = originalText;
+        btn.disabled = false;
+    }
+}
+
+// =========================================================
+// ■ 資材マスターの検索・サジェスト機能
+// =========================================================
+let materialMasterCache = JSON.parse(localStorage.getItem('dx_material_master')) || [];
+
+// アプリ起動時に裏側でマスターを最新化する（現場に着く頃には最新になっています）
+function fetchMaterialMasterBg() {
+    const gasUrl = localStorage.getItem('dx_gas_url');
+    if (!gasUrl) return;
+    
+    fetch(gasUrl, {
+        method: 'POST',
+        headers: { 'Content-Type': 'text/plain' }, 
+        body: JSON.stringify({ type: "getMaterials" })
+    })
+    .then(res => res.json())
+    .then(data => {
+        if (data.result === "success" && data.data) {
+            materialMasterCache = data.data;
+            // 次回用にスマホに保存しておく
+            localStorage.setItem('dx_material_master', JSON.stringify(materialMasterCache));
+        }
+    })
+    .catch(e => console.log("マスターのバックグラウンド更新をスキップしました"));
+}
+
+// 画面読み込み時にコッソリ実行
+document.addEventListener('DOMContentLoaded', () => {
+    fetchMaterialMasterBg();
+});
+
+// 文字を打った時の検索処理
+function searchMaterial() {
+    const input = document.getElementById('log-material-search');
+    const box = document.getElementById('material-suggestions');
+    const keyword = input.value.toLowerCase().trim();
+
+    if (!keyword) {
+        box.style.display = 'none';
+        return;
+    }
+
+    // 名前かコードにキーワードが含まれるものを探す
+    const filtered = materialMasterCache.filter(m => 
+        m.name.toLowerCase().includes(keyword) || 
+        m.code.toLowerCase().includes(keyword)
+    );
+
+    if (filtered.length === 0) {
+        box.innerHTML = '<div style="padding: 12px; color: #777; font-size: 0.9rem;">見つかりません</div>';
+    } else {
+        box.innerHTML = filtered.map(m => `
+            <div style="padding: 12px; border-bottom: 1px solid #eee; cursor: pointer; display: flex; flex-direction: column;" 
+                 onclick="selectMaterial('${m.code}', '${m.name}')">
+                <span style="font-weight: bold; color: #2c3e50; font-size: 1rem;">${m.name}</span>
+                <span style="font-size: 0.75rem; color: #7f8c8d; margin-top: 2px;">${m.code}</span>
+            </div>
+        `).join('');
+    }
+    box.style.display = 'block';
+}
+
+// 候補をタップした時の処理
+function selectMaterial(code, name) {
+    document.getElementById('log-material-code').value = code;     // コードを裏にセット
+    document.getElementById('log-material-search').value = name;   // 見た目は名前にする
+    document.getElementById('material-suggestions').style.display = 'none'; // 候補を消す
+}
+
+// 画面の別の場所をタッチしたら候補を閉じる
+document.addEventListener('click', (e) => {
+    if (e.target.id !== 'log-material-search') {
+        const box = document.getElementById('material-suggestions');
+        if (box) box.style.display = 'none';
     }
 });
 </script>
