@@ -229,6 +229,51 @@
     .cam-chip.display-btn {
         background: #fff; border: 2px solid #2e7d32; color: #2e7d32; font-size: 1.1rem;
     }
+
+    /* =========================================
+   曖昧ワード選択用ポップアップ
+   ========================================= */
+#ambiguous-popup {
+  display: none;
+  position: fixed;
+  top: 0; left: 0; width: 100%; height: 100%;
+  background: rgba(0,0,0,0.6);
+  z-index: 9999;
+  justify-content: center;
+  align-items: center;
+}
+.popup-box {
+  background: #fff;
+  width: 90%;
+  max-width: 400px;
+  border-radius: 12px;
+  padding: 20px;
+  text-align: center;
+  box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+}
+.popup-title {
+  font-size: 1.1em;
+  font-weight: bold;
+  color: #333;
+  margin-bottom: 15px;
+}
+.popup-btn {
+  display: block;
+  width: 100%;
+  padding: 15px;
+  margin-bottom: 10px;
+  background: #4a90e2;
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  font-size: 1.1em;
+  font-weight: bold;
+  cursor: pointer;
+}
+.popup-btn-cancel {
+  background: #ccc;
+  color: #333;
+}
     </style>
 </head>
 <body>
@@ -356,7 +401,7 @@
     </div>
     
     <div style="margin-top:15px; display:flex; flex-direction:column; gap:10px;">
-        <button class="save-btn" onclick="saveReportLocal()" style="background:#f39c12; font-size:1rem;">💾 まずは履歴に残す</button>
+        <button class="save-btn" onclick="checkAndSubmitReport(saveReportLocal)" style="background:#f39c12; font-size:1rem;">💾 まずは履歴に残す</button>
         <div style="display:flex; gap:5px;">
             <button class="save-btn" onclick="sendReportLine()" style="flex:1; background:#00C300; font-size:0.8rem;">LINE</button>
             <button class="save-btn" onclick="sendReportMail()" style="flex:1; background:#007bff; font-size:0.8rem;">メール</button>
@@ -1847,5 +1892,108 @@ document.addEventListener('click', (e) => {
 });
 
 </script>
+
+<div id="ambiguous-popup">
+  <div class="popup-box">
+    <div id="popup-message" class="popup-title">どの作業ですか？</div>
+    <div id="popup-buttons">
+      </div>
+  </div>
+</div>
+
+<script>
+let translationDict = {};
+
+// ① アプリ起動時にGASから辞書を裏で読み込んでおく
+async function loadDictionary() {
+  try {
+    const response = await fetch("https://script.google.com/macros/s/AKfycbxUpH4otUOhFLQOQh33ai8NvSUIpIOd1_ftG9TR11bLhRGl_CYzNhAKd_iVzUpWOotbGA/exec", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ type: "getDictionary", authKey: "うっきうき" })
+    });
+    const result = await response.json();
+    if (result.result === "success") {
+      result.data.forEach(item => {
+        if (item.trigger) {
+          if (!translationDict[item.trigger]) {
+            translationDict[item.trigger] = [];
+          }
+          translationDict[item.trigger].push(item.word);
+        }
+      });
+      console.log("辞書ロード完了:", translationDict);
+    }
+  } catch (error) {
+    console.error("辞書の読み込みに失敗しました", error);
+  }
+}
+
+// 画面が読み込まれたら裏で辞書を取得
+window.addEventListener("DOMContentLoaded", loadDictionary);
+
+// ② 送信ボタン（または履歴保存ボタン）を押した時のチェック機能
+function checkAndSubmitReport(originalSubmitFunction) {
+  // tools.html のテキストエリアIDに合わせる
+  const textarea = document.getElementById("reportText");
+  const text = textarea.value;
+  const lines = text.split(/\r?\n/);
+
+  for (let i = 0; i < lines.length; i++) {
+    let line = lines[i];
+
+    for (let trigger in translationDict) {
+      if (line.includes(trigger)) {
+        const options = translationDict[trigger];
+        const hasSpecificWord = options.some(opt => line.includes(opt));
+        
+        if (!hasSpecificWord) {
+          // 曖昧ワード検知！ポップアップを表示して処理を止める
+          showPopup(trigger, options, i, lines, textarea, originalSubmitFunction);
+          return; 
+        }
+      }
+    }
+  }
+
+  // 問題なければ本来の送信（または保存）処理を実行
+  originalSubmitFunction(); 
+}
+
+// ③ ポップアップを表示して選択させる処理
+function showPopup(trigger, options, lineIndex, lines, textarea, originalSubmitFunction) {
+  const popup = document.getElementById("ambiguous-popup");
+  const btnContainer = document.getElementById("popup-buttons");
+  const msg = document.getElementById("popup-message");
+  
+  msg.innerText = `「${trigger}」はどの作業ですか？`;
+  btnContainer.innerHTML = ""; 
+
+  options.forEach(opt => {
+    const btn = document.createElement("button");
+    btn.className = "popup-btn";
+    btn.innerText = opt;
+    btn.onclick = () => {
+      lines[lineIndex] = lines[lineIndex].replace(trigger, opt);
+      textarea.value = lines.join("\n");
+      popup.style.display = "none";
+      // 修正後、もう一度チェックを走らせる（複数行ある場合のため）
+      checkAndSubmitReport(originalSubmitFunction);
+    };
+    btnContainer.appendChild(btn);
+  });
+
+  const cancelBtn = document.createElement("button");
+  cancelBtn.className = "popup-btn popup-btn-cancel";
+  cancelBtn.innerText = "キャンセルして手動で直す";
+  cancelBtn.onclick = () => {
+    popup.style.display = "none";
+  };
+  btnContainer.appendChild(cancelBtn);
+
+  popup.style.display = "flex";
+}
+</script>
+
 </body>
 </html>
