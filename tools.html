@@ -1934,6 +1934,9 @@ window.addEventListener("DOMContentLoaded", loadDictionary);
 
 // ② 送信ボタン（または履歴保存ボタン）を押した時のチェック機能
 function checkAndSubmitReport(originalSubmitFunction) {
+  
+  // ★★★ この1行を追加してテスト！ ★★★
+  alert("チェック開始！ 読み込んだ辞書の数：" + Object.keys(translationDict).length);
   // tools.html のテキストエリアIDに合わせる
   const textarea = document.getElementById("reportText");
   const text = textarea.value;
