@@ -565,76 +565,89 @@
     }
 
     function renderList() {
-        const listEl = document.getElementById('siteList');
-        const kw = document.getElementById('searchInput').value.toLowerCase();
-        listEl.innerHTML = '';
-        if (sites.length === 0) { listEl.innerHTML = '<div style="text-align:center; padding:40px; color:#888;">データがありません。<br>右下の「＋」ボタンから追加してください。</div>'; return; }
-        let displaySites = [...sites];
-        if (currentFilter !== 'all') {
-            displaySites = displaySites.filter(s => {
-                if (currentFilter === 'contract') return s.status === 'contract' || s.status === 'active';
-                if (currentFilter === 'complete') return s.status === 'complete' || s.status === 'done';
-                return s.status === currentFilter;
-            });
-            displaySites.sort((a, b) => { if (a.id < b.id) return 1; if (a.id > b.id) return -1; return 0; });
-        }
-        displaySites.forEach((site) => {
-            const originalIndex = sites.findIndex(s => s.id === site.id);
-            if (kw && !site.name.toLowerCase().includes(kw) && !site.address.toLowerCase().includes(kw) && !site.id.includes(kw)) return;
-            let stLabel = '見積中', stClass = 'st-estimate';
-            if(site.status === 'contract' || site.status === 'active') { stLabel = '契約済み'; stClass = 'st-contract'; }
-            if(site.status === 'billing') { stLabel = '請求'; stClass = 'st-billing'; }
-            if(site.status === 'complete' || site.status === 'done') { stLabel = '完了'; stClass = 'st-complete'; }
-            if(site.status === 'lost') { stLabel = '失注'; stClass = 'st-lost'; }
-            const sortButtons = (currentFilter === 'all') ? `<div class="sort-actions"><button class="btn-up" onclick="moveItem(${originalIndex},-1)">⬆️</button><button class="btn-down" onclick="moveItem(${originalIndex},1)">⬇️</button></div>` : '';
-            
-            // ★追加：親案件Noの表示ロジック
-            let caseNoHtml = `<span class="case-no">${site.id}</span>`;
-            if (site.parentCaseNo && site.parentCaseNo !== site.id) {
-                // 親案件Noがあり、かつ案件Noと違う場合のみ横に追加（見やすいように少し青色にしています）
-                caseNoHtml += `<span class="case-no" style="margin-left: 5px; background-color: #e3f2fd; color: #1565c0; border: 1px solid #bbdefb;">親: ${site.parentCaseNo}</span>`;
-            }
-
-            const html = `
-                <div class="site-card">
-                    <div class="card-header">
-                        <div>${caseNoHtml}</div>
-                        <span class="status-badge ${stClass}">${stLabel}</span>
-                    </div>
-                    <div class="site-name">${site.name}</div>
-                    <div class="site-address">📍 ${site.address}</div>
-                    <div style="font-size: 0.85rem; color: #7f8c8d; margin-top: 4px;">⏳ 工期目安: ${site.workDays || '未算出'}</div>
-                    <div class="card-actions">
-                        <div class="action-btn btn-navi-side" 
-                             onmousedown="handleTouchStart(this,'${site.id}','${site.address}')" 
-                             onmouseup="handleTouchEnd(this,'${site.id}','${site.address}')" 
-                             onmouseleave="handleTouchEnd(this,'${site.id}','${site.address}')" 
-                             ontouchstart="handleTouchStart(this,'${site.id}','${site.address}')" 
-                             ontouchend="handleTouchEnd(this,'${site.id}','${site.address}')" 
-                             ontouchcancel="handleTouchEnd(this,'${site.id}','${site.address}')" 
-                             oncontextmenu="return false;">
-                            <div class="btn-content">🚀<br><span style="font-size:0.7rem">ナビ</span></div>
-                            <div class="hold-bar"></div><div class="hold-bar-plus"></div>
-                        </div>
-                        <a href="tools.html?id=${site.id}" class="action-btn btn-center"><div class="btn-content">🧰<br><span style="font-size:0.7rem">ツール</span></div></a>
-                        <div class="navi-wrapper"><span class="navi-count-label">${site.naviCount||0}回</span>
-                        <a href="https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(site.address)}" target="_blank" class="action-btn btn-navi-side" 
-                           onclick="return handleRightClick(event, '${site.id}')"
-                           onmousedown="handleRightStart(this, '${site.id}')" 
-                           onmouseup="handleRightEnd(this)" 
-                           onmouseleave="handleRightEnd(this)" 
-                           ontouchstart="handleRightStart(this, '${site.id}')" 
-                           ontouchend="handleRightEnd(this)" 
-                           ontouchcancel="handleRightEnd(this)" 
-                           oncontextmenu="return false;">
-                           <div class="btn-content">🚀<br><span style="font-size:0.7rem">ナビ</span></div>
-                        </a></div>
-                    </div>
-                    ${sortButtons}
-                </div>`;
-            listEl.insertAdjacentHTML('beforeend', html);
+    const listEl = document.getElementById('siteList');
+    const kw = document.getElementById('searchInput').value.toLowerCase();
+    listEl.innerHTML = '';
+    if (sites.length === 0) { listEl.innerHTML = '<div style="text-align:center; padding:40px; color:#888;">データがありません。<br>右下の「＋」ボタンから追加してください。</div>'; return; }
+    
+    let displaySites = [...sites];
+    if (currentFilter !== 'all') {
+        displaySites = displaySites.filter(s => {
+            if (currentFilter === 'contract') return s.status === 'contract' || s.status === 'active';
+            if (currentFilter === 'complete') return s.status === 'complete' || s.status === 'done';
+            return s.status === currentFilter;
         });
+        displaySites.sort((a, b) => { if (a.id < b.id) return 1; if (a.id > b.id) return -1; return 0; });
     }
+    
+    displaySites.forEach((site) => {
+        const originalIndex = sites.findIndex(s => s.id === site.id);
+        if (kw && !site.name.toLowerCase().includes(kw) && !site.address.toLowerCase().includes(kw) && !site.id.includes(kw)) return;
+        
+        let stLabel = '見積中', stClass = 'st-estimate';
+        if(site.status === 'contract' || site.status === 'active') { stLabel = '契約済み'; stClass = 'st-contract'; }
+        if(site.status === 'billing') { stLabel = '請求'; stClass = 'st-billing'; }
+        if(site.status === 'complete' || site.status === 'done') { stLabel = '完了'; stClass = 'st-complete'; }
+        if(site.status === 'lost') { stLabel = '失注'; stClass = 'st-lost'; }
+        
+        const sortButtons = (currentFilter === 'all') ? `<div class="sort-actions"><button class="btn-up" onclick="moveItem(${originalIndex},-1)">⬆️</button><button class="btn-down" onclick="moveItem(${originalIndex},1)">⬇️</button></div>` : '';
+        
+        // --- 1. 親案件Noの表示ロジック ---
+        let caseNoHtml = `<span class="case-no">${site.id}</span>`;
+        if (site.parentCaseNo && site.parentCaseNo !== site.id) {
+            caseNoHtml += `<span class="case-no" style="margin-left: 5px; background-color: #e3f2fd; color: #1565c0; border: 1px solid #bbdefb;">親: ${site.parentCaseNo}</span>`;
+        }
+
+        // --- 2. 元請け名バッジの生成ロジック ---
+        let customerBadge = "";
+        if (site.customerName) {
+            // ㈱や㈲を消してスッキリさせる
+            let cleanName = site.customerName.replace(/[㈱㈲]/g, "").trim();
+            customerBadge = `<span style="margin-left:8px; background-color:#e0f2f1; color:#00695c; font-size:0.75rem; padding:1px 6px; border-radius:4px; border:1px solid #b2dfdb; vertical-align:middle;">${cleanName}</span>`;
+        }
+
+        const html = `
+            <div class="site-card">
+                <div class="card-header">
+                    <div>${caseNoHtml}</div>
+                    <span class="status-badge ${stClass}">${stLabel}</span>
+                </div>
+                <div class="site-name">${site.name}</div>
+                <div class="site-address">📍 ${site.address}</div>
+                <div style="font-size: 0.85rem; color: #7f8c8d; margin-top: 4px; display: flex; align-items: center;">
+                    ⏳ 工期目安: ${site.workDays || '未算出'}
+                    ${customerBadge}
+                </div>
+                <div class="card-actions">
+                    <div class="action-btn btn-navi-side" 
+                         onmousedown="handleTouchStart(this,'${site.id}','${site.address}')" 
+                         onmouseup="handleTouchEnd(this,'${site.id}','${site.address}')" 
+                         onmouseleave="handleTouchEnd(this,'${site.id}','${site.address}')" 
+                         ontouchstart="handleTouchStart(this,'${site.id}','${site.address}')" 
+                         ontouchend="handleTouchEnd(this,'${site.id}','${site.address}')" 
+                         ontouchcancel="handleTouchEnd(this,'${site.id}','${site.address}')" 
+                         oncontextmenu="return false;">
+                        <div class="btn-content">🚀<br><span style="font-size:0.7rem">ナビ</span></div>
+                    </div>
+                    <a href="tools.html?id=${site.id}" class="action-btn btn-center"><div class="btn-content">🧰<br><span style="font-size:0.7rem">ツール</span></div></a>
+                    <div class="navi-wrapper"><span class="navi-count-label">${site.naviCount||0}回</span>
+                    <a href="https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(site.address)}" target="_blank" class="action-btn btn-navi-side" 
+                       onclick="return handleRightClick(event, '${site.id}')"
+                       onmousedown="handleRightStart(this, '${site.id}')" 
+                       onmouseup="handleRightEnd(this)" 
+                       onmouseleave="handleRightEnd(this)" 
+                       ontouchstart="handleRightStart(this, '${site.id}')" 
+                       ontouchend="handleRightEnd(this)" 
+                       ontouchcancel="handleRightEnd(this)" 
+                       oncontextmenu="return false;">
+                       <div class="btn-content">🚀<br><span style="font-size:0.7rem">ナビ</span></div>
+                    </a></div>
+                </div>
+                ${sortButtons}
+            </div>`;
+        listEl.insertAdjacentHTML('beforeend', html);
+    });
+}
     function moveItem(index, direction) {
         if(currentFilter !== 'all') return;
         if ((direction === -1 && index > 0) || (direction === 1 && index < sites.length - 1)) {
