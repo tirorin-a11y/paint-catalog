@@ -1957,36 +1957,47 @@ async function loadDictionary() {
 // 画面が読み込まれたら裏で辞書を取得
 window.addEventListener("DOMContentLoaded", loadDictionary);
 
-// ② 送信ボタン（または履歴保存ボタン）を押した時のチェック機能
+// ② 送信ボタンを押した時のチェック機能（連鎖バグ防止版）
 function checkAndSubmitReport(originalSubmitFunction) {
-      // tools.html のテキストエリアIDに合わせる
   const textarea = document.getElementById("reportText");
-  const text = textarea.value;
-  const lines = text.split(/\r?\n/);
+  const lines = textarea.value.split(/\r?\n/);
+
+  // ★追加：すべての「正式な言葉（A列）」を文字数が長い順に並べたリストを作る
+  let allValidWords = [...new Set(Object.values(translationDict).flat())];
+  allValidWords.sort((a, b) => b.length - a.length);
 
   for (let i = 0; i < lines.length; i++) {
-    let line = lines[i];
+    let originalLine = lines[i];
+    let lineForCheck = originalLine;
 
+    // ★追加：すでに完成している「正式な言葉」をチェック対象から黒塗りで隠す
+    allValidWords.forEach(word => {
+      if (lineForCheck.includes(word)) {
+        // 例：「プレミアムシリコン」を「■■■■■■■■」に置き換えて隠す
+        lineForCheck = lineForCheck.split(word).join("■".repeat(word.length));
+      }
+    });
+
+    // 隠し終わった後のテキストで、トリガーワードを探す
     for (let trigger in translationDict) {
-      if (line.includes(trigger)) {
+      let triggerIndex = lineForCheck.indexOf(trigger);
+      if (triggerIndex !== -1) {
+        // マスキングされた状態で見つかった ＝ まだ未完成の曖昧ワード！
         const options = translationDict[trigger];
-        const hasSpecificWord = options.some(opt => line.includes(opt));
         
-        if (!hasSpecificWord) {
-          // 曖昧ワード検知！ポップアップを表示して処理を止める
-          showPopup(trigger, options, i, lines, textarea, originalSubmitFunction);
-          return; 
-        }
+        // ★修正：トリガーが見つかった正確な位置（triggerIndex）も一緒に渡す
+        showPopup(trigger, options, i, lines, textarea, originalSubmitFunction, triggerIndex);
+        return; 
       }
     }
   }
 
-  // 問題なければ本来の送信（または保存）処理を実行
+  // 問題なければ本来の送信処理を実行
   originalSubmitFunction(); 
 }
 
 // ③ ポップアップを表示して選択させる処理
-function showPopup(trigger, options, lineIndex, lines, textarea, originalSubmitFunction) {
+function showPopup(trigger, options, lineIndex, lines, textarea, originalSubmitFunction, triggerIndex) {
   const popup = document.getElementById("ambiguous-popup");
   const btnContainer = document.getElementById("popup-buttons");
   const msg = document.getElementById("popup-message");
@@ -1994,7 +2005,7 @@ function showPopup(trigger, options, lineIndex, lines, textarea, originalSubmitF
   msg.innerText = `「${trigger}」はどの作業ですか？`;
   btnContainer.innerHTML = ""; 
 
-  let selectedOption = null; // ★今どれが選ばれているかを記憶する
+  let selectedOption = null;
 
   // 1. 選択肢ボタンを生成
   options.forEach(opt => {
@@ -2002,15 +2013,10 @@ function showPopup(trigger, options, lineIndex, lines, textarea, originalSubmitF
     btn.className = "popup-btn";
     btn.innerText = opt;
     btn.onclick = () => {
-      // 一旦すべてのボタンから「選択中」の色を外す
       const allBtns = btnContainer.querySelectorAll(".popup-btn");
       allBtns.forEach(b => b.classList.remove("selected"));
-      
-      // 押されたボタンだけ「選択中」の色にする
       btn.classList.add("selected");
       selectedOption = opt;
-      
-      // 確定ボタンを押せるようにする
       confirmBtn.disabled = false;
     };
     btnContainer.appendChild(btn);
@@ -2020,14 +2026,17 @@ function showPopup(trigger, options, lineIndex, lines, textarea, originalSubmitF
   const confirmBtn = document.createElement("button");
   confirmBtn.className = "popup-btn popup-btn-confirm";
   confirmBtn.innerText = "✅ 確定して進む";
-  confirmBtn.disabled = true; // 最初は選ばれていないので押せない
+  confirmBtn.disabled = true;
   confirmBtn.onclick = () => {
-    if (!selectedOption) return; // 念のためチェック
+    if (!selectedOption) return; 
     
-    // 選ばれた言葉で書き換えて送信！
-    lines[lineIndex] = lines[lineIndex].replace(trigger, selectedOption);
+    // ★修正：最初の文字ではなく、「見つかった正確な位置」の文字だけを置き換える
+    let currentLine = lines[lineIndex];
+    lines[lineIndex] = currentLine.substring(0, triggerIndex) + selectedOption + currentLine.substring(triggerIndex + trigger.length);
+    
     textarea.value = lines.join("\n");
     popup.style.display = "none";
+    // 修正後、もう一度チェックを走らせる
     checkAndSubmitReport(originalSubmitFunction);
   };
   btnContainer.appendChild(confirmBtn);
