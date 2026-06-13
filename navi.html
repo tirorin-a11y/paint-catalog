@@ -615,8 +615,8 @@
                 <div class="site-name">${site.name}</div>
                 <div class="site-address">📍 ${site.address}</div>
                 <div style="font-size: 0.85rem; color: #7f8c8d; margin-top: 4px; display: flex; align-items: center;">
-                    ⏳ 工期目安: ${site.workDays || '未算出'}
-                    ${customerBadge}
+                ⏳ 工期目安: <span style="margin-left: 4px; margin-right: 8px;">${site.workDays ? site.workDays : `<span style="color: #2980b9; text-decoration: underline; cursor: pointer;" onclick="event.stopPropagation(); inputGencho('${site.id}')">未算出</span>`}</span>
+                ${customerBadge}
                 </div>
                 <div class="card-actions">
                     <div class="action-btn btn-navi-side" 
@@ -648,7 +648,31 @@
         listEl.insertAdjacentHTML('beforeend', html);
     });
 }
-    function moveItem(index, direction) {
+
+// ★新規追加：未算出をタップしたときに現調日時を手打ちする魔法
+function inputGencho(siteId) {
+    const val = prompt("現調の日付と時刻を入力してください\n(例: 7/15 10:00)");
+    if (val === null) return; // キャンセルされた場合は何もしない
+    
+    // アプリ内の現場データを検索
+    const site = sites.find(s => s.id === siteId);
+    if (site) {
+        // 入力があれば「現調 」を頭につけて保存、空欄なら元に戻す
+        site.workDays = val ? "現調 " + val : "";
+        
+        // アプリのローカルストレージに記憶
+        localStorage.setItem('dx_sites', JSON.stringify(sites));
+        
+        // 画面を再描画して文字を切り替える
+        renderList();
+        
+        // 通知を出す
+        if (typeof showNotification === 'function') {
+            showNotification('📝 現調予定を記録しました');
+        }
+    }
+}
+function moveItem(index, direction) {
         if(currentFilter !== 'all') return;
         if ((direction === -1 && index > 0) || (direction === 1 && index < sites.length - 1)) {
             [sites[index], sites[index + direction]] = [sites[index + direction], sites[index]];
