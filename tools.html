@@ -425,11 +425,19 @@
         <button class="mic-btn" id="micBtn" onclick="toggleSpeech()">🎤</button>
     </div>
     
-    <div style="margin-top:15px; display:flex; flex-direction:column; gap:10px;">
-        <button class="save-btn" onclick="checkAndSubmitReport(saveReportLocal)" style="background:#f39c12; font-size:1rem;">💾 まずは履歴に残す</button>
-        <div style="display:flex; gap:5px;">
-            <button class="save-btn" onclick="sendReportLine()" style="flex:1; background:#00C300; font-size:0.8rem;">LINE</button>
-            <button class="save-btn" onclick="sendReportMail()" style="flex:1; background:#007bff; font-size:0.8rem;">メール</button>
+    <div style="margin-top:15px; display:flex; flex-direction:column; gap:8px;">
+        <div style="display:flex; gap:8px;">
+            <select id="reportType" style="flex:1; padding: 10px; border-radius: 6px; border: 1px solid #ccc; font-size: 0.9rem; background: white; color: #333;">
+                <option value="通常">🟢 通常</option>
+                <option value="補修">🟡 補修・手直し</option>
+                <option value="クレーム">🔴 トラブル・クレーム</option>
+            </select>
+            <button class="save-btn" onclick="checkAndSubmitReport(saveReportLocal)" style="flex:1; margin: 0; padding: 10px; background:#f39c12; font-size:0.9rem;">💾 履歴に保存</button>
+        </div>
+        
+        <div style="display:flex; gap:8px;">
+            <button class="save-btn" onclick="sendReportLine()" style="flex:1; margin: 0; padding: 10px; background:#00C300; font-size:0.9rem;">LINE</button>
+            <button class="save-btn" onclick="sendReportMail()" style="flex:1; margin: 0; padding: 10px; background:#007bff; font-size:0.9rem;">メール</button>
         </div>
     </div>
 
@@ -582,6 +590,8 @@
     /* --- 日報機能 --- */
     function saveReportLocal() { 
         const text = document.getElementById('reportText').value; 
+        const rType = document.getElementById('reportType').value; // ★追加：ドロップダウンの値を取得
+        
         if(!text) { alert('日報の内容が空です'); return; }
         const targetId = siteId || 'preview';
         if (!reportHistory[targetId]) { reportHistory[targetId] = []; } 
@@ -590,11 +600,14 @@
             date: now.toLocaleString(), 
             timestamp: now.getTime(),   
             content: text,
+            reportType: rType, // ★追加：履歴データに種別を記録
             submitted: false            
         }); 
         localStorage.setItem('dx_reports', JSON.stringify(reportHistory)); 
         renderReportHistory(); 
         document.getElementById('reportText').value = ''; 
+        // 連続投稿に備えてドロップダウンは「通常」に戻しておく（お好みで外してもOKです）
+        document.getElementById('reportType').value = '通常'; 
         alert('履歴に保存しました'); 
     }
     
@@ -603,10 +616,24 @@
         listEl.innerHTML = ''; 
         const targetId = siteId || 'preview';
         if (!reportHistory[targetId] || reportHistory[targetId].length === 0) { listEl.innerHTML = '<div style="color:#777; font-size:0.8rem; text-align:center; padding:10px;">履歴はありません</div>'; return; } 
+        
         reportHistory[targetId].forEach((item, index) => { 
             let btnText = "📤 クラウドへ提出"; let btnStyle = "";
             if (item.submitted) { btnText = "✅ 提出済み"; btnStyle = "background: #27ae60 !important; color: white !important; border-color: #27ae60 !important; cursor: default;"; }
-            const html = `<div class="history-card"><div class="history-header"><span class="history-date">📅 ${item.date}</span></div><div class="history-content">${item.content}</div><div class="history-actions"><button class="btn-resend" style="${btnStyle}" onclick="resendReport(${index})">${btnText}</button><button class="btn-delete-hist" onclick="deleteReport(${index})">削除</button></div></div>`;
+            
+            // ★追加：種別に応じてカラフルなバッジ（ラベル）を作成
+            let typeBadge = "";
+            const currentType = item.reportType || "通常"; // 過去のデータ用フォールバック
+            if (currentType === "クレーム") {
+                typeBadge = `<span style="background:#e74c3c; color:white; padding:2px 6px; border-radius:4px; font-size:0.75rem; margin-left:8px;">🔴 クレーム</span>`;
+            } else if (currentType === "補修") {
+                typeBadge = `<span style="background:#f1c40f; color:black; padding:2px 6px; border-radius:4px; font-size:0.75rem; margin-left:8px;">🟡 補修</span>`;
+            } else {
+                typeBadge = `<span style="background:#2ecc71; color:white; padding:2px 6px; border-radius:4px; font-size:0.75rem; margin-left:8px;">🟢 通常</span>`;
+            }
+
+            // ★修正：日付の横に typeBadge を追加
+            const html = `<div class="history-card"><div class="history-header"><span class="history-date">📅 ${item.date}${typeBadge}</span></div><div class="history-content">${item.content}</div><div class="history-actions"><button class="btn-resend" style="${btnStyle}" onclick="resendReport(${index})">${btnText}</button><button class="btn-delete-hist" onclick="deleteReport(${index})">削除</button></div></div>`;
             listEl.insertAdjacentHTML('beforeend', html); 
         }); 
     }
@@ -621,25 +648,62 @@
         if (!gasUrl) { alert("【設定エラー】\nナビ画面の設定から「GAS URL」を登録してください。"); return; }
         
         const reporterName = localStorage.getItem('dx_reporter_name') || "職人";
-        const btn = event.target; const originalText = btn.innerHTML; btn.innerHTML = "⏳ 送信中..."; btn.disabled = true;
+        const btn = event.target; 
+        const originalText = btn.innerHTML; 
         
-        // ★修正箇所：timestampの後ろにカンマ「,」を追加しました
+        // 画面の見た目を先に変える
+        btn.innerHTML = "⏳ 送信中..."; 
+        btn.disabled = true;
+        
         const sendData = { 
             type: "report", 
             id: currentSite ? currentSite.id : "", 
             siteName: currentSite ? currentSite.name : "未定", 
             address: currentSite ? currentSite.address : "", 
             reporter: reporterName, 
+            reportType: item.reportType || "通常",
             content: item.content, 
-            timestamp: item.timestamp || new Date(item.date).getTime(), // ←ここにカンマが必要でした
+            timestamp: item.timestamp || new Date(item.date).getTime(),
             authKey: localStorage.getItem('dx_auth_key') || "" 
         };
 
+        // =========================================================
+        // ★魔法①：画面を離れても状態が維持されるよう、先に「提出済み」としてスマホに記憶させる（先行保存）
+        // =========================================================
+        reportHistory[targetId][index].submitted = true;
+        localStorage.setItem('dx_reports', JSON.stringify(reportHistory));
+        renderReportHistory(); // 画面を「✅ 提出済み」に即座に更新
+
         try {
-            const response = await fetch(gasUrl, { method: 'POST', headers: { 'Content-Type': 'text/plain' }, body: JSON.stringify(sendData) });
-            const resText = await response.text(); const resJson = JSON.parse(resText);
-            if (resJson.result === "success") { alert("✅ 提出完了！"); reportHistory[targetId][index].submitted = true; localStorage.setItem('dx_reports', JSON.stringify(reportHistory)); renderReportHistory(); } else { throw new Error("サーバーエラー"); }
-        } catch(e) { alert("送信失敗: " + e); btn.innerHTML = originalText; btn.disabled = false; }
+            // =========================================================
+            // ★魔法②：keepalive: true を追加し、ページ遷移後もバックグラウンドで通信を完遂させる
+            // =========================================================
+            const response = await fetch(gasUrl, { 
+                method: 'POST', 
+                headers: { 'Content-Type': 'text/plain' }, 
+                keepalive: true, // ←ここが最大のポイント！
+                body: JSON.stringify(sendData) 
+            });
+            
+            const resText = await response.text(); 
+            const resJson = JSON.parse(resText);
+            
+            if (resJson.result === "success") { 
+                // ページに残っていれば完了アラートを出す（遷移していればそのまま無視される）
+                alert("✅ 提出完了！"); 
+            } else { 
+                throw new Error("サーバーエラー"); 
+            }
+            
+        } catch(e) { 
+            // 万が一通信エラーが起きた場合で、かつページにまだ留まっていたら「未提出」に戻す
+            reportHistory[targetId][index].submitted = false;
+            localStorage.setItem('dx_reports', JSON.stringify(reportHistory));
+            renderReportHistory();
+            alert("送信失敗: " + e); 
+            btn.innerHTML = originalText; 
+            btn.disabled = false; 
+        }
     }
 
     function deleteReport(index) {
