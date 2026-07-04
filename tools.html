@@ -706,14 +706,66 @@
         }
     }
 
-    function deleteReport(index) {
-        if(!confirm("この履歴を削除しますか？")) return;
+async function deleteReport(index) {
         const targetId = siteId || 'preview';
-        reportHistory[targetId].splice(index, 1);
-        localStorage.setItem('dx_reports', JSON.stringify(reportHistory));
-        renderReportHistory();
-    }
+        const item = reportHistory[targetId][index];
+        if (!item) return;
 
+        // -------------------------------------------------------------
+        // ★パターンA：まだ提出していない場合（誤タップなど）
+        // -------------------------------------------------------------
+        if (!item.submitted) {
+            if(!confirm("この未提出の履歴を削除しますか？")) return;
+            reportHistory[targetId].splice(index, 1);
+            localStorage.setItem('dx_reports', JSON.stringify(reportHistory));
+            renderReportHistory();
+            return;
+        }
+
+        // -------------------------------------------------------------
+        // ★パターンB：すでに提出済みの場合（クラウド側も連動して取り消す）
+        // -------------------------------------------------------------
+        if(!confirm("⚠️この日報はすでにクラウドへ提出済みです。\nスプレッドシートのデータを『取消』に書き換えますか？")) return;
+
+        const gasUrl = localStorage.getItem('dx_gas_url');
+        if (!gasUrl) { alert("【設定エラー】\nナビ画面の設定から「GAS URL」を登録してください。"); return; }
+
+        const btn = event.target;
+        const originalText = btn.innerHTML;
+        btn.innerHTML = "⏳ 取消中...";
+        btn.disabled = true;
+
+        const sendData = {
+            type: "cancel_report",
+            id: currentSite ? currentSite.id : "",
+            timestamp: item.timestamp || new Date(item.date).getTime(),
+            authKey: localStorage.getItem('dx_auth_key') || ""
+        };
+
+        try {
+            const response = await fetch(gasUrl, {
+                method: 'POST',
+                headers: { 'Content-Type': 'text/plain' },
+                keepalive: true, // ページを閉じても確実に完遂させる
+                body: JSON.stringify(sendData)
+            });
+            const resText = await response.text();
+            const resJson = JSON.parse(resText);
+
+            if (resJson.result === "success") {
+                alert("🗑️ クラウドデータを『取消』に更新し、履歴から削除しました。");
+                reportHistory[targetId].splice(index, 1);
+                localStorage.setItem('dx_reports', JSON.stringify(reportHistory));
+                renderReportHistory();
+            } else {
+                throw new Error("サーバーエラー");
+            }
+        } catch(e) {
+            alert("通信失敗（データは削除されませんでした）: " + e);
+            btn.innerHTML = originalText;
+            btn.disabled = false;
+        }
+    }
     /* --- その他ツール --- */
     function handleCalendarAction() { const calId = localStorage.getItem('dx_calendar_id'); if (calId && calId.trim() !== "") openModal('calSelect'); else openPersonalCalendar(); }
     function openPersonalCalendar() { let stLabel = '現調予定'; if(currentSite && (currentSite.status === 'contract' || currentSite.status === 'active')) stLabel = '施工中'; const text = encodeURIComponent(`【${stLabel}】${currentSite?currentSite.name:''}`); const location = encodeURIComponent(currentSite?currentSite.address:''); const url = `https://www.google.com/calendar/render?action=TEMPLATE&text=${text}&location=${location}`; window.open(url, '_blank'); closeAllModals(); }
