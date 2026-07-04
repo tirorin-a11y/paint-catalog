@@ -443,6 +443,9 @@
 
     <div style="margin-top:15px;">
         <label style="margin:0; font-size:0.85rem; border-bottom:2px solid #ddd; padding-bottom:5px;">📜 履歴 (この現場のみ)</label>
+        <button id="btnSyncHistory" onclick="syncReportHistory()" style="margin-bottom: 15px; width: 100%; padding: 10px; background: #3498db; color: white; border: none; border-radius: 6px; font-weight: bold; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+    🔄 クラウドから履歴を同期
+</button>
         <div id="reportHistoryList" class="history-list"></div>
     </div>
     
@@ -637,6 +640,51 @@
             listEl.insertAdjacentHTML('beforeend', html); 
         }); 
     }
+
+// --- クラウドから履歴を同期する機能 ---
+    async function syncReportHistory() {
+        const targetId = siteId || 'preview';
+        if (!currentSite || !currentSite.id) {
+            alert("案件情報がありません。");
+            return;
+        }
+
+        const gasUrl = localStorage.getItem('dx_gas_url');
+        if (!gasUrl) { alert("【設定エラー】GAS URLが登録されていません。"); return; }
+
+        const btn = document.getElementById('btnSyncHistory');
+        if (btn) { btn.innerHTML = "⏳ 同期中..."; btn.disabled = true; }
+
+        const sendData = {
+            type: "fetch_reports",
+            id: currentSite.id,
+            authKey: localStorage.getItem('dx_auth_key') || ""
+        };
+
+        try {
+            const response = await fetch(gasUrl, { 
+                method: 'POST', 
+                headers: { 'Content-Type': 'text/plain' }, 
+                body: JSON.stringify(sendData) 
+            });
+            const resText = await response.text();
+            const resJson = JSON.parse(resText);
+
+            if (resJson.result === "success") {
+                // 取得した最新データで、スマホのローカル履歴を上書きする
+                reportHistory[targetId] = resJson.data;
+                localStorage.setItem('dx_reports', JSON.stringify(reportHistory));
+                renderReportHistory();
+            } else {
+                throw new Error("サーバーエラー");
+            }
+        } catch(e) {
+            alert("同期失敗: " + e);
+        } finally {
+            if (btn) { btn.innerHTML = "🔄 クラウドから履歴を同期"; btn.disabled = false; }
+        }
+    }
+
 
     async function resendReport(index) {
         const targetId = siteId || 'preview';
