@@ -452,48 +452,93 @@
     <button class="btn-close" onclick="closeAllModals()">閉じる</button>
 </div>
 
-<div id="materialModal" class="modal-box" style="background:#f4f9f4;">
-    <h3 style="margin-top:0;">📦 資材・実績の記録</h3>
-    
-    <label style="margin-top:0;">🔍 資材検索 (名前かコードを入力):</label>
-    <div style="position: relative; margin-bottom: 10px;">
-        <input type="text" id="log-material-search" placeholder="例: ビーズ" style="width: 100%; padding: 12px; box-sizing: border-box; border: 1px solid #ccc; border-radius: 6px;" oninput="searchMaterial()" onfocus="searchMaterial()">
-        <div id="material-suggestions" style="position: absolute; top: 100%; left: 0; right: 0; background: white; border: 1px solid #ccc; border-top: none; max-height: 180px; overflow-y: auto; z-index: 200; display: none; box-shadow: 0 4px 6px rgba(0,0,0,0.1);"></div>
-    </div>
-    
-    <label style="margin-top:0; font-size: 0.9rem; color: #555;">資材コード (自動入力):</label>
-    <input type="text" id="log-material-code" placeholder="上の検索から選んでください" style="width: 100%; margin-bottom: 15px; background-color: #e0e0e0; color: #555;" readonly>
-    <label>現場総使用量 (kg/L/本):</label>
-    <input type="number" id="log-total-usage" placeholder="例: 10" style="width: 100%; margin-bottom: 15px;" step="0.1">
+<style>
+    /* スマホで押しやすいモダンなトグルボタンのCSS */
+    .mode-switch {
+        display: flex;
+        background: #e0e0e0;
+        border-radius: 8px;
+        overflow: hidden;
+        margin-bottom: 15px;
+    }
+    .mode-switch input[type="radio"] {
+        display: none;
+    }
+    .mode-switch label {
+        flex: 1;
+        text-align: center;
+        padding: 12px 5px;
+        font-size: 0.9rem;
+        font-weight: bold;
+        color: #666;
+        cursor: pointer;
+        transition: background 0.2s, color 0.2s;
+        margin: 0;
+        border-right: 1px solid #ccc;
+    }
+    .mode-switch label:last-child {
+        border-right: none;
+    }
+    .mode-switch input[type="radio"]:checked + label {
+        background: #2e7d32;
+        color: white;
+    }
+    .input-group { margin-bottom: 15px; }
+</style>
 
-    <div style="margin-bottom: 15px; display: flex; flex-direction: column; gap: 8px;">
-        <label style="margin:0; font-weight:normal; cursor:pointer;">
-            <input type="radio" name="inputMode" value="direct" checked onchange="toggleInputMode()"> 🅰️ 直入力（外壁・屋根など）
-        </label>
-        <label style="margin:0; font-weight:normal; cursor:pointer;">
-            <input type="radio" name="inputMode" value="dimension" onchange="toggleInputMode()"> 🅱️ 寸法入力（木部・役物など）
-        </label>
+<div id="materialModal" class="modal-box" style="background:#ffffff; padding: 20px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.2);">
+    <h3 style="margin-top:0; color: #2e7d32; border-bottom: 2px solid #e8f5e9; padding-bottom: 10px;">📦 資材・実績の記録</h3>
+
+    <div class="mode-switch">
+        <input type="radio" name="inputMode" id="mode-direct" value="direct" checked onchange="toggleInputMode()">
+        <label for="mode-direct">🅰️ 面積</label>
+
+        <input type="radio" name="inputMode" id="mode-dimension" value="dimension" onchange="toggleInputMode()">
+        <label for="mode-dimension">🅱️ 寸法</label>
+
+        <input type="radio" name="inputMode" id="mode-caulking" value="caulking" onchange="toggleInputMode()">
+        <label for="mode-caulking">🅲 コーキング</label>
     </div>
 
-    <div id="area-direct" style="background: #ffffff; padding: 10px; border-radius: 8px; border: 1px solid #ddd;">
-        <label style="margin-top:0;">直入力面積 (㎡):</label>
-        <input type="number" id="log-direct-area" placeholder="例: 120" style="width: 100%;" step="0.1">
-    </div>
-
-    <div id="area-dimension" style="display: none; background: #eef7e6; padding: 10px; border-radius: 8px; border: 1px solid #c5e1a5;">
-        <div style="display: flex; gap: 5px; margin-bottom: 10px;">
-            <div style="flex: 1;"><label style="margin-top:0; font-size:0.8rem;">厚み(mm)</label><input type="number" id="log-thickness" style="width: 100%;"></div>
-            <div style="flex: 1;"><label style="margin-top:0; font-size:0.8rem;">幅(mm)</label><input type="number" id="log-width" style="width: 100%;"></div>
-            <div style="flex: 1;"><label style="margin-top:0; font-size:0.8rem;">長さ(mm)</label><input type="number" id="log-length" style="width: 100%;"></div>
+    <div class="input-group">
+        <label style="font-weight: bold; color: #444; font-size: 0.9rem;">🔍 使用資材 (検索):</label>
+        <div style="position: relative;">
+            <input type="text" id="log-material-search" placeholder="例: ペンギンシール、シリコン" style="width: 100%; padding: 12px; border: 1px solid #ccc; border-radius: 6px; font-size: 1rem;" oninput="searchMaterial()" onfocus="searchMaterial()">
+            <div id="material-suggestions" style="position: absolute; top: 100%; left: 0; right: 0; background: white; border: 1px solid #ccc; max-height: 180px; overflow-y: auto; z-index: 200; display: none; box-shadow: 0 4px 6px rgba(0,0,0,0.1); border-radius: 0 0 6px 6px;"></div>
         </div>
-        <label style="margin-top:0;">数量 (本/枚):</label>
-        <input type="number" id="log-quantity" placeholder="例: 12" style="width: 100%;">
+        <input type="text" id="log-material-code" placeholder="資材コード (自動)" style="width: 100%; margin-top: 5px; padding: 8px; background-color: #f5f5f5; border: 1px solid #e0e0e0; border-radius: 6px; color: #777; font-size: 0.85rem;" readonly>
     </div>
 
-    <button class="save-btn" onclick="submitMaterialLog(event)" style="background-color: #2e7d32; margin-top: 20px; font-size: 1.1rem;">
+    <div class="input-group" style="background: #f1f8e9; padding: 12px; border-radius: 8px; border: 1px solid #c5e1a5;">
+        <label id="label-total-usage" style="font-weight: bold; color: #2e7d32; font-size: 0.95rem; display: block; margin-bottom: 5px;">現場総使用量 (kg / 缶):</label>
+        <input type="number" id="log-total-usage" placeholder="例: 10" style="width: 100%; padding: 12px; font-size: 1.1rem; font-weight: bold; border: 1px solid #ccc; border-radius: 6px;" step="0.1">
+    </div>
+
+    <div id="area-direct" class="input-group" style="padding: 10px; border-radius: 8px; border: 1px dashed #bbb;">
+        <label style="font-size: 0.9rem; color: #555; display: block; margin-bottom: 5px;">直入力面積 (㎡):</label>
+        <input type="number" id="log-direct-area" placeholder="例: 120" style="width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 6px;" step="0.1">
+    </div>
+
+    <div id="area-dimension" class="input-group" style="display: none; padding: 10px; border-radius: 8px; border: 1px dashed #bbb;">
+        <div style="display: flex; gap: 8px; margin-bottom: 10px;">
+            <div style="flex: 1;"><label style="font-size:0.8rem; color: #555;">厚み(mm)</label><input type="number" id="log-thickness" style="width: 100%; padding: 8px; border: 1px solid #ccc; border-radius: 6px;"></div>
+            <div style="flex: 1;"><label style="font-size:0.8rem; color: #555;">幅(mm)</label><input type="number" id="log-width" style="width: 100%; padding: 8px; border: 1px solid #ccc; border-radius: 6px;"></div>
+            <div style="flex: 1;"><label style="font-size:0.8rem; color: #555;">長さ(mm)</label><input type="number" id="log-length" style="width: 100%; padding: 8px; border: 1px solid #ccc; border-radius: 6px;"></div>
+        </div>
+        <label style="font-size: 0.9rem; color: #555; display: block; margin-bottom: 5px;">数量 (本/枚):</label>
+        <input type="number" id="log-quantity" placeholder="例: 12" style="width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 6px;">
+    </div>
+    
+    <div id="area-caulking" class="input-group" style="display: none; padding: 10px; text-align: center; background: #e3f2fd; border-radius: 8px; border: 1px solid #90caf9;">
+        <p style="margin: 0; font-size: 0.85rem; color: #1565c0;">ℹ️ コーキングは資材を検索し、<br>上の入力欄に「総本数」を入力して送信してください。</p>
+    </div>
+
+    <button class="save-btn" onclick="submitMaterialLog(event)" style="background-color: #2e7d32; color: white; width: 100%; padding: 15px; border: none; border-radius: 8px; margin-top: 10px; font-size: 1.1rem; font-weight: bold; cursor: pointer; box-shadow: 0 4px 6px rgba(46, 125, 50, 0.3);">
         📤 実績を送信する
     </button>
-    <button class="btn-close" onclick="closeAllModals()" style="margin-top: 10px;">閉じる</button>
+    <button class="btn-close" onclick="closeAllModals()" style="background-color: transparent; color: #777; width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 8px; margin-top: 10px; cursor: pointer;">
+        キャンセル
+    </button>
 </div>
 
 <div id="calSelectModal" class="modal-box" style="text-align:center;">
@@ -1923,18 +1968,33 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 });
 
-// --- ★新規追加：資材・実績入力システム用関数 ---
+// =========================================================
+// ■ 入力フォームの動的切り替え（3モード対応・ラベル連動）
+// =========================================================
 function toggleInputMode() {
     const mode = document.querySelector('input[name="inputMode"]:checked').value;
+    const labelUsage = document.getElementById('label-total-usage');
+    
+    // 一旦すべての個別エリアを隠す
+    document.getElementById('area-direct').style.display = 'none';
+    document.getElementById('area-dimension').style.display = 'none';
+    document.getElementById('area-caulking').style.display = 'none';
+
+    // 選択されたモードに応じてエリアを表示＆単位ラベルを変更
     if (mode === 'direct') {
         document.getElementById('area-direct').style.display = 'block';
-        document.getElementById('area-dimension').style.display = 'none';
-    } else {
-        document.getElementById('area-direct').style.display = 'none';
+        labelUsage.innerText = '現場総使用量 (kg / 缶):';
+    } else if (mode === 'dimension') {
         document.getElementById('area-dimension').style.display = 'block';
+        labelUsage.innerText = '現場総使用量 (kg / 缶):';
+    } else if (mode === 'caulking') {
+        document.getElementById('area-caulking').style.display = 'block';
+        labelUsage.innerText = '現場総使用量 (本 / セット):'; // コーキングは「本」にナビゲート
     }
 }
-
+// =========================================================
+// ■ 実績送信処理（コーキング自動判別・区分セット機能付き）
+// =========================================================
 async function submitMaterialLog(event) {
     const gasUrl = localStorage.getItem('dx_gas_url');
     if (!gasUrl) { 
@@ -1942,23 +2002,49 @@ async function submitMaterialLog(event) {
         return; 
     }
 
-    // GASのdoPostで処理を分岐させるための「type: "material"」を指定
-    const logData = {
+    // 現在の入力モードを判定
+    const mode = document.querySelector('input[name="inputMode"]:checked').value;
+    
+    // GASへ送るベースのデータ箱を用意
+    let logData = {
         type: "material", 
         ankenNo: currentSite ? currentSite.id : "未定",
-        materialCode: document.getElementById('log-material-code').value,
-        totalUsage: document.getElementById('log-total-usage').value,
-        directArea: document.getElementById('log-direct-area').value,
-        thickness: document.getElementById('log-thickness').value,
-        width: document.getElementById('log-width').value,
-        length: document.getElementById('log-length').value,
-        quantity: document.getElementById('log-quantity').value,
         authKey: localStorage.getItem('dx_auth_key') || ""
     };
 
-    if (!logData.materialCode) {
-        alert("資材コードを入力してください。");
-        return;
+    if (mode === 'caulking') {
+        // ---------------------------------------------------
+        // 🟦 コーキングモードの場合
+        // ---------------------------------------------------
+        // 現場で分かりやすい品名（セメダイン330ml等）をコードとして送る
+        logData.materialCode = document.getElementById('log-caulking-brand').value; 
+        // 職人さんが入力した「本数/缶数」をセット
+        logData.totalUsage = document.getElementById('log-caulking-count').value; 
+        // ★重要：裏側でこっそり区分をセット！
+        logData.kubun = "コーキング";
+        
+        if (!logData.materialCode || !logData.totalUsage) {
+            alert("コーキングの種類と本数を入力してください。");
+            return;
+        }
+    } else {
+        // ---------------------------------------------------
+        // 🟩 通常の塗料モード（直入力 / 寸法）の場合
+        // ---------------------------------------------------
+        logData.materialCode = document.getElementById('log-material-code').value;
+        logData.totalUsage = document.getElementById('log-total-usage').value;
+        logData.directArea = document.getElementById('log-direct-area').value;
+        logData.thickness = document.getElementById('log-thickness').value;
+        logData.width = document.getElementById('log-width').value;
+        logData.length = document.getElementById('log-length').value;
+        logData.quantity = document.getElementById('log-quantity').value;
+        // 塗料の場合は区分を空（または「塗料」など）にしておく
+        logData.kubun = ""; 
+
+        if (!logData.materialCode) {
+            alert("資材コードを入力してください。");
+            return;
+        }
     }
 
     const btn = event.target;
@@ -1977,7 +2063,7 @@ async function submitMaterialLog(event) {
         
         if (resJson.result === "success" || resJson.success === true) { 
             alert("✅ 実績を記録しました！"); 
-            // 送信完了後、入力欄をクリアする
+            // 入力欄をクリア
             document.getElementById('log-material-code').value = '';
             document.getElementById('log-total-usage').value = '';
             document.getElementById('log-direct-area').value = '';
@@ -1985,7 +2071,13 @@ async function submitMaterialLog(event) {
             document.getElementById('log-width').value = '';
             document.getElementById('log-length').value = '';
             document.getElementById('log-quantity').value = '';
-            closeAllModals(); // モーダルを閉じる
+            
+            // コーキング用入力欄もクリア
+            if (document.getElementById('log-caulking-count')) {
+                document.getElementById('log-caulking-count').value = '';
+            }
+            
+            closeAllModals(); 
         } else { 
             throw new Error(resJson.message || resJson.error || "サーバーエラー"); 
         }
@@ -1996,6 +2088,7 @@ async function submitMaterialLog(event) {
         btn.disabled = false;
     }
 }
+
 
 // =========================================================
 // ■ 資材マスターの検索・サジェスト機能
