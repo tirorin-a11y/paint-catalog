@@ -1992,8 +1992,9 @@ function toggleInputMode() {
         labelUsage.innerText = '現場総使用量 (本 / セット):'; // コーキングは「本」にナビゲート
     }
 }
+
 // =========================================================
-// ■ 実績送信処理（コーキング自動判別・区分セット機能付き）
+// ■ 実績送信処理（IDすれ違い修正・安全版）
 // =========================================================
 async function submitMaterialLog(event) {
     const gasUrl = localStorage.getItem('dx_gas_url');
@@ -2002,51 +2003,48 @@ async function submitMaterialLog(event) {
         return; 
     }
 
-    // 現在の入力モードを判定
+    // 現在の入力モードを判定 (direct, dimension, caulking)
     const mode = document.querySelector('input[name="inputMode"]:checked').value;
     
-    // GASへ送るベースのデータ箱を用意
+    // GASへ送るデータの基本セット
     let logData = {
         type: "material", 
         ankenNo: currentSite ? currentSite.id : "未定",
+        materialCode: document.getElementById('log-material-code').value, // 共通のコード欄から取得
+        totalUsage: document.getElementById('log-total-usage').value,     // 共通の使用量欄から取得
         authKey: localStorage.getItem('dx_auth_key') || ""
     };
 
+    // モードごとの個別チェックとデータ追加
     if (mode === 'caulking') {
         // ---------------------------------------------------
         // 🟦 コーキングモードの場合
         // ---------------------------------------------------
-        // 現場で分かりやすい品名（セメダイン330ml等）をコードとして送る
-        logData.materialCode = document.getElementById('log-caulking-brand').value; 
-        // 職人さんが入力した「本数/缶数」をセット
-        logData.totalUsage = document.getElementById('log-caulking-count').value; 
-        // ★重要：裏側でこっそり区分をセット！
+        // 裏側でこっそり区分を「コーキング」にセットして自動按分を起動させる
         logData.kubun = "コーキング";
         
         if (!logData.materialCode || !logData.totalUsage) {
-            alert("コーキングの種類と本数を入力してください。");
+            alert("使用したコーキングの資材を検索し、総本数を入力してください。");
             return;
         }
     } else {
         // ---------------------------------------------------
         // 🟩 通常の塗料モード（直入力 / 寸法）の場合
         // ---------------------------------------------------
-        logData.materialCode = document.getElementById('log-material-code').value;
-        logData.totalUsage = document.getElementById('log-total-usage').value;
         logData.directArea = document.getElementById('log-direct-area').value;
         logData.thickness = document.getElementById('log-thickness').value;
         logData.width = document.getElementById('log-width').value;
         logData.length = document.getElementById('log-length').value;
         logData.quantity = document.getElementById('log-quantity').value;
-        // 塗料の場合は区分を空（または「塗料」など）にしておく
-        logData.kubun = ""; 
+        logData.kubun = ""; // 塗料の場合は区分を空にする
 
-        if (!logData.materialCode) {
-            alert("資材コードを入力してください。");
+        if (!logData.materialCode || !logData.totalUsage) {
+            alert("資材コードと現場総使用量を入力してください。");
             return;
         }
     }
 
+    // ボタンの連打防止処理
     const btn = event.target;
     const originalText = btn.innerHTML;
     btn.innerHTML = "⏳ 送信中...";
@@ -2063,7 +2061,9 @@ async function submitMaterialLog(event) {
         
         if (resJson.result === "success" || resJson.success === true) { 
             alert("✅ 実績を記録しました！"); 
-            // 入力欄をクリア
+            
+            // 入力欄をすべてきれいにクリアする
+            document.getElementById('log-material-search').value = '';
             document.getElementById('log-material-code').value = '';
             document.getElementById('log-total-usage').value = '';
             document.getElementById('log-direct-area').value = '';
@@ -2072,12 +2072,7 @@ async function submitMaterialLog(event) {
             document.getElementById('log-length').value = '';
             document.getElementById('log-quantity').value = '';
             
-            // コーキング用入力欄もクリア
-            if (document.getElementById('log-caulking-count')) {
-                document.getElementById('log-caulking-count').value = '';
-            }
-            
-            closeAllModals(); 
+            closeAllModals(); // モーダルを閉じる
         } else { 
             throw new Error(resJson.message || resJson.error || "サーバーエラー"); 
         }
@@ -2088,7 +2083,6 @@ async function submitMaterialLog(event) {
         btn.disabled = false;
     }
 }
-
 
 // =========================================================
 // ■ 資材マスターの検索・サジェスト機能
