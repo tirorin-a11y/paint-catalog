@@ -1969,7 +1969,7 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 
 // =========================================================
-// ■ 入力フォームの動的切り替え（3モード対応・ラベル連動）
+// ■ 入力フォームの動的切り替え（ラベル連動版）
 // =========================================================
 function toggleInputMode() {
     const mode = document.querySelector('input[name="inputMode"]:checked').value;
@@ -1981,23 +1981,21 @@ function toggleInputMode() {
     document.getElementById('area-caulking').style.display = 'none';
 
     // 選択されたモードに応じてエリアを表示＆単位ラベルを変更
-    if (mode === 'direct') {
-        document.getElementById('area-direct').style.display = 'block';
-        labelUsage.innerText = '現場総使用量 (kg / 缶):';
-    } else if (mode === 'dimension') {
-        document.getElementById('area-dimension').style.display = 'block';
+    if (mode === 'direct' || mode === 'dimension') {
+        if (mode === 'direct') document.getElementById('area-direct').style.display = 'block';
+        if (mode === 'dimension') document.getElementById('area-dimension').style.display = 'block';
         labelUsage.innerText = '現場総使用量 (kg / 缶):';
     } else if (mode === 'caulking') {
         document.getElementById('area-caulking').style.display = 'block';
-        labelUsage.innerText = '現場総使用量 (本 / セット):'; // コーキングは「本」にナビゲート
+        // 職人さん向けに、コーキングの時はラベルを「本」に変える！
+        labelUsage.innerText = '現場総使用量 (本 / セット):'; 
     }
 }
 
 // =========================================================
-// ■ 実績送信処理（手打ち救済＆エラー全捕捉デバッグ版）
+// ■ 実績送信処理（プランB：裏側でkg自動換算＆手打ち救済版）
 // =========================================================
 async function submitMaterialLog(event) {
-    // ボタンを押した瞬間のあらゆるエラーを完全に捕捉するための最外周ガード
     try {
         const gasUrl = localStorage.getItem('dx_gas_url');
         if (!gasUrl) { 
@@ -2005,17 +2003,13 @@ async function submitMaterialLog(event) {
             return; 
         }
 
-        // 現在の入力モードを判定 (direct, dimension, caulking)
         const mode = document.querySelector('input[name="inputMode"]:checked').value;
         
-        // 🔎 コーキングモード用の救済ロジック
-        // サジェストから選ばず、検索窓に直接「ペンギンシール」等と手打ちした場合、
-        // 自動入力用のコード欄が空になるため、検索窓の文字をそのまま資材名（コード代わり）として救い上げます
+        // サジェストから選ばず手打ちした場合の救済措置
         let matCode = document.getElementById('log-material-code').value;
         const searchWord = document.getElementById('log-material-search').value;
-        
         if (mode === 'caulking' && !matCode && searchWord) {
-            matCode = searchWord; // 手打ちの品名をそのままセット
+            matCode = searchWord; 
         }
 
         // GASへ送るデータの基本セット
@@ -2023,25 +2017,47 @@ async function submitMaterialLog(event) {
             type: "material", 
             ankenNo: currentSite ? currentSite.id : "未定",
             materialCode: matCode,
-            totalUsage: document.getElementById('log-total-usage').value,
             authKey: localStorage.getItem('dx_auth_key') || ""
         };
 
-        // モードごとの個別チェックとデータ追加
         if (mode === 'caulking') {
             // ---------------------------------------------------
-            // 🟦 コーキングモードの場合
+            // 🟦 コーキングモード（本数 ➔ kg自動変換）
             // ---------------------------------------------------
             logData.kubun = "コーキング";
             
-            if (!logData.materialCode || !logData.totalUsage) {
+            // 職人さんが入力した「本数」を取得
+            const inputCount = parseFloat(document.getElementById('log-total-usage').value) || 0;
+            let convertedKg = inputCount; // デフォルトは入力値そのまま
+
+            // スマホ内のキャッシュ（マスター）から、選んだ資材を探し出す
+            const matchedMaterial = materialMasterCache.find(item => item[0] === matCode);
+            
+            if (matchedMaterial && matchedMaterial[3]) {
+                // マスターの4列目（容量/kg）を取得して掛け算する！
+                const unitWeight = parseFloat(matchedMaterial[3]) || 1;
+                convertedKg = inputCount * unitWeight; 
+            } else {
+                // 万が一マスターから容量が取れなかった場合のエマージェンシー処理
+                if (matCode.includes("330")) {
+                    convertedKg = inputCount * 0.33; // 330ml＝約0.33kg換算など（実態に合わせてください）
+                } else if (matCode.includes("4k") || matCode.includes("4K")) {
+                    convertedKg = inputCount * 4.0;
+                }
+            }
+
+            // ★変換された【kg】をセットしてGASに送る！
+            logData.totalUsage = convertedKg; 
+
+            if (!logData.materialCode || inputCount === 0) {
                 alert("使用したコーキングの資材を入力（または検索）し、総本数を入力してください。");
                 return;
             }
         } else {
             // ---------------------------------------------------
-            // 🟩 通常の塗料モード（直入力 / 寸法）の場合
+            // 🟩 通常の塗料モード
             // ---------------------------------------------------
+            logData.totalUsage = document.getElementById('log-total-usage').value;
             logData.directArea = document.getElementById('log-direct-area').value;
             logData.thickness = document.getElementById('log-thickness').value;
             logData.width = document.getElementById('log-width').value;
@@ -2055,13 +2071,12 @@ async function submitMaterialLog(event) {
             }
         }
 
-        // ボタンの連打防止処理
+        // 送信中のボタン無効化
         const btn = event.target;
         const originalText = btn.innerHTML;
         btn.innerHTML = "⏳ 送信中...";
         btn.disabled = true;
 
-        // 実際の通信ブロック
         try {
             const response = await fetch(gasUrl, { 
                 method: 'POST', 
@@ -2072,9 +2087,9 @@ async function submitMaterialLog(event) {
             const resJson = JSON.parse(resText);
             
             if (resJson.result === "success" || resJson.success === true) { 
-                alert("✅ 実績を記録しました！"); 
+                alert("✅ 実績を記録しました！\n（※裏側でkg換算されて送信されました）"); // テスト用にメッセージ追加
                 
-                // 入力欄をすべてきれいにクリアする
+                // 入力欄クリア
                 document.getElementById('log-material-search').value = '';
                 document.getElementById('log-material-code').value = '';
                 document.getElementById('log-total-usage').value = '';
@@ -2096,7 +2111,6 @@ async function submitMaterialLog(event) {
         }
 
     } catch (fatalError) {
-        // 万が一、ボタンを押した瞬間にJSがクラッシュした場合、エラー内容を強制ポップアップします
         alert("❌ アプリ内エラーが発生しました。この画面を教えてください:\n" + fatalError.message);
     }
 }
