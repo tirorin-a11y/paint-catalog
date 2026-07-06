@@ -1994,93 +1994,110 @@ function toggleInputMode() {
 }
 
 // =========================================================
-// ■ 実績送信処理（IDすれ違い修正・安全版）
+// ■ 実績送信処理（手打ち救済＆エラー全捕捉デバッグ版）
 // =========================================================
 async function submitMaterialLog(event) {
-    const gasUrl = localStorage.getItem('dx_gas_url');
-    if (!gasUrl) { 
-        alert("【設定エラー】\nナビ画面の設定から「GAS URL」を登録してください。"); 
-        return; 
-    }
-
-    // 現在の入力モードを判定 (direct, dimension, caulking)
-    const mode = document.querySelector('input[name="inputMode"]:checked').value;
-    
-    // GASへ送るデータの基本セット
-    let logData = {
-        type: "material", 
-        ankenNo: currentSite ? currentSite.id : "未定",
-        materialCode: document.getElementById('log-material-code').value, // 共通のコード欄から取得
-        totalUsage: document.getElementById('log-total-usage').value,     // 共通の使用量欄から取得
-        authKey: localStorage.getItem('dx_auth_key') || ""
-    };
-
-    // モードごとの個別チェックとデータ追加
-    if (mode === 'caulking') {
-        // ---------------------------------------------------
-        // 🟦 コーキングモードの場合
-        // ---------------------------------------------------
-        // 裏側でこっそり区分を「コーキング」にセットして自動按分を起動させる
-        logData.kubun = "コーキング";
-        
-        if (!logData.materialCode || !logData.totalUsage) {
-            alert("使用したコーキングの資材を検索し、総本数を入力してください。");
-            return;
-        }
-    } else {
-        // ---------------------------------------------------
-        // 🟩 通常の塗料モード（直入力 / 寸法）の場合
-        // ---------------------------------------------------
-        logData.directArea = document.getElementById('log-direct-area').value;
-        logData.thickness = document.getElementById('log-thickness').value;
-        logData.width = document.getElementById('log-width').value;
-        logData.length = document.getElementById('log-length').value;
-        logData.quantity = document.getElementById('log-quantity').value;
-        logData.kubun = ""; // 塗料の場合は区分を空にする
-
-        if (!logData.materialCode || !logData.totalUsage) {
-            alert("資材コードと現場総使用量を入力してください。");
-            return;
-        }
-    }
-
-    // ボタンの連打防止処理
-    const btn = event.target;
-    const originalText = btn.innerHTML;
-    btn.innerHTML = "⏳ 送信中...";
-    btn.disabled = true;
-
+    // ボタンを押した瞬間のあらゆるエラーを完全に捕捉するための最外周ガード
     try {
-        const response = await fetch(gasUrl, { 
-            method: 'POST', 
-            headers: { 'Content-Type': 'text/plain' }, 
-            body: JSON.stringify(logData) 
-        });
-        const resText = await response.text(); 
-        const resJson = JSON.parse(resText);
-        
-        if (resJson.result === "success" || resJson.success === true) { 
-            alert("✅ 実績を記録しました！"); 
-            
-            // 入力欄をすべてきれいにクリアする
-            document.getElementById('log-material-search').value = '';
-            document.getElementById('log-material-code').value = '';
-            document.getElementById('log-total-usage').value = '';
-            document.getElementById('log-direct-area').value = '';
-            document.getElementById('log-thickness').value = '';
-            document.getElementById('log-width').value = '';
-            document.getElementById('log-length').value = '';
-            document.getElementById('log-quantity').value = '';
-            
-            closeAllModals(); // モーダルを閉じる
-        } else { 
-            throw new Error(resJson.message || resJson.error || "サーバーエラー"); 
+        const gasUrl = localStorage.getItem('dx_gas_url');
+        if (!gasUrl) { 
+            alert("【設定エラー】\nナビ画面の設定から「GAS URL」を登録してください。"); 
+            return; 
         }
-    } catch(e) { 
-        alert("通信エラーが発生しました: " + e.message); 
-    } finally {
-        btn.innerHTML = originalText;
-        btn.disabled = false;
+
+        // 現在の入力モードを判定 (direct, dimension, caulking)
+        const mode = document.querySelector('input[name="inputMode"]:checked').value;
+        
+        // 🔎 コーキングモード用の救済ロジック
+        // サジェストから選ばず、検索窓に直接「ペンギンシール」等と手打ちした場合、
+        // 自動入力用のコード欄が空になるため、検索窓の文字をそのまま資材名（コード代わり）として救い上げます
+        let matCode = document.getElementById('log-material-code').value;
+        const searchWord = document.getElementById('log-material-search').value;
+        
+        if (mode === 'caulking' && !matCode && searchWord) {
+            matCode = searchWord; // 手打ちの品名をそのままセット
+        }
+
+        // GASへ送るデータの基本セット
+        let logData = {
+            type: "material", 
+            ankenNo: currentSite ? currentSite.id : "未定",
+            materialCode: matCode,
+            totalUsage: document.getElementById('log-total-usage').value,
+            authKey: localStorage.getItem('dx_auth_key') || ""
+        };
+
+        // モードごとの個別チェックとデータ追加
+        if (mode === 'caulking') {
+            // ---------------------------------------------------
+            // 🟦 コーキングモードの場合
+            // ---------------------------------------------------
+            logData.kubun = "コーキング";
+            
+            if (!logData.materialCode || !logData.totalUsage) {
+                alert("使用したコーキングの資材を入力（または検索）し、総本数を入力してください。");
+                return;
+            }
+        } else {
+            // ---------------------------------------------------
+            // 🟩 通常の塗料モード（直入力 / 寸法）の場合
+            // ---------------------------------------------------
+            logData.directArea = document.getElementById('log-direct-area').value;
+            logData.thickness = document.getElementById('log-thickness').value;
+            logData.width = document.getElementById('log-width').value;
+            logData.length = document.getElementById('log-length').value;
+            logData.quantity = document.getElementById('log-quantity').value;
+            logData.kubun = ""; 
+
+            if (!logData.materialCode || !logData.totalUsage) {
+                alert("資材コードと現場総使用量を入力してください。");
+                return;
+            }
+        }
+
+        // ボタンの連打防止処理
+        const btn = event.target;
+        const originalText = btn.innerHTML;
+        btn.innerHTML = "⏳ 送信中...";
+        btn.disabled = true;
+
+        // 実際の通信ブロック
+        try {
+            const response = await fetch(gasUrl, { 
+                method: 'POST', 
+                headers: { 'Content-Type': 'text/plain' }, 
+                body: JSON.stringify(logData) 
+            });
+            const resText = await response.text(); 
+            const resJson = JSON.parse(resText);
+            
+            if (resJson.result === "success" || resJson.success === true) { 
+                alert("✅ 実績を記録しました！"); 
+                
+                // 入力欄をすべてきれいにクリアする
+                document.getElementById('log-material-search').value = '';
+                document.getElementById('log-material-code').value = '';
+                document.getElementById('log-total-usage').value = '';
+                document.getElementById('log-direct-area').value = '';
+                document.getElementById('log-thickness').value = '';
+                document.getElementById('log-width').value = '';
+                document.getElementById('log-length').value = '';
+                document.getElementById('log-quantity').value = '';
+                
+                closeAllModals(); 
+            } else { 
+                throw new Error(resJson.message || resJson.error || "サーバーエラー"); 
+            }
+        } catch(e) { 
+            alert("通信エラーが発生しました: " + e.message); 
+        } finally {
+            btn.innerHTML = originalText;
+            btn.disabled = false;
+        }
+
+    } catch (fatalError) {
+        // 万が一、ボタンを押した瞬間にJSがクラッシュした場合、エラー内容を強制ポップアップします
+        alert("❌ アプリ内エラーが発生しました。この画面を教えてください:\n" + fatalError.message);
     }
 }
 
