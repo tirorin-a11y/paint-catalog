@@ -1875,9 +1875,9 @@ function generateFlowchartText() {
     const msg = document.getElementById('flowchart-message').value;
     
     if (msg) {
-        text += "$\r\n";          // 1. 上の＄を置いて、確実に改行
+        text += "$$\r\n";          // 1. 上の＄を置いて、確実に改行
         text += msg + "\r\n";     // 2. 本文を置いて、確実に改行
-        text += "$\r\n\n";        // 3. 下の＄を置いて、さらに空行を作る
+        text += "$$\r\n\n";        // 3. 下の＄を置いて、さらに空行を作る
     } else {
         text += "$\r\n";
         text += "(内容が入力されていません)\r\n";
