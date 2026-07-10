@@ -1871,12 +1871,17 @@ function generateFlowchartText() {
         text += `ご連絡事項がございます。\nご確認をよろしくお願いいたします。\n`;
     }
 
-    // ★修正：テキストエリアの本文をここでまとめて「$」で挟む
+    // テキストエリアの本文
     const msg = document.getElementById('flowchart-message').value;
+    
     if (msg) {
-        text += `$\n${msg}\n$\n\n`;
+        text += "$\r\n";          // 1. 上の＄を置いて、確実に改行
+        text += msg + "\r\n";     // 2. 本文を置いて、確実に改行
+        text += "$\r\n\n";        // 3. 下の＄を置いて、さらに空行を作る
     } else {
-        text += `$\n(内容が入力されていません)\n$\n\n`;
+        text += "$\r\n";
+        text += "(内容が入力されていません)\r\n";
+        text += "$\r\n\n";
     }
 
     text += `ご不明な点がございましたら、いつでもご連絡ください。`;
