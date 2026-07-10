@@ -347,55 +347,23 @@
             <span style="font-size:1.5rem; color:#a5d6a7;">＞</span>
         </div>
 
-<div id="flowchartModal" class="modal-box" style="display:none; background:#ffffff; padding: 20px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.3); z-index: 9999; position: fixed; top: 5%; left: 5%; right: 5%; max-height: 90vh; overflow-y: auto;">
-    <h3 style="color: #1976d2; border-bottom: 2px solid #e3f2fd; padding-bottom: 10px; margin-top:0;">📢 予定の作成・送信</h3>
-    <p style="font-size: 0.85rem; color: #555;">現在の進捗と今後の予定を選んでください。</p>
-
-    <div id="flowchart-steps" style="margin-bottom: 15px; display: flex; flex-direction: column; gap: 8px;">
-        <div class="flow-step" style="display: flex; gap: 10px;">
-            <select class="step-status" style="padding: 5px; border-radius: 4px; border: 1px solid #ccc; background-color: #f9f9f9;">
-                <option value="hide">➖ 表示しない</option><option value="✅ 済">✅ 済</option><option value="🔄 今">🔄 今</option><option value="📅 次">📅 次</option><option value="📅 後">📅 後</option>
-            </select>
-            <input type="text" class="step-name" value="足場仮設" style="flex:1; padding: 5px; border: 1px solid #ccc; border-radius: 4px;">
-        </div>
-        <div class="flow-step" style="display: flex; gap: 10px;">
-            <select class="step-status" style="padding: 5px; border-radius: 4px; border: 1px solid #ccc; background-color: #f9f9f9;">
-                <option value="hide">➖ 表示しない</option><option value="✅ 済">✅ 済</option><option value="🔄 今">🔄 今</option><option value="📅 次">📅 次</option><option value="📅 後">📅 後</option>
-            </select>
-            <input type="text" class="step-name" value="高圧洗浄" style="flex:1; padding: 5px; border: 1px solid #ccc; border-radius: 4px;">
-        </div>
-        <div class="flow-step" style="display: flex; gap: 10px;">
-            <select class="step-status" style="padding: 5px; border-radius: 4px; border: 1px solid #ccc; background-color: #f9f9f9;">
-                <option value="hide">➖ 表示しない</option><option value="✅ 済">✅ 済</option><option value="🔄 今">🔄 今</option><option value="📅 次">📅 次</option><option value="📅 後">📅 後</option>
-            </select>
-            <input type="text" class="step-name" value="コーキング打ち替え" style="flex:1; padding: 5px; border: 1px solid #ccc; border-radius: 4px;">
-        </div>
-        <div class="flow-step" style="display: flex; gap: 10px;">
-            <select class="step-status" style="padding: 5px; border-radius: 4px; border: 1px solid #ccc; background-color: #f9f9f9;">
-                <option value="hide">➖ 表示しない</option><option value="✅ 済">✅ 済</option><option value="🔄 今">🔄 今</option><option value="📅 次">📅 次</option><option value="📅 後">📅 後</option>
-            </select>
-            <input type="text" class="step-name" value="外壁 下塗り" style="flex:1; padding: 5px; border: 1px solid #ccc; border-radius: 4px;">
-        </div>
-        <div class="flow-step" style="display: flex; gap: 10px;">
-            <select class="step-status" style="padding: 5px; border-radius: 4px; border: 1px solid #ccc; background-color: #f9f9f9;">
-                <option value="hide">➖ 表示しない</option><option value="✅ 済">✅ 済</option><option value="🔄 今">🔄 今</option><option value="📅 次">📅 次</option><option value="📅 後">📅 後</option>
-            </select>
-            <input type="text" class="step-name" value="外壁 中塗り・上塗り" style="flex:1; padding: 5px; border: 1px solid #ccc; border-radius: 4px;">
-        </div>
-        <div class="flow-step" style="display: flex; gap: 10px;">
-            <select class="step-status" style="padding: 5px; border-radius: 4px; border: 1px solid #ccc; background-color: #f9f9f9;">
-                <option value="hide">➖ 表示しない</option><option value="✅ 済">✅ 済</option><option value="🔄 今">🔄 今</option><option value="📅 次">📅 次</option><option value="📅 後">📅 後</option>
-            </select>
-            <input type="text" class="step-name" value="足場解体・清掃" style="flex:1; padding: 5px; border: 1px solid #ccc; border-radius: 4px;">
-        </div>
+<div id="flowchartModal" class="modal-box" style="display:none; background:#ffffff; padding: 20px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.3); z-index: 9999; position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 90%; max-width: 450px; max-height: 90vh; overflow-y: auto;">
+    <h3 style="color: #1976d2; border-bottom: 2px solid #e3f2fd; padding-bottom: 10px; margin-top:0;">📢 お客様へ送信</h3>
+    
+    <div style="margin-bottom: 15px;">
+        <label style="font-size: 0.85rem; color: #333; font-weight: bold; display:block; margin-bottom: 5px;">📌 送信内容の種類:</label>
+        <select id="flowchart-status" style="width: 100%; padding: 12px; border-radius: 6px; border: 1px solid #ccc; font-size: 1.1rem; background-color: #f9f9f9; cursor: pointer;">
+            <option value="作業予定">📅 作業予定</option>
+            <option value="連絡事項">⚠️ 連絡事項</option>
+        </select>
     </div>
 
-    <div style="margin-top: 15px; background: #f5f5f5; padding: 10px; border-radius: 8px;">
-        <label style="font-size: 0.85rem; color: #333; font-weight: bold;">💬 お客様へのメッセージ (任意):</label>
-        <textarea id="flowchart-message" rows="2" style="width:100%; box-sizing:border-box; margin-top:5px; padding: 8px; border-radius:4px; border:1px solid #ccc;" placeholder="例：天候により日程が前後する場合がございます。"></textarea>
+    <div style="margin-bottom: 15px; background: #f5f5f5; padding: 10px; border-radius: 8px;">
+        <label style="font-size: 0.85rem; color: #333; font-weight: bold;">💬 内容:</label>
+        <textarea id="flowchart-message" rows="6" style="width:100%; box-sizing:border-box; margin-top:5px; padding: 10px; border-radius:6px; border:1px solid #ccc; font-size: 1rem;" placeholder="明日の作業内容や、お伝えしたい事項を入力してください。"></textarea>
     </div>
 
-    <button onclick="sendFlowchartLine()" style="background-color: #00B900; color: white; width: 100%; padding: 15px; border: none; border-radius: 8px; margin-top: 20px; font-size: 1.1rem; font-weight: bold; cursor: pointer; box-shadow: 0 2px 4px rgba(0,185,0,0.3);">
+    <button onclick="sendFlowchartLine()" style="background-color: #00B900; color: white; width: 100%; padding: 15px; border: none; border-radius: 8px; margin-top: 10px; font-size: 1.1rem; font-weight: bold; cursor: pointer; box-shadow: 0 2px 4px rgba(0,185,0,0.3);">
         LINEでお客様に送る
     </button>
     <button onclick="sendFlowchartMail()" style="background-color: #fbbc05; color: white; width: 100%; padding: 15px; border: none; border-radius: 8px; margin-top: 10px; font-size: 1.1rem; font-weight: bold; cursor: pointer; box-shadow: 0 2px 4px rgba(251,188,5,0.3);">
@@ -404,7 +372,7 @@
     <button onclick="document.getElementById('flowchartModal').style.display='none'" style="background-color: transparent; color: #777; width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 8px; margin-top: 10px; cursor: pointer;">
         キャンセル（閉じる）
     </button>
-    </div>
+</div>
 
     </div>
 
@@ -1875,44 +1843,38 @@ function getShortAreaName(fullAddress) {
     return short;
 }
 
-// フローチャートのテキストを生成する共通関数
+// フローチャート（お客様宛メッセージ）のテキストを生成する共通関数
 function generateFlowchartText() {
-    // 既存の currentSite オブジェクトから安全に取得
     const siteName = currentSite ? currentSite.name : 'お客様';
     const address = currentSite ? currentSite.address : '';
     const company = document.getElementById('companyName') ? document.getElementById('companyName').value : 'ペイントハウス';
     
-    // 住所から地域名を抽出してタイトルを作成
+    // 住所から地域名を抽出
     const shortArea = getShortAreaName(address);
     const titleArea = shortArea ? `【${shortArea}】` : "";
-    const subject = `${titleArea}${siteName}様邸 作業予定`;
-
-    // 挨拶文の組み立て
-    let text = `${siteName} 様\nいつもお世話になっております。${company}です。\n\n今後の作業予定をお知らせいたします。\n\n`;
-
-    // 画面で選ばれた工程（「➖ 表示しない」以外）を順番にテキスト化
-    const steps = document.querySelectorAll('#flowchart-steps .flow-step');
-    let hasSteps = false;
     
-    steps.forEach(step => {
-        const status = step.querySelector('.step-status').value;
-        const name = step.querySelector('.step-name').value;
-        if (status !== 'hide' && name) {
-            text += `${status}：${name}\n`;
-            hasSteps = true;
-        }
-    });
+    // ドロップダウンで選ばれた「ステータス」を取得
+    const status = document.getElementById('flowchart-status').value;
+    
+    // タイトルもステータスに合わせて自動変化
+    // 例：【豊岡】〇〇様邸 連絡事項
+    const subject = `${titleArea}${siteName}様邸 ${status}`;
 
-    if(!hasSteps) {
-        text += `(予定はまだ設定されていません)\n`;
+    // 挨拶文とステータスに応じた導入文の組み立て
+    let text = `${siteName} 様\nいつもお世話になっております。${company}です。\n\n`;
+
+    if (status === "作業予定") {
+        text += `今後の作業予定をお知らせいたします。\n\n`;
+    } else if (status === "連絡事項") {
+        text += `ご連絡事項がございます。\nご確認をよろしくお願いいたします。\n\n`;
     }
 
-    text += `\n`; // 余白
-
-    // 追加メッセージ
+    // テキストエリアの本文
     const msg = document.getElementById('flowchart-message').value;
     if (msg) {
         text += `${msg}\n\n`;
+    } else {
+        text += `(内容が入力されていません)\n\n`;
     }
 
     text += `ご不明な点がございましたら、いつでもご連絡ください。`;
