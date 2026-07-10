@@ -338,7 +338,7 @@
         <span style="font-size:1.5rem; color:#a5d6a7;">＞</span>
     </div>
 
-    <div class="tool-btn" onclick="document.getElementById('flowchartModal').style.display='block'">
+    <div class="tool-btn" onclick="openFlowchartModal()">
             <div class="btn-icon">📢</div>
             <div class="btn-text">
                 <h3>お客様へ予定送信</h3>
@@ -363,10 +363,10 @@
         <textarea id="flowchart-message" rows="6" style="width:100%; box-sizing:border-box; margin-top:5px; padding: 10px; border-radius:6px; border:1px solid #ccc; font-size: 1rem;" placeholder="明日の作業内容や、お伝えしたい事項を入力してください。"></textarea>
     </div>
 
-    <button onclick="sendFlowchartLine()" style="background-color: #00B900; color: white; width: 100%; padding: 15px; border: none; border-radius: 8px; margin-top: 10px; font-size: 1.1rem; font-weight: bold; cursor: pointer; box-shadow: 0 2px 4px rgba(0,185,0,0.3);">
+    <button id="btn-send-line" onclick="sendFlowchartLine()" style="background-color: #00B900; color: white; width: 100%; padding: 15px; border: none; border-radius: 8px; margin-top: 10px; font-size: 1.1rem; font-weight: bold; cursor: pointer; box-shadow: 0 2px 4px rgba(0,185,0,0.3);">
         LINEでお客様に送る
     </button>
-    <button onclick="sendFlowchartMail()" style="background-color: #fbbc05; color: white; width: 100%; padding: 15px; border: none; border-radius: 8px; margin-top: 10px; font-size: 1.1rem; font-weight: bold; cursor: pointer; box-shadow: 0 2px 4px rgba(251,188,5,0.3);">
+    <button id="btn-send-mail" onclick="sendFlowchartMail()" style="background-color: #fbbc05; color: white; width: 100%; padding: 15px; border: none; border-radius: 8px; margin-top: 10px; font-size: 1.1rem; font-weight: bold; cursor: pointer; box-shadow: 0 2px 4px rgba(251,188,5,0.3);">
         メールでお客様に送る
     </button>
     <button onclick="document.getElementById('flowchartModal').style.display='none'" style="background-color: transparent; color: #777; width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 8px; margin-top: 10px; cursor: pointer;">
