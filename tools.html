@@ -900,44 +900,58 @@ async function deleteReport(index) {
 // ■ 顧客向け 作業予定フローチャート機能（エラー回避の安全版）
 // =========================================================
 
-function openFlowchartModal() {
-    // 1. まずはポップアップ画面（モーダル）を表示する
-    const modal = document.getElementById('flowchartModal');
-    if (!modal) {
-        alert("エラー：モーダルのHTMLが見つかりません。");
-        return; // モーダル自体がなければここでストップ
-    }
-    modal.style.display = 'block'; // ★何があってもここまでは絶対に実行させて画面を開く！
+// =========================================================
+// ■ 顧客向け 作業予定フローチャート機能（絶対開く安全版）
+// =========================================================
 
-    // 2. 画面下にある「LINEボタン」と「メールボタン」の要素を掴む
+function openFlowchartModal() {
+    // 1. 何があってもまずは画面（モーダル）を絶対に開く！
+    const modal = document.getElementById('flowchartModal');
+    if (modal) {
+        modal.style.display = 'block';
+    } else {
+        alert("エラー：画面が見つかりません。");
+        return;
+    }
+
+    // 2. ボタンとセレクトボックスを取得
     const lineBtn = document.getElementById('btn-send-line');
     const mailBtn = document.getElementById('btn-send-mail');
     const statusSelect = document.getElementById('flowchart-status');
 
-    // ★安全装置：もしボタンのIDが見つからなかったら、色を変える処理はスキップする
-    if (!lineBtn || !mailBtn) {
-        console.log("送信ボタンのIDが見つからないため、判定アシストをスキップしました。");
-        return; 
-    }
+    if (statusSelect) statusSelect.value = "作業予定"; // デフォルトをセット
 
-    // 3. 顧客データ（currentSite）の中にメールアドレス（email）が存在するか自動判定
-    if (currentSite && currentSite.email && currentSite.email.trim() !== "") {
-        // ✉️ メール派
-        mailBtn.style.opacity = "1";
-        mailBtn.style.boxShadow = "0 4px 12px rgba(251,188,5,0.6)";
-        lineBtn.style.opacity = "0.3";
-        lineBtn.style.boxShadow = "none";
-    } else {
-        // 💬 LINE派
-        lineBtn.style.opacity = "1";
-        lineBtn.style.boxShadow = "0 4px 12px rgba(0,185,0,0.6)";
-        mailBtn.style.opacity = "0.3";
-        mailBtn.style.boxShadow = "none";
-    }
+    // 3. アシスト判定（★エラーが起きてもアプリが止まらないようバリアを張る）
+    try {
+        if (lineBtn && mailBtn) {
+            // メールアドレスの有無を安全にチェック
+            let hasEmail = false;
+            // currentSiteが存在し、かつemail項目があり、それが空っぽでないか確認
+            if (typeof currentSite !== 'undefined' && currentSite !== null) {
+                if (currentSite.email && String(currentSite.email).trim() !== "") {
+                    hasEmail = true;
+                }
+            }
 
-    // ステータスセレクトがある場合のみ値をセット
-    if (statusSelect) {
-        statusSelect.value = "作業予定";
+            if (hasEmail) {
+                // ✉️ メール派
+                mailBtn.style.opacity = "1";
+                mailBtn.style.boxShadow = "0 4px 12px rgba(251,188,5,0.6)";
+                lineBtn.style.opacity = "0.3";
+                lineBtn.style.boxShadow = "none";
+            } else {
+                // 💬 LINE派
+                lineBtn.style.opacity = "1";
+                lineBtn.style.boxShadow = "0 4px 12px rgba(0,185,0,0.6)";
+                mailBtn.style.opacity = "0.3";
+                mailBtn.style.boxShadow = "none";
+            }
+        }
+    } catch (error) {
+        // 万が一ここでエラーが起きても、裏でエラーを記録するだけで画面はそのまま使えるようにする
+        console.log("アシスト機能エラー: ", error);
+        if (lineBtn) lineBtn.style.opacity = "1";
+        if (mailBtn) mailBtn.style.opacity = "1";
     }
 }
 
@@ -1891,25 +1905,17 @@ function getShortAreaName(fullAddress) {
 
 // フローチャート（お客様宛メッセージ）のテキストを生成する共通関数
 function generateFlowchartText() {
-    const siteName = currentSite ? currentSite.name : '現場名';
+    const siteName = currentSite ? currentSite.name : 'お客様';
     const address = currentSite ? currentSite.address : '';
-    const company = document.getElementById('companyName') ? document.getElementById('companyName').value : '山岡塗装工業';
+    const company = document.getElementById('companyName') ? document.getElementById('companyName').value : 'ペイントハウス山岡';
     
-    // 住所から地域名を抽出
     const shortArea = getShortAreaName(address);
     const titleArea = shortArea ? `【${shortArea}】` : "";
-    
-    // ドロップダウンで選ばれた「ステータス」を取得
     const status = document.getElementById('flowchart-status').value;
-    
-    // タイトル（件名）
     const subject = `${titleArea}${siteName}様邸 ${status}`;
 
-    // ★変更：本文の先頭に【ステータス】を強調して配置
     let text = `【${status}】\n\n`;
-    
-    // 挨拶文とステータスに応じた導入文の組み立て
-    text += `いつもお世話になっております。${company}です。\n\n`;
+    text += `${siteName} 様\nいつもお世話になっております。${company}です。\n\n`;
 
     if (status === "作業予定") {
         text += `今後の作業予定をお知らせいたします。\n`;
@@ -1921,13 +1927,22 @@ function generateFlowchartText() {
     const msg = document.getElementById('flowchart-message').value;
     
     if (msg) {
-        text += "$$\r\n";          // 1. 上の＄を置いて、確実に改行
-        text += msg + "\r\n";     // 2. 本文を置いて、確実に改行
-        text += "$$\r\n\n";        // 3. 下の＄を置いて、さらに空行を作る
+        if (status === "連絡事項") {
+            // ⚠️ 連絡事項：注意を引く「／＼」と太線
+            text += "／＼／＼／＼／＼／＼／＼／＼\r\n";
+            text += "━━━━ 必ずご確認ください ━━━━\r\n";
+            text += msg + "\r\n";
+            text += "＼／＼／＼／＼／＼／＼／＼／\r\n\n";
+        } else {
+            // 📅 作業予定：スッキリとした太線のみ
+            text += "━━━━━━━━━━━━━━━━━\r\n";
+            text += msg + "\r\n";
+            text += "━━━━━━━━━━━━━━━━━\r\n\n";
+        }
     } else {
-        text += "$\r\n";
+        text += "━━━━━━━━━━━━━━━━━\r\n";
         text += "(内容が入力されていません)\r\n";
-        text += "$\r\n\n";
+        text += "━━━━━━━━━━━━━━━━━\r\n\n";
     }
 
     text += `ご不明な点がございましたら、いつでもご連絡ください。`;
@@ -1946,7 +1961,7 @@ function sendFlowchartLine() {
 // 🟧 フローチャートをメールで送る
 function sendFlowchartMail() {
     const { subject, text } = generateFlowchartText();
-    const company = document.getElementById('companyName') ? document.getElementById('companyName').value : 'ペイントハウス';
+    const company = document.getElementById('companyName') ? document.getElementById('companyName').value : '山岡塗装工業';
     
     // お客様向けなので、現場データにメアドがあれば To にセットする（無ければ空欄でメーラー起動）
     let customerEmail = (currentSite && currentSite.email) ? currentSite.email : "";
