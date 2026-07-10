@@ -895,6 +895,52 @@ async function deleteReport(index) {
             btn.disabled = false;
         }
     }
+
+// =========================================================
+// ■ 顧客向け 作業予定フローチャート機能（エラー回避の安全版）
+// =========================================================
+
+function openFlowchartModal() {
+    // 1. まずはポップアップ画面（モーダル）を表示する
+    const modal = document.getElementById('flowchartModal');
+    if (!modal) {
+        alert("エラー：モーダルのHTMLが見つかりません。");
+        return; // モーダル自体がなければここでストップ
+    }
+    modal.style.display = 'block'; // ★何があってもここまでは絶対に実行させて画面を開く！
+
+    // 2. 画面下にある「LINEボタン」と「メールボタン」の要素を掴む
+    const lineBtn = document.getElementById('btn-send-line');
+    const mailBtn = document.getElementById('btn-send-mail');
+    const statusSelect = document.getElementById('flowchart-status');
+
+    // ★安全装置：もしボタンのIDが見つからなかったら、色を変える処理はスキップする
+    if (!lineBtn || !mailBtn) {
+        console.log("送信ボタンのIDが見つからないため、判定アシストをスキップしました。");
+        return; 
+    }
+
+    // 3. 顧客データ（currentSite）の中にメールアドレス（email）が存在するか自動判定
+    if (currentSite && currentSite.email && currentSite.email.trim() !== "") {
+        // ✉️ メール派
+        mailBtn.style.opacity = "1";
+        mailBtn.style.boxShadow = "0 4px 12px rgba(251,188,5,0.6)";
+        lineBtn.style.opacity = "0.3";
+        lineBtn.style.boxShadow = "none";
+    } else {
+        // 💬 LINE派
+        lineBtn.style.opacity = "1";
+        lineBtn.style.boxShadow = "0 4px 12px rgba(0,185,0,0.6)";
+        mailBtn.style.opacity = "0.3";
+        mailBtn.style.boxShadow = "none";
+    }
+
+    // ステータスセレクトがある場合のみ値をセット
+    if (statusSelect) {
+        statusSelect.value = "作業予定";
+    }
+}
+
     /* --- その他ツール --- */
     function handleCalendarAction() { const calId = localStorage.getItem('dx_calendar_id'); if (calId && calId.trim() !== "") openModal('calSelect'); else openPersonalCalendar(); }
     function openPersonalCalendar() { let stLabel = '現調予定'; if(currentSite && (currentSite.status === 'contract' || currentSite.status === 'active')) stLabel = '施工中'; const text = encodeURIComponent(`【${stLabel}】${currentSite?currentSite.name:''}`); const location = encodeURIComponent(currentSite?currentSite.address:''); const url = `https://www.google.com/calendar/render?action=TEMPLATE&text=${text}&location=${location}`; window.open(url, '_blank'); closeAllModals(); }
