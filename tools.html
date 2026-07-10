@@ -639,7 +639,7 @@
     window.onload = () => {
         // 会社名の読み込み
         const savedComp = localStorage.getItem('dx_company_name');
-        document.getElementById('companyName').value = savedComp ? savedComp : "ペイントハウス";
+        document.getElementById('companyName').value = savedComp ? savedComp : "山岡塗装工業";
 
         // ★追加：工程ボタン（編集可能版）を生成
         renderProcessButtons(); 
@@ -1845,9 +1845,9 @@ function getShortAreaName(fullAddress) {
 
 // フローチャート（お客様宛メッセージ）のテキストを生成する共通関数
 function generateFlowchartText() {
-    const siteName = currentSite ? currentSite.name : 'お客様';
+    const siteName = currentSite ? currentSite.name : '現場名';
     const address = currentSite ? currentSite.address : '';
-    const company = document.getElementById('companyName') ? document.getElementById('companyName').value : 'ペイントハウス';
+    const company = document.getElementById('companyName') ? document.getElementById('companyName').value : '山岡塗装工業';
     
     // 住所から地域名を抽出
     const shortArea = getShortAreaName(address);
@@ -1856,12 +1856,14 @@ function generateFlowchartText() {
     // ドロップダウンで選ばれた「ステータス」を取得
     const status = document.getElementById('flowchart-status').value;
     
-    // タイトルもステータスに合わせて自動変化
-    // 例：【豊岡】〇〇様邸 連絡事項
+    // タイトル（件名）
     const subject = `${titleArea}${siteName}様邸 ${status}`;
 
+    // ★変更：本文の先頭に【ステータス】を強調して配置
+    let text = `【${status}】\n\n`;
+    
     // 挨拶文とステータスに応じた導入文の組み立て
-    let text = `${siteName} 様\nいつもお世話になっております。${company}です。\n\n`;
+    text += `$\nいつもお世話になっております。${company}です。\n\n`;
 
     if (status === "作業予定") {
         text += `今後の作業予定をお知らせいたします。\n\n`;
