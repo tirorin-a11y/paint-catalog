@@ -1893,8 +1893,8 @@ function openFlowchartModal() {
 function getShortAreaName(fullAddress) {
     if (!fullAddress) return "";
     
-    // 1. 北海道、旭川市などを消す（近隣の町名などは残る）
-    let short = fullAddress.replace(/^北海道/, '').replace(/^旭川市/, '').trim();
+    // 1. 北海道、旭川市、さらに「〇〇郡」も消す（美瑛町などを綺麗にするため）
+    let short = fullAddress.replace(/^北海道/, '').replace(/^旭川市/, '').replace(/^[^郡]+郡/, '').trim();
     
     // 2. 全角数字（１２３）にも完全対応した抽出ルール
     
