@@ -1996,22 +1996,34 @@ function generateFlowchartText() {
 
 // 🟦 追加：送信ログを裏側（GAS）にひっそり送る関数
 function recordSendLog(tool, subject, text) {
-    if (!currentSite) return; // 現場データがなければスキップ
+    if (!currentSite) {
+        alert("⚠️ 現場データ（currentSite）が読み込まれていません");
+        return;
+    }
 
     const logData = {
         siteId: currentSite.id,
         status: document.getElementById('flowchart-status').value,
-        tool: tool, // "LINE" または "メール"
-        text: subject + "\n\n" + text, // 件名と本文をセットで保存
-        isImportant: true // ※あとでチェックボックスと連動させますが、今は一律TRUE
+        tool: tool,
+        text: subject + "\n\n" + text,
+        isImportant: true
     };
 
-    // google.script.runで裏側のGASを呼び出す（画面は待たずに即座に次へ進む）
+    // 通信状態を画面に出してチェックする
     if (typeof google !== 'undefined' && google.script) {
         google.script.run
-            .withSuccessHandler(function(res) { console.log("ログ記録: " + res); })
-            .withFailureHandler(function(err) { console.error("ログ記録エラー: " + err); })
+            .withSuccessHandler(function(res) { 
+                // GASからの返事を画面に出す
+                alert("✅ GAS通信成功: " + res); 
+            })
+            .withFailureHandler(function(err) { 
+                // GAS側でエラーが起きた場合
+                alert("❌ GAS内部エラー: " + err); 
+            })
             .saveSendLog(logData);
+    } else {
+        // googleオブジェクト自体が見つからない場合
+        alert("⚠️ googleオブジェクトがありません。\nアプリを『file:///〜』などのローカルファイルとして直接ブラウザで開いていませんか？（GASのデプロイURLから開く必要があります）");
     }
 }
 
