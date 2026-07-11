@@ -639,7 +639,7 @@
     window.onload = () => {
         // 会社名の読み込み
         const savedComp = localStorage.getItem('dx_company_name');
-        document.getElementById('companyName').value = savedComp ? savedComp : "山岡塗装工業";
+        document.getElementById('companyName').value = savedComp ? savedComp : "";
 
         // ★追加：工程ボタン（編集可能版）を生成
         renderProcessButtons(); 
@@ -1889,33 +1889,32 @@ function openFlowchartModal() {
 // ■ 顧客向け 作業予定フローチャート機能
 // =========================================================
 
-/// 住所から分かりやすい地域名を自動抽出するロジック（旭川特化版）
+// 住所から分かりやすい地域名を自動抽出するロジック（全角数字対応の最強版）
 function getShortAreaName(fullAddress) {
     if (!fullAddress) return "";
     
-    // 1. 北海道、旭川市を消す（東神楽町や鷹栖町など近隣の場合は町名が残るようにします）
+    // 1. 北海道、旭川市などを消す（近隣の町名などは残る）
     let short = fullAddress.replace(/^北海道/, '').replace(/^旭川市/, '').trim();
     
-    // 2. 旭川の特殊な住所パターンに合わせて切り取る
+    // 2. 全角数字（１２３）にも完全対応した抽出ルール
     
-    // パターンA: 「東4条」「南3条」などの方向＋条
-    // 例：東4条2丁目 → 【東4条】
-    let matchA = short.match(/^[東西南北]\d+条/);
+    // パターンA: 「東4条」「南３条」などの方向＋条
+    let matchA = short.match(/^[東西南北][0-9０-９]+条/);
     if (matchA) return matchA[0];
     
-    // パターンB: 「2条通」「3条」などの数字始まりの条
-    // 例：2条3丁目 → 【2条】、 2条通3丁目 → 【2条通】
-    let matchB = short.match(/^\d+条通?/);
+    // パターンB: 「2条通」「３条」などの数字始まりの条
+    let matchB = short.match(/^[0-9０-９]+条通?/);
     if (matchB) return matchB[0];
     
-    // パターンC: 「豊岡」「緑町」「神楽」など（最初の数字が出てくる前まで）
-    // 例：緑町20丁目 → 【緑町】、 豊岡4条2丁目 → 【豊岡】、 神楽岡5条 → 【神楽岡】
-    let matchC = short.match(/^[^\d]+/);
+    // パターンC: 「豊岡」「緑町」「神楽」など
+    // ★魔法：最初に出現する【半角または全角の数字】の直前までを切り取る！
+    let matchC = short.match(/^[^0-9０-９]+/);
     if (matchC) {
-        return matchC[0].trim(); 
+        // 余分な空白や、ハイフンなどを綺麗に掃除して返す
+        return matchC[0].replace(/[ー\-〜\s]+$/, '').trim(); 
     }
     
-    return short; // 万が一どれにも当てはまらない場合はそのまま返す
+    return short; 
 }
 
 // フローチャート（お客様宛メッセージ）のテキストを生成する共通関数
@@ -1974,10 +1973,13 @@ function sendFlowchartLine() {
 }
 
 // 🟧 フローチャートをメールで送る
-function sendFlowchartMail() {
-    const { subject, text } = generateFlowchartText();
-    const company = document.getElementById('companyName') ? document.getElementById('companyName').value : '山岡塗装工業';
+function generateFlowchartText() {
+    const siteName = currentSite ? currentSite.name : 'お客様';
+    const address = currentSite ? currentSite.address : '';
     
+    // ★修正：会社名が入力されていない場合は「当店」や「弊社」という言葉を代用する
+    let compVal = document.getElementById('companyName') ? document.getElementById('companyName').value.trim() : '';
+    const company = compVal !== '' ? compVal : '弊社';
     // お客様向けなので、現場データにメアドがあれば To にセットする（無ければ空欄でメーラー起動）
     let customerEmail = (currentSite && currentSite.email) ? currentSite.email : "";
     
