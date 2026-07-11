@@ -1951,7 +1951,7 @@ function getShortAreaName(fullAddress) {
 function generateFlowchartText() {
     const siteName = currentSite ? currentSite.name : 'お客様';
     const address = currentSite ? currentSite.address : '';
-    const company = document.getElementById('companyName') ? document.getElementById('companyName').value : 'ペイントハウス山岡';
+    const company = document.getElementById('companyName') ? document.getElementById('companyName').value : '弊社';
     
     const shortArea = getShortAreaName(address);
     const titleArea = shortArea ? `【${shortArea}】` : "";
@@ -2002,14 +2002,15 @@ function sendFlowchartLine() {
     window.open(lineUrl, '_blank');
 }
 
-// 🟧 フローチャートをメールで送る
-function generateFlowchartText() {
-    const siteName = currentSite ? currentSite.name : 'お客様';
-    const address = currentSite ? currentSite.address : '';
+// 🟧 フローチャートをメールで送る（★関数名を修正しました！）
+function sendFlowchartEmail() {
+    // ★共通関数から件名と本文をもらう
+    const { subject, text } = generateFlowchartText(); 
     
-    // ★修正：会社名が入力されていない場合は「当店」や「弊社」という言葉を代用する
+    // 会社名が入力されていない場合は「当店」や「弊社」という言葉を代用する
     let compVal = document.getElementById('companyName') ? document.getElementById('companyName').value.trim() : '';
     const company = compVal !== '' ? compVal : '弊社';
+    
     // お客様向けなので、現場データにメアドがあれば To にセットする（無ければ空欄でメーラー起動）
     let customerEmail = (currentSite && currentSite.email) ? currentSite.email : "";
     
