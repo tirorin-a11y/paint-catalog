@@ -1998,15 +1998,16 @@ function generateFlowchartText() {
 function recordSendLog(tool, subject, text) {
     if (!currentSite) return;
 
-    // 保存されているGASのURLを呼び出す
     const gasUrl = localStorage.getItem('dx_gas_url');
     if (!gasUrl) {
         console.warn("⚠️ GAS URLが設定されていません。ログは記録されません。");
         return; 
     }
 
+    // 既存のGASシステムが求める形式にカチッと合わせる
     const logData = {
-        action: "saveSendLog", // ★GAS側で処理を仕分けるための「合言葉」
+        authKey: "うっきうき",   // ★必須：これがないと合言葉エラーになります
+        type: "saveSendLog",     // ★必須：GAS側の新しい分岐に入らせるための合言葉
         siteId: currentSite.id,
         status: document.getElementById('flowchart-status').value,
         tool: tool,
@@ -2014,16 +2015,15 @@ function recordSendLog(tool, subject, text) {
         isImportant: true
     };
 
-    // fetchを使って、URLめがけてデータを投げつける
     fetch(gasUrl, {
         method: 'POST',
         headers: {
-            'Content-Type': 'text/plain' // GASでエラーを起こさずに受け取るための設定
+            'Content-Type': 'text/plain'
         },
         body: JSON.stringify(logData)
     })
-    .then(response => response.text())
-    .then(result => console.log("✅ ログ送信完了: " + result))
+    .then(response => response.json()) // 既存システムに合わせてjsonで受け取る
+    .then(result => console.log("✅ ログ送信完了: ", result))
     .catch(error => console.error("❌ ログ送信エラー: ", error));
 }
 
