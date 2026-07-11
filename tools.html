@@ -2021,8 +2021,7 @@ function generateFlowchartText() {
     const subject = `${titleArea}${siteName}様邸 ${status}`;
 
     let text = `【${status}】\n\n`;
-    text += `いつもお世話になっております。${company}です。\n\n`;
-
+    
     if (status === "作業予定") {
         text += `今後の作業予定をお知らせいたします。\n`;
     } else if (status === "連絡事項") {
@@ -2039,13 +2038,13 @@ function generateFlowchartText() {
     if (msg) {
         if (status === "連絡事項") {
             text += "／＼／＼／＼／＼／＼\r\n";
-            text += "━━━━ 要確認 ━━━━\r\n";
+            text += "━━━━ 要確認 ━━━\r\n";
             text += msg + "\r\n";
             text += "＼／＼／＼／＼／＼／\r\n\n";
         } else {
-            text += "━━━━━━━━━━━━━━━\r\n";
+            text += "━━━━━━━━━━━━━━\r\n";
             text += msg + "\r\n";
-            text += "━━━━━━━━━━━━━━━\r\n\n";
+            text += "━━━━━━━━━━━━━━\r\n\n";
         }
     } else if (checkedLogs.length === 0) {
         // 新しいメッセージも無く、過去ログのチェックも無い場合
@@ -2054,12 +2053,18 @@ function generateFlowchartText() {
         text += "━━━━━━━━━━━━━━━\r\n\n";
     }
 
-    // ★★★ 魔法の処理：チェックされた過去ログを「引用」として合体させる ★★★
+    // ★★★ 修正後：過去ログを「引用」として合体させる（時刻付き） ★★★
     if (checkedLogs.length > 0) {
-        text += "📌 【以前お伝えした事項の再確認】\r\n";
+        text += "📌【過去の再確認】\r\n";
         checkedLogs.forEach(cb => {
+            // ① チェックボックスのすぐ隣（ラベルの中）にある日時テキストを探す
+            // 今回のロジックでは、cb（input要素）の親要素から探せます
+            const parentLabel = cb.closest('label');
+            const dateText = parentLabel ? parentLabel.innerText.split(']')[0] + ']' : '[日時不明]';
+            
             text += "------------------------\r\n";
-            text += cb.value + "\r\n"; // cb.valueには保存しておいた過去の本文が入っている
+            // ② 「日時 ＋ 本文」の形にする
+            text += `${dateText} 送信内容：\n${cb.value}\r\n`; 
         });
         text += "------------------------\r\n\n";
     }
