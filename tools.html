@@ -2004,14 +2004,20 @@ function recordSendLog(tool, subject, text) {
         return; 
     }
 
-    // 既存のGASシステムが求める形式にカチッと合わせる
+    // ★追加：テキストエリアにユーザーが直接打ち込んだ文字だけを取得
+    const userInput = document.getElementById('flowchart-message').value;
+    
+    // もし何も打ち込まずに送信した時用の保険
+    const finalLogText = userInput ? userInput : "(定型文のみ送信)";
+
     const logData = {
-        authKey: "うっきうき",   // ★必須：これがないと合言葉エラーになります
-        type: "saveSendLog",     // ★必須：GAS側の新しい分岐に入らせるための合言葉
+        authKey: "うっきうき",
+        type: "saveSendLog",
         siteId: currentSite.id,
         status: document.getElementById('flowchart-status').value,
         tool: tool,
-        text: subject + "\n\n" + text,
+        // ★修正：全文ではなく、打ち込んだ文字だけを記録する
+        text: finalLogText, 
         isImportant: true
     };
 
@@ -2022,7 +2028,7 @@ function recordSendLog(tool, subject, text) {
         },
         body: JSON.stringify(logData)
     })
-    .then(response => response.json()) // 既存システムに合わせてjsonで受け取る
+    .then(response => response.json()) 
     .then(result => console.log("✅ ログ送信完了: ", result))
     .catch(error => console.error("❌ ログ送信エラー: ", error));
 }
