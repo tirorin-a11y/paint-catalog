@@ -575,6 +575,11 @@
                 destination = site.plusCode; 
                 // ★追加：ナビを開く直前にふわっと通知！
                 showNotification('📍 ピンポイントで案内します');
+                
+                // ★追加：プラスコードの時だけ「ブル・ブルッ」と2回振動させる
+                // （100ミリ秒振動 ➔ 50ミリ秒休み ➔ 100ミリ秒振動）
+                if (navigator.vibrate) navigator.vibrate([100, 50, 100]);
+                
             } else {
                 destination = site.address;
             }

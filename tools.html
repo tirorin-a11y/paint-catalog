@@ -669,7 +669,7 @@
     }
     
     function openCameraModal() { document.getElementById('overlay').classList.add('show'); document.getElementById('cameraModal').classList.add('show'); drawBoard(); }
-    function openForm() { document.getElementById('overlay').classList.add('show'); document.getElementById('inputForm').classList.add('show'); document.getElementById('siteName').value = currentSite ? currentSite.name : ''; document.getElementById('address').value = currentSite ? currentSite.address : ''; document.getElementById('status').value = currentSite ? currentSite.status : 'estimate'; }
+    function openForm() { document.getElementById('overlay').classList.add('show'); document.getElementById('inputForm').classList.add('show'); document.getElementById('siteName').value = currentSite ? currentSite.name : ''; document.getElementById('address').value = currentSite ? currentSite.address : ''; document.getElementById('status').value = currentSite ? currentSite.status : 'estimate'; document.getElementById('pluscode').value = currentSite ? (currentSite.plusCode || '') : '';}
     function closeAllModals() { document.querySelectorAll('.modal-box').forEach(el => el.classList.remove('show')); document.getElementById('overlay').classList.remove('show'); stopSpeech(); if(document.getElementById('photoPreviewArea').style.display==='flex') retakePhoto(); }
 
     /* --- 日報機能 --- */
