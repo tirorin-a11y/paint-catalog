@@ -499,15 +499,36 @@
     }
 
     function handleTouchEnd(btn, id, address) {
-        if (pressTimer) {
-            clearTimeout(pressTimer); pressTimer = null; btn.classList.remove('holding');
-        }
-        const pressTime = Date.now() - (parseInt(btn.dataset.startTime) || 0);
-        if (pressTime > 0 && pressTime < 500) {
-            updateNaviCount(id, 1);
-            window.open(`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(address)}`, '_blank');
-        }
+    if (pressTimer) {
+        clearTimeout(pressTimer); 
+        pressTimer = null; 
+        btn.classList.remove('holding');
     }
+    const pressTime = Date.now() - (parseInt(btn.dataset.startTime) || 0);
+    
+    if (pressTime > 0 && pressTime < 500) {
+        updateNaviCount(id, 1);
+
+        let destination = address; 
+
+        // 罠①対策：IDの「型不一致（数値と文字列）」を絶対に防ぐため、両方を文字に変換して探す
+        const site = sites.find(s => String(s.id) === String(id));
+        
+        // 🔍 【原因究明用のアラート】（確認できたら後で消せます！）
+        if (site) {
+            alert(`【スマホ内データ確認】\n現場名: ${site.name}\nプラスコード: ${site.plusCode || "★入っていません★"}`);
+        } else {
+            alert(`【警告】\nID: ${id} の現場がスマホの sites の中から見つかりませんでした！`);
+        }
+
+        if (site && site.plusCode && site.plusCode.trim() !== "") {
+            destination = site.plusCode; 
+        }
+
+        // ※URLの変数を正しく認識させるため ${destination} に補正しています
+        window.open(`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(destination)}`, '_blank');
+    }
+}
 
     // --- 右ボタン制御 ---
     let rightPressTimer = null;
