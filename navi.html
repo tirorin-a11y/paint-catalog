@@ -516,10 +516,17 @@
             const site = sites.find(s => String(s.id) === String(id));
             
             if (site && site.plusCode && site.plusCode.trim() !== "") {
-                destination = site.plusCode; 
-                // ★追加：ナビを開く直前にふわっと通知！
-                showNotification('📍 ピンポイントで案内します');
-            }
+            destination = site.plusCode; 
+            
+            // ふわっと通知（一瞬で消えるが念のため）
+            showNotification('📍 ピンポイントで案内します');
+            
+            // ★ここに振動を追加！「ブル・ブルッ」と手に感触を残す
+            if (navigator.vibrate) navigator.vibrate([100, 50, 100]);
+            
+        } else {
+            destination = site.address;
+        }
 
             window.open(`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(destination)}`, '_blank');
         }
