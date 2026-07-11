@@ -1994,14 +1994,19 @@ function generateFlowchartText() {
     return { subject, text };
 }
 
-// 🟦 追加：送信ログを裏側（GAS）にひっそり送る関数
+// 🟦 修正：送信ログを裏側（GAS）にひっそり送る関数（URL通信版）
 function recordSendLog(tool, subject, text) {
-    if (!currentSite) {
-        alert("⚠️ 現場データ（currentSite）が読み込まれていません");
-        return;
+    if (!currentSite) return;
+
+    // 保存されているGASのURLを呼び出す
+    const gasUrl = localStorage.getItem('dx_gas_url');
+    if (!gasUrl) {
+        console.warn("⚠️ GAS URLが設定されていません。ログは記録されません。");
+        return; 
     }
 
     const logData = {
+        action: "saveSendLog", // ★GAS側で処理を仕分けるための「合言葉」
         siteId: currentSite.id,
         status: document.getElementById('flowchart-status').value,
         tool: tool,
@@ -2009,22 +2014,17 @@ function recordSendLog(tool, subject, text) {
         isImportant: true
     };
 
-    // 通信状態を画面に出してチェックする
-    if (typeof google !== 'undefined' && google.script) {
-        google.script.run
-            .withSuccessHandler(function(res) { 
-                // GASからの返事を画面に出す
-                alert("✅ GAS通信成功: " + res); 
-            })
-            .withFailureHandler(function(err) { 
-                // GAS側でエラーが起きた場合
-                alert("❌ GAS内部エラー: " + err); 
-            })
-            .saveSendLog(logData);
-    } else {
-        // googleオブジェクト自体が見つからない場合
-        alert("⚠️ googleオブジェクトがありません。\nアプリを『file:///〜』などのローカルファイルとして直接ブラウザで開いていませんか？（GASのデプロイURLから開く必要があります）");
-    }
+    // fetchを使って、URLめがけてデータを投げつける
+    fetch(gasUrl, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'text/plain' // GASでエラーを起こさずに受け取るための設定
+        },
+        body: JSON.stringify(logData)
+    })
+    .then(response => response.text())
+    .then(result => console.log("✅ ログ送信完了: " + result))
+    .catch(error => console.error("❌ ログ送信エラー: ", error));
 }
 
 // 🟩 修正：フローチャートをLINEで送る
