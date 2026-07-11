@@ -591,6 +591,7 @@
     <h3 style="margin-top:0; text-align:center;">情報の編集・削除</h3>
     <label>現場名</label><input type="text" id="siteName">
     <label>住所</label><input type="text" id="address">
+    <label>プラスコード</label><input type="text" id="pluscode">
     <label>状況</label>
     <select id="status">
         <option value="estimate">📄 見積中</option>
@@ -1731,7 +1732,36 @@ function openFlowchartModal() {
     }
 
     /* 共通系・音声入力 */
-    function saveEdit() { const name = document.getElementById('siteName').value; const address = document.getElementById('address').value; const status = document.getElementById('status').value; if(!name) return; if (siteId) { const index = sites.findIndex(s => s.id === siteId); if(index !== -1) { sites[index].name = name; sites[index].address = address; sites[index].status = status; sites[index].updatedAt = Date.now(); localStorage.setItem('dx_sites', JSON.stringify(sites)); location.reload(); } } else { alert("現場IDがありません"); } }
+    function saveEdit() { 
+    const name = document.getElementById('siteName').value; 
+    const address = document.getElementById('address').value; 
+    const status = document.getElementById('status').value; 
+
+    // ★追加：プラスコードの入力値を取得（万が一HTMLに枠がない時のエラー防止付き）
+    const plusCodeElement = document.getElementById('pluscode');
+    const plusCode = plusCodeElement ? plusCodeElement.value : "";
+
+    if(!name) return; 
+
+    if (siteId) { 
+        const index = sites.findIndex(s => s.id === siteId); 
+        if(index !== -1) { 
+            sites[index].name = name; 
+            sites[index].address = address; 
+            
+            // ★追加：取得したプラスコードをデータに上書きする！
+            sites[index].plusCode = plusCode; 
+            
+            sites[index].status = status; 
+            sites[index].updatedAt = Date.now(); 
+            
+            localStorage.setItem('dx_sites', JSON.stringify(sites)); 
+            location.reload(); 
+        } 
+    } else { 
+        alert("現場IDがありません"); 
+    } 
+}
     function deleteSite() { if(confirm('削除しますか？')) { const newSites = sites.filter(s => s.id !== siteId); localStorage.setItem('dx_sites', JSON.stringify(newSites)); window.location.href = 'navi.html'; } }
     function searchSupply() { 
         if (navigator.geolocation) { 
@@ -1895,7 +1925,7 @@ function getShortAreaName(fullAddress) {
     
     // 1. 北海道、旭川市、さらに「〇〇郡」も消す（美瑛町などを綺麗にするため）
     let short = fullAddress.replace(/^北海道/, '').replace(/^旭川市/, '').replace(/^[^郡]+郡/, '').trim();
-    
+
     // 2. 全角数字（１２３）にも完全対応した抽出ルール
     
     // パターンA: 「東4条」「南３条」などの方向＋条

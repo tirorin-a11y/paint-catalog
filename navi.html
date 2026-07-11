@@ -265,6 +265,7 @@
     <label>親案件No</label><input type="text" id="parentCaseNo" placeholder="例：K-12345" style="background:#f9f9f9;">
     <label>現場名</label><input type="text" id="siteName" placeholder="例：鈴木様邸">
     <label>住所</label><input type="text" id="address" placeholder="例：東京都千代田区...">
+    <label>プラスコード</label><input type="text" id="pluscode" placeholder="例：AG9_+W2_ __町">
     <label>工期</label>
     <div class="date-group">
         <input type="date" id="startDate" class="date-input">
@@ -353,12 +354,12 @@
 
 <div class="fab-container">
     <div style="display:flex; align-items:center;">
-        <button class="fab-btn add-fab" onclick="openForm('new')">＋</button>
+        <button class="fab-btn add-fab" transform: translateZ(0); onclick="openForm('new')">＋</button>
     </div>
     
     <div style="display:flex; align-items:center;">
-        <span class="fab-label">共有・暗号化保存</span>
-        <button class="fab-btn share-fab" onclick="handleBackupClick()">📤</button>
+        <span class="fab-label" transform: translateZ(0);>共有・暗号化保存</span>
+        <button class="fab-btn share-fab"  transform: translateZ(0); onclick="handleBackupClick()">📤</button>
     </div>
 </div>
 <div id="notification" class="notification"></div>
@@ -730,22 +731,45 @@ function moveItem(index, direction) {
     function saveSite() {
         const id = `${document.getElementById('inputYear').value}-${document.getElementById('inputNum').value}`;
         const name = document.getElementById('siteName').value;
+        
+        // ★修正：コメントアウトはスラッシュ2つです
+        // ★追加：プラスコードの入力値を取得
+        const plusCode = document.getElementById('pluscode').value;
+        
         if(!name) { showNotification('⚠️ 現場名が必要です'); return; }
+        
+        // ★修正：取得したplusCodeをdataの中にしっかり組み込む！
         const data = {
-            id, name, address: document.getElementById('address').value, status: document.getElementById('status').value,
+            id, 
+            name, 
+            address: document.getElementById('address').value, 
+            plusCode: plusCode,  // ←★ここに追加しました！
+            status: document.getElementById('status').value,
             naviCount: parseInt(document.getElementById('editNaviCount').value)||0,
             parentCaseNo: document.getElementById('parentCaseNo').value,
-            start: document.getElementById('startDate').value, end: document.getElementById('endDate').value, updatedAt: Date.now()
+            start: document.getElementById('startDate').value, 
+            end: document.getElementById('endDate').value, 
+            updatedAt: Date.now()
         };
+        
         if(isEditing) {
             const idx = sites.findIndex(s => s.id === editingId);
             if(idx !== -1) sites[idx] = data; else sites.unshift(data);
         } else {
-            if(sites.some(s=>s.id===id)){ if(!confirm('上書きしますか？'))return; const idx=sites.findIndex(s=>s.id===id); sites[idx]=data; }
+            if(sites.some(s=>s.id===id)){ 
+                if(!confirm('上書きしますか？'))return; 
+                const idx=sites.findIndex(s=>s.id===id); 
+                sites[idx]=data; 
+            }
             else sites.unshift(data);
         }
-        localStorage.setItem('dx_sites', JSON.stringify(sites)); closeAllModals(); renderList(); showNotification('🎉 保存しました');
+        
+        localStorage.setItem('dx_sites', JSON.stringify(sites)); 
+        closeAllModals(); 
+        renderList(); 
+        showNotification('🎉 保存しました');
     }
+
     function deleteCurrentSite() { if(editingId && confirm('削除しますか？')) { sites = sites.filter(s=>s.id!==editingId); localStorage.setItem('dx_sites', JSON.stringify(sites)); closeAllModals(); renderList(); showNotification('🗑️ 削除しました'); } }
     function openForm(mode, id=null) {
         document.getElementById('inputForm').classList.add('show'); document.getElementById('overlay').classList.add('show');
