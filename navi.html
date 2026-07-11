@@ -485,7 +485,9 @@
         }
     }
 
-    // 左ボタン（減る演出）の制御
+    // ==========================================
+    // ■ 左ボタン（減る演出）の制御
+    // ==========================================
     function handleTouchStart(btn, id, address) {
         if (btn.classList.contains('holding')) return;
         btn.dataset.startTime = Date.now();
@@ -499,38 +501,33 @@
     }
 
     function handleTouchEnd(btn, id, address) {
-    if (pressTimer) {
-        clearTimeout(pressTimer); 
-        pressTimer = null; 
-        btn.classList.remove('holding');
-    }
-    const pressTime = Date.now() - (parseInt(btn.dataset.startTime) || 0);
-    
-    if (pressTime > 0 && pressTime < 500) {
-        updateNaviCount(id, 1);
-
-        let destination = address; 
-
-        // 罠①対策：IDの「型不一致（数値と文字列）」を絶対に防ぐため、両方を文字に変換して探す
-        const site = sites.find(s => String(s.id) === String(id));
+        if (pressTimer) {
+            clearTimeout(pressTimer); 
+            pressTimer = null; 
+            btn.classList.remove('holding');
+        }
+        const pressTime = Date.now() - (parseInt(btn.dataset.startTime) || 0);
         
-        // 🔍 【原因究明用のアラート】（確認できたら後で消せます！）
-        if (site) {
-            alert(`【スマホ内データ確認】\n現場名: ${site.name}\nプラスコード: ${site.plusCode || "★入っていません★"}`);
-        } else {
-            alert(`【警告】\nID: ${id} の現場がスマホの sites の中から見つかりませんでした！`);
-        }
+        // 短押し（タップ）の時のナビ起動
+        if (pressTime > 0 && pressTime < 500) {
+            updateNaviCount(id, 1);
 
-        if (site && site.plusCode && site.plusCode.trim() !== "") {
-            destination = site.plusCode; 
-        }
+            let destination = address; 
+            const site = sites.find(s => String(s.id) === String(id));
+            
+            // プラスコードがあれば上書き
+            if (site && site.plusCode && site.plusCode.trim() !== "") {
+                destination = site.plusCode; 
+            }
 
-        // ※URLの変数を正しく認識させるため ${destination} に補正しています
-        window.open(`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(destination)}`, '_blank');
+            // Googleマップを開く（確実なURL形式）
+            window.open(`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(destination)}`, '_blank');
+        }
     }
-}
 
-    // --- 右ボタン制御 ---
+    // ==========================================
+    // ■ 右ボタン制御
+    // ==========================================
     let rightPressTimer = null;
     let isRightLongPress = false;
 
@@ -561,11 +558,33 @@
     function handleRightClick(e, id) {
         const btn = e.currentTarget;
         const pressTime = Date.now() - (parseInt(btn.dataset.startTime) || 0);
+        
+        // 長押しの場合は何もしない（リンクも開かない）
         if (isRightLongPress || pressTime >= 500 || pressTime <= 0) {
-            e.preventDefault(); return false;
+            e.preventDefault(); 
+            return false;
         }
+
+        // ★タップ時の処理（HTMLのリンクを無視して自力で開く）
+        e.preventDefault(); 
         updateNaviCount(id, 1);
-        return true;
+
+        let destination = ""; 
+        const site = sites.find(s => String(s.id) === String(id));
+        
+        if (site) {
+            if (site.plusCode && site.plusCode.trim() !== "") {
+                destination = site.plusCode; // プラスコード優先
+            } else {
+                destination = site.address;  // なければ普通の住所
+            }
+        }
+
+        if (destination) {
+            window.open(`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(destination)}`, '_blank');
+        }
+        
+        return false; 
     }
     // ----------------------------------------
 
