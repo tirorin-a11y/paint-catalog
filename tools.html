@@ -701,26 +701,30 @@ function loadSendLogs(siteId) {
     .then(res => res.json())
     .then(data => {
         if (data.result === 'success' && data.logs.length > 0) {
-            logList.innerHTML = ''; // ローディング文字を消す
+            logList.innerHTML = ''; 
             
             data.logs.forEach(log => {
-                // 1行分のチェックボックス付きHTMLを作成
                 const item = document.createElement('div');
                 item.style.marginBottom = '5px';
                 item.style.borderBottom = '1px dashed #ccc';
                 item.style.paddingBottom = '5px';
                 
-                // checkboxのvalueに過去の本文を仕込んでおく
+                // ★重要フラグが TRUE の場合は星マークをつけ、背景を少し目立たせる
+                const starMark = log.isImportant ? '⭐ ' : '⬜️ ';
+                if (log.isImportant) {
+                    item.style.background = '#fffde7'; // ほんのり薄黄色
+                    item.style.padding = '4px';
+                    item.style.borderRadius = '3px';
+                }
+                
                 item.innerHTML = `
                     <label style="display:flex; align-items:center; gap:8px; cursor:pointer;">
                         <input type="checkbox" class="log-checkbox" style="transform: scale(1.2);">
-                        <span style="color:#555;">[${log.date}] ${log.summary}</span>
+                        <span style="color:#555;">${starMark}[${log.date}] ${log.summary}</span>
                     </label>
                 `;
                 
-                // 本文（text）は改行などが含まれるため、安全にプロパティとしてセット
                 item.querySelector('input').value = log.text; 
-                
                 logList.appendChild(item);
             });
         } else {
