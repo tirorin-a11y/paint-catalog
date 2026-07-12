@@ -276,7 +276,7 @@
 
     window.onload = () => {
         const savedComp = localStorage.getItem('dx_company_name');
-        document.getElementById('companyName').value = savedComp ? savedComp : "ペイントハウス";
+        document.getElementById('companyName').value = savedComp ? savedComp : "";
         renderProcessButtons();
         renderCameraButtons();
         updateDateConfigDisplay(); // 設定値を画面に反映

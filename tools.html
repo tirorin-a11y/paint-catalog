@@ -711,23 +711,43 @@ function loadSendLogs(siteId) {
                 item.style.borderBottom = '1px dashed #ccc';
                 item.style.paddingBottom = '5px';
                 
-                // ★重要フラグが TRUE の場合は星マークをつけ、背景を少し目立たせる
                 const starMark = log.isImportant ? '⭐ ' : '⬜️ ';
                 if (log.isImportant) {
-                    item.style.background = '#fffde7'; // ほんのり薄黄色
+                    item.style.background = '#fffde7'; 
                     item.style.padding = '4px';
                     item.style.borderRadius = '3px';
                 }
                 
+                // 行番号をセット
                 item.innerHTML = `
-                    <label style="display:flex; align-items:center; gap:8px; cursor:pointer;">
+                    <label class="log-item-label" data-row="${log.row}" style="display:flex; align-items:center; gap:8px; cursor:pointer; user-select:none;">
                         <input type="checkbox" class="log-checkbox" style="transform: scale(1.2);">
                         <span style="color:#555;">${starMark}[${log.date}] ${log.summary}</span>
                     </label>
                 `;
-                
                 item.querySelector('input').value = log.text; 
                 logList.appendChild(item);
+                
+                // ★追加：長押しの判定ロジック
+                const labelTarget = item.querySelector('.log-item-label');
+                let pressTimer;
+                
+                const startPress = (e) => {
+                    // 800ミリ秒押し続けたら取り消し処理を発動
+                    pressTimer = setTimeout(() => {
+                        cancelLogItem(log.row, log.summary);
+                    }, 800);
+                };
+                const cancelPress = () => { clearTimeout(pressTimer); };
+
+                // スマホ用（タッチ）とPC用（マウス）両方のイベントを登録
+                labelTarget.addEventListener('touchstart', startPress, {passive: true});
+                labelTarget.addEventListener('touchend', cancelPress);
+                labelTarget.addEventListener('touchcancel', cancelPress);
+                
+                labelTarget.addEventListener('mousedown', startPress);
+                labelTarget.addEventListener('mouseup', cancelPress);
+                labelTarget.addEventListener('mouseleave', cancelPress);
             });
         } else {
             logList.innerHTML = '<div style="color: gray;">過去の履歴はありません。</div>';
@@ -736,6 +756,36 @@ function loadSendLogs(siteId) {
     .catch(err => {
         logList.innerHTML = '<div style="color: red;">読み込みに失敗しました</div>';
     });
+}
+
+// 🟪 ログを長押しした時に呼ばれる取り消し処理
+function cancelLogItem(rowNumber, summaryText) {
+    // 振動で「長押し成功」を指先に伝える
+    if (navigator.vibrate) navigator.vibrate([50, 50, 50]);
+
+    if (!confirm(`以下の送信履歴を取り消しますか？\n「${summaryText}」`)) {
+        return;
+    }
+
+    const gasUrl = localStorage.getItem('dx_gas_url');
+    if (!gasUrl) return;
+
+    fetch(gasUrl, {
+        method: 'POST',
+        headers: { 'Content-Type': 'text/plain' },
+        body: JSON.stringify({ authKey: "うっきうき", type: "cancelSendLog", row: rowNumber })
+    })
+    .then(res => res.json())
+    .then(data => {
+        if (data.result === 'success') {
+            alert("履歴を取り消しました！");
+            // リストを最新状態に読み込み直す（消えたことを画面に反映）
+            if (currentSite) loadSendLogs(currentSite.id);
+        } else {
+            alert("エラーが発生しました: " + data.error);
+        }
+    })
+    .catch(err => alert("通信エラーが発生しました。"));
 }
     
     
@@ -2119,22 +2169,32 @@ function recordSendLog(tool, subject, text) {
     .catch(error => console.error("❌ ログ送信エラー: ", error));
 }
 
-// 🟩 修正：フローチャートをLINEで送る
+// 🟩 フローチャートをLINEで送る（ガード追加）
 function sendFlowchartLine() {
+    // ★追加：送信前の最終確認（キャンセルを防ぐガード）
+    if (!confirm("LINEを起動してメッセージを送信しますか？\n（「OK」を押すと送信履歴に記録されます）")) {
+        return; // キャンセルされたらここで処理をピタッと止める（ログも残らない）
+    }
+
     const { subject, text } = generateFlowchartText();
     
-    // ★追加：送る直前にログを記録する
+    // 送る直前にログを記録する
     recordSendLog("LINE", subject, text);
     
     const lineUrl = `https://line.me/R/msg/text/?${encodeURIComponent(subject + "\n\n" + text)}`;
     window.open(lineUrl, '_blank');
 }
 
-// 🟧 修正：フローチャートをメールで送る
+// 🟧 フローチャートをメールで送る（ガード追加）
 function sendFlowchartEmail() {
+    // ★追加：送信前の最終確認（キャンセルを防ぐガード）
+    if (!confirm("メールアプリを起動してメッセージを送信しますか？\n（「OK」を押すと送信履歴に記録されます）")) {
+        return;
+    }
+
     const { subject, text } = generateFlowchartText(); 
     
-    // ★追加：送る直前にログを記録する
+    // 送る直前にログを記録する
     recordSendLog("メール", subject, text);
     
     let compVal = document.getElementById('companyName') ? document.getElementById('companyName').value.trim() : '';
