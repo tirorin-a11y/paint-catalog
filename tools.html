@@ -366,6 +366,11 @@
                 <div id="sendLogList" style="max-height: 120px; overflow-y: auto; font-size: 0.85em;">
             </div>
     </div>
+
+        <label style="display: flex; align-items: center; gap: 6px; margin: 8px 0; font-size: 0.9em; color: #e67e22; font-weight: bold; cursor: pointer;">
+        <input type="checkbox" id="flowchart-important" checked style="transform: scale(1.2);">
+        ⭐ 重要事項として記録
+    </label>
 </div>
 
     <button id="btn-send-line" onclick="sendFlowchartLine()" style="background-color: #00B900; color: white; width: 100%; padding: 15px; border: none; border-radius: 8px; margin-top: 10px; font-size: 1.1rem; font-weight: bold; cursor: pointer; box-shadow: 0 2px 4px rgba(0,185,0,0.3);">
@@ -2084,10 +2089,7 @@ function recordSendLog(tool, subject, text) {
         return; 
     }
 
-    // ★追加：テキストエリアにユーザーが直接打ち込んだ文字だけを取得
     const userInput = document.getElementById('flowchart-message').value;
-    
-    // もし何も打ち込まずに送信した時用の保険
     const finalLogText = userInput ? userInput : "(定型文のみ送信)";
 
     const logData = {
@@ -2096,16 +2098,14 @@ function recordSendLog(tool, subject, text) {
         siteId: currentSite.id,
         status: document.getElementById('flowchart-status').value,
         tool: tool,
-        // ★修正：全文ではなく、打ち込んだ文字だけを記録する
         text: finalLogText, 
-        isImportant: true
+        // ★修正：画面のチェックボックスがONなら true、OFFなら false を送る
+        isImportant: document.getElementById('flowchart-important') ? document.getElementById('flowchart-important').checked : false
     };
 
     fetch(gasUrl, {
         method: 'POST',
-        headers: {
-            'Content-Type': 'text/plain'
-        },
+        headers: { 'Content-Type': 'text/plain' },
         body: JSON.stringify(logData)
     })
     .then(response => response.json()) 
