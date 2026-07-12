@@ -361,16 +361,18 @@
     <div style="margin-bottom: 15px; background: #f5f5f5; padding: 10px; border-radius: 8px;">
         <label style="font-size: 0.85rem; color: #333; font-weight: bold;">💬 内容:</label>
         <textarea id="flowchart-message" rows="6" style="width:100%; box-sizing:border-box; margin-top:5px; padding: 10px; border-radius:6px; border:1px solid #ccc; font-size: 1rem;" placeholder="明日の作業内容や、お伝えしたい事項を入力してください。"></textarea>
+            <label style="display: flex; align-items: center; gap: 6px; margin: 8px 0; font-size: 0.9em; color: #e67e22; font-weight: bold; cursor: pointer;">
+                <input type="checkbox" id="flowchart-important" checked style="transform: scale(1.2);">
+                ⭐ 重要事項として記録
+            </label>
+
             <div id="sendLogArea" style="margin-top: 15px; padding: 10px; background: #f4f5f7; border-radius: 5px; display: none;">
                 <div style="font-weight: bold; font-size: 0.9em; margin-bottom: 8px; color: #333;">📜 過去の送信履歴（チェックで本文に引用）</div>
                 <div id="sendLogList" style="max-height: 120px; overflow-y: auto; font-size: 0.85em;">
             </div>
     </div>
 
-        <label style="display: flex; align-items: center; gap: 6px; margin: 8px 0; font-size: 0.9em; color: #e67e22; font-weight: bold; cursor: pointer;">
-        <input type="checkbox" id="flowchart-important" checked style="transform: scale(1.2);">
-        ⭐ 重要事項として記録
-    </label>
+        
 </div>
 
     <button id="btn-send-line" onclick="sendFlowchartLine()" style="background-color: #00B900; color: white; width: 100%; padding: 15px; border: none; border-radius: 8px; margin-top: 10px; font-size: 1.1rem; font-weight: bold; cursor: pointer; box-shadow: 0 2px 4px rgba(0,185,0,0.3);">
