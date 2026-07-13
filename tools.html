@@ -2084,9 +2084,9 @@ function generateFlowchartText() {
     let text = `【${status}】\n\n`;
     
     if (status === "作業予定") {
-        text += `今後の作業予定をお知らせいたします。\n`;
+        text += `今後の作業予定をお知らせ\n`;
     } else if (status === "連絡事項") {
-        text += `ご連絡事項がございます。\nご確認をよろしくお願いいたします。\n`;
+        text += `ご確認をよろしくお願いいたします。\n`;
     }
 
     // ① テキストエリアの本文を取得
@@ -2099,7 +2099,6 @@ function generateFlowchartText() {
     if (msg) {
         if (status === "連絡事項") {
             text += "／＼／＼／＼／＼／＼\r\n";
-            text += "━━━━ 要確認 ━━━\r\n";
             text += msg + "\r\n";
             text += "＼／＼／＼／＼／＼／\r\n\n";
         } else {
