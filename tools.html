@@ -2186,33 +2186,41 @@ function sendFlowchartLine() {
 
 // 🟧 フローチャートをメールで直接送る（GAS連携版）
 async function sendFlowchartEmail() {
-    // 1️⃣ 先に画面から会社名を取得する
-    let compVal = document.getElementById('companyName') ? document.getElementById('companyName').value.trim() : '';
-    // ※もし画面の設定が空っぽだった場合の「予備の会社名」は弊社にしておきます
-    const company = compVal !== '' ? compVal : '弊社'; 
-
-    // 2️⃣ 取得した会社名（変数）をポップアップの文章に組み込む
-    // ※文字を「`（バッククォート）」で囲み、変数を ${} で入れるのがJSのルールです！
-    if (!confirm(`${company} として、お客様に直接メールを送信しますか？\n（「OK」を押すと裏側で即座に送信されます）`)) {
-        return;
-    }
-
-    const { subject, text } = generateFlowchartText(); 
-    let customerEmail = (currentSite && currentSite.email) ? currentSite.email : "";
-    
-    if (!customerEmail) {
-        alert("宛先メールアドレスが登録されていません。確認してください。");
-        return;
-    }
-
-    const body = `${text}\n\n--\n${company}`;
-    
-    showNotification("✉️ メール送信中...");
-    
-    const targetUrl = localStorage.getItem('dx_gas_url');
-    const authKey = localStorage.getItem('dx_auth_key') || "";
-
     try {
+        // 1️⃣ 会社名取得
+        let compVal = document.getElementById('companyName') ? document.getElementById('companyName').value.trim() : '';
+        const company = compVal !== '' ? compVal : '弊社';
+
+        // 2️⃣ 確認ポップアップ
+        if (!confirm(`${company} として、お客様に直接メールを送信しますか？\n（「OK」を押すと裏側で即座に送信されます）`)) {
+            return;
+        }
+
+        // 🚨 もしここから下でつまずいたら、一番下の「catch」に飛んでエラーを警告します！
+        
+        const { subject, text } = generateFlowchartText(); 
+        let customerEmail = (currentSite && currentSite.email) ? currentSite.email : "";
+        
+        if (!customerEmail) {
+            alert("宛先メールアドレスが登録されていません。確認してください。");
+            return;
+        }
+
+        const body = `${text}\n\n--\n${company}`;
+        
+        // 通知を出す
+        if (typeof showNotification === 'function') {
+            showNotification("✉️ メール送信中...");
+        }
+        
+        const targetUrl = localStorage.getItem('dx_gas_url');
+        const authKey = localStorage.getItem('dx_auth_key') || "";
+
+        if (!targetUrl) {
+            throw new Error("GASのURLが設定されていません。");
+        }
+
+        // GASへ通信（メール送信依頼）
         const response = await fetch(targetUrl, { 
             method: 'POST', 
             headers: { 'Content-Type': 'text/plain' }, 
@@ -2222,7 +2230,6 @@ async function sendFlowchartEmail() {
                 subject: subject,
                 body: body,
                 authKey: authKey,
-                // 3️⃣ ★超重要：GAS（裏側）にもこの会社名を送ってあげる！
                 senderName: company 
             })
         });
@@ -2231,15 +2238,21 @@ async function sendFlowchartEmail() {
         const resJson = JSON.parse(resText);   
         
         if (resJson.result === "success") { 
-            recordSendLog("メール", subject, text);
-            showNotification("✅ メール送信完了"); 
+            // ✅ 成功した時だけログを残す
+            if (typeof recordSendLog === 'function') {
+                recordSendLog("メール", subject, text);
+            }
+            if (typeof showNotification === 'function') {
+                showNotification("✅ メール送信完了"); 
+            }
             alert("メールを直接送信しました！"); 
         } else { 
-            throw new Error(resJson.error || "GASエラー");
+            throw new Error(resJson.error || "GAS側でエラーが発生しました");
         }
 
     } catch(e) { 
-        alert("メール送信失敗: " + e); 
+        // 💥 気絶させずに、何が原因で止まったのかを画面に表示する！
+        alert("🚨 処理が途中でストップしました！\n原因: " + e.message); 
     }
 }
 
