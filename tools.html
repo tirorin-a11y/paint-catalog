@@ -779,8 +779,21 @@ function cancelLogItem(rowNumber, summaryText) {
     .then(data => {
         if (data.result === 'success') {
             alert("履歴を取り消しました！");
-            // リストを最新状態に読み込み直す（消えたことを画面に反映）
-            if (currentSite) loadSendLogs(currentSite.id);
+            
+            // ==========================================
+            // 🌟 追加：「作戦A」手元のメモ（配列）からもその行を直接消し去る！
+            // ==========================================
+            if (currentSite) {
+                // ※ログが入っている配列名（sendLogs または logs など）に合わせて調整してください
+                if (currentSite.sendLogs) {
+                    currentSite.sendLogs = currentSite.sendLogs.filter(log => log.row !== rowNumber);
+                } else if (currentSite.logs) {
+                    currentSite.logs = currentSite.logs.filter(log => log.row !== rowNumber);
+                }
+                
+                // 手元のデータを綺麗にしてから、リストを最新状態に描き直す
+                loadSendLogs(currentSite.id);
+            }
         } else {
             alert("エラーが発生しました: " + data.error);
         }
