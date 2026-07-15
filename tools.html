@@ -2184,74 +2184,97 @@ function sendFlowchartLine() {
     window.open(lineUrl, '_blank');
 }
 
-// 🟧 フローチャートをメールで直接送る（GAS連携版）
+// 🟧 フローチャートをメールで送る（自動分岐ハイブリッド版）
 async function sendFlowchartEmail() {
     try {
-        // 1️⃣ 会社名取得
+        // 1️⃣ 画面から会社名を取得
         let compVal = document.getElementById('companyName') ? document.getElementById('companyName').value.trim() : '';
-        const company = compVal !== '' ? compVal : '弊社';
+        const company = compVal !== '' ? compVal : '会社名を入力して';
 
-        // 2️⃣ 確認ポップアップ
-        if (!confirm(`${company} として、お客様に直接メールを送信しますか？\n（「OK」を押すと裏側で即座に送信されます）`)) {
-            return;
-        }
-
-        // 🚨 もしここから下でつまずいたら、一番下の「catch」に飛んでエラーを警告します！
-        
-        const { subject, text } = generateFlowchartText(); 
+        // 2️⃣ 宛先メールアドレスの確認
         let customerEmail = (currentSite && currentSite.email) ? currentSite.email : "";
-        
-        if (!customerEmail) {
-            alert("宛先メールアドレスが登録されていません。確認してください。");
-            return;
-        }
 
-        const body = `${text}\n\n--\n${company}`;
-        
-        // 通知を出す
-        if (typeof showNotification === 'function') {
-            showNotification("✉️ メール送信中...");
-        }
-        
-        const targetUrl = localStorage.getItem('dx_gas_url');
-        const authKey = localStorage.getItem('dx_auth_key') || "";
+        // 3️⃣ メアドの有無で動きを自動分岐
+        if (customerEmail && customerEmail.trim() !== "") {
+            // ==========================================
+            // 💡 パターンA：メールアドレスがある ➔ GASで直接送信（バックグラウンド）
+            // ==========================================
+            if (!confirm(`${company} として、${currentSite.email}に直接メールを送信しますか？\n（「OK」を押すと裏側で即座に送信されます）`)) {
+                return;
+            }
 
-        if (!targetUrl) {
-            throw new Error("GASのURLが設定されていません。");
-        }
+            const { subject, text } = generateFlowchartText(); 
+            const body = `${text}\n\n--\n${company}`;
+            
+            if (typeof showNotification === 'function') {
+                showNotification("✉️ メール送信中...");
+            }
+            
+            const targetUrl = localStorage.getItem('dx_gas_url');
+            const authKey = localStorage.getItem('dx_auth_key') || "";
 
-        // GASへ通信（メール送信依頼）
-        const response = await fetch(targetUrl, { 
-            method: 'POST', 
-            headers: { 'Content-Type': 'text/plain' }, 
-            body: JSON.stringify({ 
-                type: "sendEmailDirect", 
-                to: customerEmail,
-                subject: subject,
-                body: body,
-                authKey: authKey,
-                senderName: company 
-            })
-        });
+            if (!targetUrl) {
+                throw new Error("GASのURLが設定されていません。");
+            }
 
-        const resText = await response.text(); 
-        const resJson = JSON.parse(resText);   
-        
-        if (resJson.result === "success") { 
-            // ✅ 成功した時だけログを残す
+            // GASへ送信
+            const response = await fetch(targetUrl, { 
+                method: 'POST', 
+                headers: { 'Content-Type': 'text/plain' }, 
+                body: JSON.stringify({ 
+                    type: "sendEmailDirect", 
+                    to: customerEmail,
+                    subject: subject,
+                    body: body,
+                    authKey: authKey,
+                    senderName: company 
+                })
+            });
+
+            const resText = await response.text(); 
+            const resJson = JSON.parse(resText);   
+            
+            if (resJson.result === "success") { 
+                // 成功したらログに記録
+                if (typeof recordSendLog === 'function') {
+                    recordSendLog("メール", subject, text);
+                }
+                if (typeof showNotification === 'function') {
+                    showNotification("✅ メール送信完了"); 
+                }
+                alert("メールを直接送信しました！"); 
+            } else { 
+                throw new Error(resJson.error || "GAS側でエラーが発生しました");
+            }
+
+        } else {
+            // ==========================================
+            // 💡 パターンB：メールアドレスがない ➔ 以前の mailto 方式（メーラー手動起動）
+            // ==========================================
+            if (!confirm("宛先メールアドレスが設定されていません。\nメールアプリを起動してメッセージを送信しますか？\n（「OK」を押すと送信履歴に記録されます）")) {
+                return;
+            }
+
+            const { subject, text } = generateFlowchartText(); 
+            const body = `${text}\n\n--\n${company}`;
+            
+            // ログに記録する（送信アプリ起動前）
             if (typeof recordSendLog === 'function') {
                 recordSendLog("メール", subject, text);
             }
-            if (typeof showNotification === 'function') {
-                showNotification("✅ メール送信完了"); 
-            }
-            alert("メールを直接送信しました！"); 
-        } else { 
-            throw new Error(resJson.error || "GAS側でエラーが発生しました");
+
+            // 宛先空欄の mailto リンクを作成
+            const mailUrl = `mailto:?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+            
+            const a = document.createElement('a');
+            a.href = mailUrl;
+            a.target = '_blank';
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
         }
 
     } catch(e) { 
-        // 💥 気絶させずに、何が原因で止まったのかを画面に表示する！
         alert("🚨 処理が途中でストップしました！\n原因: " + e.message); 
     }
 }
