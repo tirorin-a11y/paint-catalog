@@ -2072,14 +2072,14 @@ function getShortAreaName(fullAddress) {
 
 // フローチャート（お客様宛メッセージ）のテキストを生成する共通関数
 function generateFlowchartText() {
-    const siteName = currentSite ? currentSite.name : 'お客様';
+    const siteName = currentSite ? currentSite.name : '現場名';
     const address = currentSite ? currentSite.address : '';
     const company = document.getElementById('companyName') ? document.getElementById('companyName').value : '弊社';
     
     const shortArea = getShortAreaName(address);
     const titleArea = shortArea ? `【${shortArea}】` : "";
     const status = document.getElementById('flowchart-status').value;
-    const subject = `${titleArea}${siteName}様邸 ${status}`;
+    const subject = `${titleArea}${siteName}様 ${status}`;
 
     let text = `【${status}】\n\n`;
     
