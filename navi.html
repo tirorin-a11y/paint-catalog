@@ -844,111 +844,82 @@ function moveItem(index, direction) {
         }
     }
 
-    // クラウド保存（同期バグ修正版）
-    async function syncAllDataToCloud() {
-        const authKey = localStorage.getItem('dx_auth_key') || "";
-        // ★追加：合言葉が空の場合はここでストップ
-        if (!authKey || authKey.trim() === "") {
-            alert("合言葉を入力してください。");
-            return false;
-        }
+    // クラウド保存（即閉じ ＆ 撃ちっ放しバックグラウンド仕様）
+async function syncAllDataToCloud() {
+    const authKey = localStorage.getItem('dx_auth_key') || "";
+    // 合言葉が空の場合はここでストップ
+    if (!authKey || authKey.trim() === "") {
+        alert("合言葉を入力してください。");
+        return false;
+    }
 
-        if(!confirm("現在スマホにあるデータで、クラウドを上書き保存しますか？")) return;
-        
-        const targetUrl = localStorage.getItem('dx_gas_url');
-        if(!targetUrl || targetUrl.includes("script.google.com") === false) { 
-            alert("GAS URLを設定してください"); return false; 
-        }
+    if(!confirm("現在スマホにあるデータで、クラウドを上書き保存しますか？")) return;
+    
+    // ===========================================================
+    // 🌟【作戦Aの核心】OKを押された瞬間に、0.1秒で画面をすべて閉じる！
+    // ===========================================================
+    closeAllModals();
+    showNotification("☁️ クラウドへ保存を開始しました");
 
-        // -----------------------------------------------------------
-        // 🕵️‍♂️ ステップ1：保存する前に、念のためクラウドの状況をチラ見する
-        // -----------------------------------------------------------
-        showNotification("☁️ クラウド確認中...");
-        try {
-            // 現在のデータ一覧を取得
-            const checkRes = await fetch(targetUrl + "?type=getAll&authKey=" + authKey);
-            const text = await checkRes.text(); 
-            const cloudData = JSON.parse(text);      
-            
-            // スマホとクラウド、どっちが新しいか比較
-            const localMax = sites.length > 0 ? Math.max(...sites.map(s => s.updatedAt || 0)) : 0;
-            const cloudMax = Array.isArray(cloudData) && cloudData.length > 0 ? Math.max(...cloudData.map(s => s.updatedAt || 0)) : 0;
-            
-            // ★もしクラウドの方が新しかったら...「復元」を提案する！
-            if (cloudMax > localMax) {
-                const cloudDate = new Date(cloudMax).toLocaleString();
-                
-                // ユーザーに選択してもらう
-                if (confirm(`⚠️ クラウド側に新しいデータがあります（${cloudDate}）。\n\n保存を中止して、最新データを取り込みますか？\n（[OK]を押すと復元を開始します）`)) {
-                    // OKなら、保存はやめて復元へジャンプ
-                    downloadFromCloud(); 
-                    return false; 
-                } else {
-                    // キャンセルなら、「強引に上書き」しようとする（けど、次のGASチェックで止まるかも）
-                    if(!confirm("⚠️ 本当に上書きしますか？\nクラウドの最新データは消えます。")) {
-                        showNotification("中断しました");
-                        return false;
-                    }
-                }
-            }
-        } catch(e) { 
-            console.warn("事前チェック失敗:", e); 
-            // エラーが出ても、とりあえず保存には進んでみる
-        }
-        
-        // -----------------------------------------------------------
-        // 🚀 ステップ2：いざ、送信！（GAS側の門番チェック含む）
-        // -----------------------------------------------------------
-        try {
-            showNotification("☁️ 送信中...");
-            
-            const response = await fetch(targetUrl, { 
-                method: 'POST', 
-                headers: { 'Content-Type': 'text/plain' }, 
-                body: JSON.stringify({ 
-                    type: "sync", 
-                    data: sites, 
-                    reporter: localStorage.getItem('dx_reporter_name') || "職人",
-                    
-                    // ★正直な「同期時間」を申告（嘘をつかない）
-                    clientTime: Number(localStorage.getItem('dx_sync_time') || 0),
-                    
-                    authKey: authKey
-                })
-            });
+    const targetUrl = localStorage.getItem('dx_gas_url');
+    if(!targetUrl || targetUrl.includes("script.google.com") === false) { 
+        alert("GAS URLを設定してください"); return false; 
+    }
 
+    // 🕵️‍♂️ 旧ステップ1（送信前のチラ見チェック）は、
+    // 画面を即座に落とす運用の邪魔になるためバッサリ削除しました！
+    // 安全性の高い「GAS側の門番チェック」にすべてを委ねます。
+
+    // -----------------------------------------------------------
+    // 🚀 いざ、送信！（通信の完了を待たずに即時フリーにする）
+    // -----------------------------------------------------------
+    try {
+        // 💡 あえて「await」を外すことで、通信の終わりを待たずにこの関数を即終了させます
+        fetch(targetUrl, { 
+            method: 'POST', 
+            headers: { 'Content-Type': 'text/plain' }, 
+            body: JSON.stringify({ 
+                type: "sync", 
+                data: sites, 
+                reporter: localStorage.getItem('dx_reporter_name') || "職人",
+                clientTime: Number(localStorage.getItem('dx_sync_time') || 0),
+                authKey: authKey
+            }),
+            keepalive: true // 🌟【最重要】スマホをポケットにしまっても、ブラウザが裏で最後まで送り届ける魔法！
+        })
+        .then(async response => {
             const resText = await response.text(); 
             const resJson = JSON.parse(resText);   
             
-            // 判定ロジック
             if (resJson.result === "success") { 
-                // ✅ 成功！
-                localStorage.setItem('dx_sync_time', Date.now()); // 自分の時間も更新
-                showNotification("✅ 送信完了"); 
-                alert("クラウドに保存しました！"); 
-                // ★追加：成功したらモーダルを閉じる
-                closeAllModals();
-                return true; 
-            
+                // 成功したら、裏側でこっそり同期時間を更新
+                localStorage.setItem('dx_sync_time', Date.now()); 
+                if (typeof showNotification === 'function') {
+                    showNotification("✅ クラウド保存完了"); 
+                }
             } else { 
-                // ⛔ エラー（でも中身を見る）
-                
-                // もし「サーバーに新しいデータがある」という理由なら...
+                // GAS側の門番（サーバーの方が新しいデータがある等）で弾かれた場合
                 if (resJson.error && resJson.error.includes("サーバーに新しいデータ")) {
-                    if (confirm("⚠️ 保存できませんでした。\nサーバーに誰かが保存した新しいデータがあります。\n\n最新データを取り込み（復元）しますか？")) {
-                        downloadFromCloud(); // 復元へ誘導
+                    // もしアプリを開いたまま待っていたなら、警告を出す
+                    if (typeof showNotification === 'function') {
+                        showNotification("⛔ 保存失敗：サーバーが新しいです");
                     }
-                } else {
-                    // それ以外の本物のエラー
-                    throw new Error(resJson.error || "GASエラー");
+                    console.warn("同期競合エラー:", resJson.error);
                 }
             }
+        })
+        .catch(e => {
+            console.error("バックグラウンド通信エラー（スルーします）:", e);
+        });
 
-        } catch(e) { 
-            alert("送信失敗: " + e); 
-            return false; 
-        }
+        // 通信の「開始」自体は成功したので、trueを返して即座に画面を動かせる状態にする
+        return true; 
+
+    } catch(e) { 
+        alert("送信処理の開始に失敗: " + e); 
+        return false; 
     }
+}
 
     async function downloadFromCloud() {
         const gasUrl = localStorage.getItem('dx_gas_url');
