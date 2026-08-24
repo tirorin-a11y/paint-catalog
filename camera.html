@@ -469,8 +469,15 @@
         
         const link = document.createElement('a');
         link.href = c.toDataURL('image/jpeg', 0.9);
+        
+        
+        // 画面に入力されている「施工箇所（photoDetail）」の文字を取得
+        const loc = document.getElementById('photoDetail').value || '箇所なし';
+
+        // 現場名 _ 工程 _ 施工箇所 _ タイムスタンプ の順で合体！
         const suffix = (currentMode === 'board') ? currentProcess : '日付';
-        link.download = `${currentSite?currentSite.name:'現場'}_${suffix}_${Date.now()}.jpg`;
+        link.download = `${currentSite?currentSite.name:'現場'}_${suffix}_${loc}_${Date.now()}.jpg`;
+        
         document.body.appendChild(link);
         link.click();
         document.body.removeChild(link);
