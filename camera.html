@@ -477,6 +477,7 @@
         // 現場名 _ 工程 _ 施工箇所 _ タイムスタンプ の順で合体！
         const suffix = (currentMode === 'board') ? currentProcess : '日付';
         link.download = `${currentSite?currentSite.name:'現場'}_${suffix}_${loc}_${Date.now()}.jpg`;
+
         
         document.body.appendChild(link);
         link.click();
