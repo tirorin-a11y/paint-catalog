@@ -999,6 +999,7 @@ async function deleteReport(index) {
             type: "cancel_report",
             id: currentSite ? currentSite.id : "",
             timestamp: item.timestamp || new Date(item.date).getTime(),
+            text: item.text || "", // ★この1行を追加して本文も一緒に送る
             authKey: localStorage.getItem('dx_auth_key') || ""
         };
 
