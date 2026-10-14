@@ -839,10 +839,14 @@ function cancelLogItem(rowNumber, summaryText) {
     .catch(err => alert("通信エラーが発生しました。"));
 }
     
-    // ====== 日報の合計時間を管理するロジック（全現場横断・履歴ベース計算版） ======
+    // ====== 日報の合計時間を管理するロジック（全現場横断・バグ対策強化版） ======
 
 function updateDailyTarget() {
-    const workers = parseFloat(document.getElementById('workerCount').value) || 2;
+    const workerEl = document.getElementById('workerCount');
+    // ▼【バグ修正】画面に人数枠がない時は、ここで処理を止めてエラー（無限ロード）を防ぐ
+    if (!workerEl) return; 
+
+    const workers = parseFloat(workerEl.value) || 2;
     const target = workers * 8; 
     const targetSpan = document.getElementById('dailyTargetTime');
     if (targetSpan) targetSpan.textContent = `(目標 ${target}h)`;
@@ -861,7 +865,6 @@ function checkTotalColor(targetTime) {
     }
 }
 
-
 function extractHoursFromText(text) {
     if (!text) return 0;
     const match = text.match(/([0-9０-９\.]+)\s*[hHｈＨ]/);
@@ -872,11 +875,10 @@ function extractHoursFromText(text) {
     return 0;
 }
 
-// 📌 全現場の履歴（ローカルストレージ）をかき集めて今日の合計を出す関数
+// 📌 全現場の履歴をかき集める関数
 function calculateDailyTotalFromHistory() {
     let total = 0;
     const now = new Date();
-    // 今日の午前0時の時間を取得
     const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime();
 
     const storedData = localStorage.getItem('dx_reports');
@@ -887,13 +889,15 @@ function calculateDailyTotalFromHistory() {
                 const siteReports = allHistory[siteKey];
                 if (Array.isArray(siteReports)) {
                     siteReports.forEach(report => {
-                        // 今日のデータなら足す
+                        // ▼【バグ修正】過去の古いデータで「content」ではなく「text」で保存されていた場合にも対応
+                        const reportText = report.content || report.text || "";
+                        
                         if (report.timestamp && report.timestamp >= startOfToday) {
-                            total += extractHoursFromText(report.content);
+                            total += extractHoursFromText(reportText);
                         } 
                         else if (!report.timestamp && report.date) {
                             if (report.date.startsWith(now.toLocaleDateString())) {
-                                total += extractHoursFromText(report.content);
+                                total += extractHoursFromText(reportText);
                             }
                         }
                     });
@@ -904,13 +908,11 @@ function calculateDailyTotalFromHistory() {
         }
     }
 
-    // 入力中の「仮の時間」も足す
     const inputArea = document.getElementById('reportText');
     if (inputArea) {
         total += extractHoursFromText(inputArea.value);
     }
 
-    // 画面の数字を更新
     const totalSpan = document.getElementById('dailyTotalTime');
     if (totalSpan) {
         totalSpan.textContent = total.toFixed(1);
@@ -918,7 +920,6 @@ function calculateDailyTotalFromHistory() {
     }
 }
 
-// 画面を開いた時と、文字を打った時にリアルタイムで計算する
 window.addEventListener('DOMContentLoaded', () => {
     calculateDailyTotalFromHistory();
     const textArea = document.getElementById('reportText');
@@ -926,7 +927,6 @@ window.addEventListener('DOMContentLoaded', () => {
         textArea.addEventListener('input', calculateDailyTotalFromHistory);
     }
 });
-
     
     /* --- 日報機能 --- */
     function saveReportLocal() { 
