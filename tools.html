@@ -500,7 +500,7 @@
         <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px dashed #90caf9; padding-bottom: 5px;">
             <span style="font-size: 0.85rem; color: #555; font-weight: bold;">👥 稼働人数</span>
             <div style="font-size: 0.85rem; color: #333;">
-                <input type="number" id="workerCount" value="2" min="1" max="10" step="1" onchange="updateDailyTarget()" style="width: 50px; text-align: center; padding: 4px; border: 1px solid #ccc; border-radius: 4px; font-weight: bold;"> 人
+                <input type="number" id="workerCount" value="2" min="0.5" max="10" step="1" onchange="updateDailyTarget()" style="width: 50px; text-align: center; padding: 4px; border: 1px solid #ccc; border-radius: 4px; font-weight: bold;"> 人
             </div>
         </div>
 
@@ -841,80 +841,89 @@ function cancelLogItem(rowNumber, summaryText) {
     
     // ====== 日報の合計時間を管理するロジック ======
 
-// 1. 人数に応じて目標時間を更新する関数
 function updateDailyTarget() {
-    const workers = parseInt(document.getElementById('workerCount').value) || 2;
-    const target = workers * 8; // 1人あたり8時間
+    // 変更点：parseInt（整数のみ）から parseFloat（小数もOK）に変更
+    const workers = parseFloat(document.getElementById('workerCount').value) || 2;
+    const target = workers * 8; 
     document.getElementById('dailyTargetTime').textContent = `(目標 ${target}h)`;
-    
-    // 現在の合計時間と比較して色を変える
     checkTotalColor(target);
 }
 
-// 2. 色を変える関数（目標未達なら赤、達成で青）
 function checkTotalColor(targetTime) {
     const totalSpan = document.getElementById('dailyTotalTime');
     const currentTotal = parseFloat(totalSpan.textContent) || 0;
     
     if (currentTotal < targetTime) {
-        totalSpan.style.color = '#e74c3c'; // 赤（未達）
+        totalSpan.style.color = '#e74c3c'; // 赤
     } else {
-        totalSpan.style.color = '#2e7d32'; // 緑・青（達成）
+        totalSpan.style.color = '#2e7d32'; // 緑
     }
 }
 
-// 3. 今日の日付文字列を取得する補助関数（例: "2026-10-14"）
 function getTodayString() {
     const now = new Date();
     return `${now.getFullYear()}-${now.getMonth()+1}-${now.getDate()}`;
 }
 
-// 4. 【重要】日報が送信・保存された時に、時間を加算する関数
-// ※この関数を、既存の「saveReportLocal」や「sendReportLine」等の成功時に呼び出します
-function addTimeToDailyTotal(hoursToAdd) {
-    if (!hoursToAdd || isNaN(hoursToAdd)) return;
-
-    const todayStr = getTodayString();
-    
-    // 保存されている「日付」と「合計時間」をチェック
-    let savedDate = localStorage.getItem('reportDate');
-    let currentTotal = parseFloat(localStorage.getItem('dailyTotalHours')) || 0;
-
-    // もし日付が変わっていたら（翌日になったら）合計をリセット
-    if (savedDate !== todayStr) {
-        currentTotal = 0;
-        localStorage.setItem('reportDate', todayStr);
+// 📌 新機能：テキストから「数字＋h（全角半角対応）」を賢く抜き出す関数
+function extractHoursFromText(text) {
+    // 「4h」「0.5h」「４ｈ」などを探し出す正規表現
+    const match = text.match(/([0-9０-９\.]+)\s*[hHｈＨ]/);
+    if (match) {
+        // 全角数字を半角に変換して数値にする
+        let numStr = match[1].replace(/[０-９]/g, s => String.fromCharCode(s.charCodeAt(0) - 0xFEE0));
+        return parseFloat(numStr) || 0;
     }
-
-    // 新しい時間を足して保存
-    currentTotal += parseFloat(hoursToAdd);
-    localStorage.setItem('dailyTotalHours', currentTotal);
-
-    // 画面の数字を更新
-    displayDailyTotal();
+    return 0;
 }
 
-// 5. 画面を開いた時（またはモーダルを開いた時）に現在の合計を表示する関数
+// 📌 画面の合計を更新する関数（保存済みの時間 ＋ 今入力している時間）
 function displayDailyTotal() {
     const todayStr = getTodayString();
     let savedDate = localStorage.getItem('reportDate');
-    let currentTotal = parseFloat(localStorage.getItem('dailyTotalHours')) || 0;
+    let savedTotal = parseFloat(localStorage.getItem('dailyTotalHours')) || 0;
 
-    // 日付が変わっていればゼロ表示
     if (savedDate !== todayStr) {
-        currentTotal = 0;
+        savedTotal = 0;
     }
+
+    // 今テキストエリアに入力中の時間も加算する（リアルタイム反映）
+    const text = document.getElementById('reportText').value;
+    const currentInputHours = extractHoursFromText(text);
+    const total = savedTotal + currentInputHours;
 
     const totalSpan = document.getElementById('dailyTotalTime');
     if (totalSpan) {
-        totalSpan.textContent = currentTotal.toFixed(1);
-        // 色の更新
-        const workers = parseInt(document.getElementById('workerCount').value) || 2;
+        totalSpan.textContent = total.toFixed(1);
+        const workers = parseFloat(document.getElementById('workerCount').value) || 2;
         checkTotalColor(workers * 8);
     }
 }
 
-// 画面読み込み時に一度表示を更新
+// 📌 テキストエリアで文字を打つたびに、即座に計算を走らせる
+document.getElementById('reportText').addEventListener('input', displayDailyTotal);
+
+// 📌 保存ボタンを押した時に、時間をブラウザに記録（確定）させる関数
+function addTimeToDailyTotal() {
+    const text = document.getElementById('reportText').value;
+    const hoursToAdd = extractHoursFromText(text);
+    
+    if (hoursToAdd > 0) {
+        const todayStr = getTodayString();
+        let savedDate = localStorage.getItem('reportDate');
+        let currentTotal = parseFloat(localStorage.getItem('dailyTotalHours')) || 0;
+
+        if (savedDate !== todayStr) {
+            currentTotal = 0;
+            localStorage.setItem('reportDate', todayStr);
+        }
+
+        currentTotal += hoursToAdd;
+        localStorage.setItem('dailyTotalHours', currentTotal);
+        displayDailyTotal();
+    }
+}
+
 window.addEventListener('DOMContentLoaded', displayDailyTotal);
     
     /* --- 日報機能 --- */
