@@ -177,30 +177,18 @@
            日報モーダル（かんたん日報）
            ===================================== */
         #reportModal {
-            height: 90vh; 
+            height: 90vh; /* 画面高さいっぱいまで広げる */
             max-height: 1000px;
             display: flex;
             flex-direction: column;
-            box-sizing: border-box;
-            overflow: hidden !important; /* ★ここが重要：モーダル全体のスクロールを強制ストップ */
         }
 
-        /* 履歴エリアの親枠を広げる */
+        /* 履歴リストの上のdiv（履歴エリア全体）を画面下まで伸ばす */
         #reportModal > div:nth-last-child(2) {
             flex-grow: 1;
             display: flex;
             flex-direction: column;
             min-height: 0;
-            margin-bottom: 10px; /* 閉じるボタンとの間に少し余白 */
-        }
-
-        /* ★閉じるボタンを一番下に完全固定 */
-        #reportModal .btn-close {
-            flex-shrink: 0; 
-            margin-top: auto; 
-            position: relative;
-            z-index: 200; /* ★最前面に出して絶対にタップできるようにする */
-            width: 100%;
         }
 
         .rough-paper { background-color: #fff9c4; border: 2px dashed #dcdcdc; border-radius: 8px; padding: 15px; margin-top: 20px; position: relative; }
@@ -217,20 +205,27 @@
         .mode-switch input[type="radio"]:checked + label { background: #2e7d32; color: white; }
         .input-group { margin-bottom: 15px; }
 
-        /* 履歴リスト（ここだけが内部でスクロールする） */
+        /* 履歴リスト（スクロールを独立させて広く取る） */
         .history-list {
             flex-grow: 1;
             margin-top: 15px;
-            overflow-y: auto; /* ★ここだけスクロールOK */
-            min-height: 150px; 
+            overflow-y: auto; /* ★ここだけでスクロールさせる */
+            min-height: 300px; /* ★最低300pxの高さを確保 */
             border-top: 1px solid #eee;
             padding-top: 10px;
+            /* 背景を白くして見やすくする（お好みで） */
             background: #ffffff;
             border-radius: 6px;
             padding: 10px;
         }
+        .history-card { background: white; padding: 12px; margin-bottom: 10px; border-radius: 8px; border: 1px solid #ddd; box-shadow: 0 2px 5px rgba(0,0,0,0.05); }
+        .history-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; border-bottom: 1px dashed #eee; padding-bottom: 4px; }
+        .history-date { font-weight: bold; color: #2980b9; font-size: 0.85rem; }
+        .history-content { font-size: 0.95rem; white-space: pre-wrap; color: #333; line-height: 1.5; margin-bottom: 10px; }
+        .history-actions { display: flex; gap: 8px; }
+        .btn-resend { flex: 1; background: #e8f5e9; color: #2e7d32; border: 1px solid #a5d6a7; padding: 8px; border-radius: 6px; font-weight: bold; cursor: pointer; font-size: 0.85rem; display: flex; align-items: center; justify-content: center; gap: 5px; }
+        .btn-delete-hist { width: 60px; background: #ffebee; color: #c62828; border: 1px solid #ef9a9a; padding: 8px; border-radius: 6px; cursor: pointer; font-size: 0.85rem; }
 
-        
 
         /* 編集モーダル */
         .edit-footer { display: flex; gap: 10px; margin-top: 20px; }
