@@ -839,59 +839,74 @@ function cancelLogItem(rowNumber, summaryText) {
     .catch(err => alert("通信エラーが発生しました。"));
 }
     
-    // ====== 日報の合計時間を管理するロジック（全現場横断・バグ対策強化版） ======
+    // ====== 日報の合計時間を管理するロジック（エラー完全回避・互換性維持版） ======
+
+// ⚠️【バグ対策】他の機能が探している古い関数を「身代わり」として残し、画面のフリーズ（無限ロード）を防ぎます
+function getTodayString() {
+    const now = new Date();
+    return `${now.getFullYear()}-${now.getMonth()+1}-${now.getDate()}`;
+}
+function displayDailyTotal() {
+    calculateDailyTotalFromHistory(); // 新しい計算ロジックに横流しする
+}
+function addTimeToDailyTotal() {
+    // エラー回避のためのダミー（中身は空でOK）
+}
 
 function updateDailyTarget() {
-    const workerEl = document.getElementById('workerCount');
-    // ▼【バグ修正】画面に人数枠がない時は、ここで処理を止めてエラー（無限ロード）を防ぐ
-    if (!workerEl) return; 
+    try {
+        const workerEl = document.getElementById('workerCount');
+        if (!workerEl) return; 
 
-    const workers = parseFloat(workerEl.value) || 2;
-    const target = workers * 8; 
-    const targetSpan = document.getElementById('dailyTargetTime');
-    if (targetSpan) targetSpan.textContent = `(目標 ${target}h)`;
-    checkTotalColor(target);
+        const workers = parseFloat(workerEl.value) || 2;
+        const target = workers * 8; 
+        const targetSpan = document.getElementById('dailyTargetTime');
+        if (targetSpan) targetSpan.textContent = `(目標 ${target}h)`;
+        checkTotalColor(target);
+    } catch(e) { console.error(e); }
 }
 
 function checkTotalColor(targetTime) {
-    const totalSpan = document.getElementById('dailyTotalTime');
-    if (!totalSpan) return;
-    const currentTotal = parseFloat(totalSpan.textContent) || 0;
-    
-    if (currentTotal < targetTime) {
-        totalSpan.style.color = '#e74c3c'; // 赤（未達）
-    } else {
-        totalSpan.style.color = '#2e7d32'; // 緑（達成）
-    }
+    try {
+        const totalSpan = document.getElementById('dailyTotalTime');
+        if (!totalSpan) return;
+        const currentTotal = parseFloat(totalSpan.textContent) || 0;
+        
+        if (currentTotal < targetTime) {
+            totalSpan.style.color = '#e74c3c'; // 赤（未達）
+        } else {
+            totalSpan.style.color = '#2e7d32'; // 緑（達成）
+        }
+    } catch(e) { console.error(e); }
 }
 
 function extractHoursFromText(text) {
     if (!text) return 0;
-    const match = text.match(/([0-9０-９\.]+)\s*[hHｈＨ]/);
-    if (match) {
-        let numStr = match[1].replace(/[０-９]/g, s => String.fromCharCode(s.charCodeAt(0) - 0xFEE0));
-        return parseFloat(numStr) || 0;
-    }
+    try {
+        const match = text.match(/([0-9０-９\.]+)\s*[hHｈＨ]/);
+        if (match) {
+            let numStr = match[1].replace(/[０-９]/g, s => String.fromCharCode(s.charCodeAt(0) - 0xFEE0));
+            return parseFloat(numStr) || 0;
+        }
+    } catch(e) { console.error(e); }
     return 0;
 }
 
 // 📌 全現場の履歴をかき集める関数
 function calculateDailyTotalFromHistory() {
-    let total = 0;
-    const now = new Date();
-    const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime();
+    try {
+        let total = 0;
+        const now = new Date();
+        const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime();
 
-    const storedData = localStorage.getItem('dx_reports');
-    if (storedData) {
-        try {
+        const storedData = localStorage.getItem('dx_reports');
+        if (storedData) {
             const allHistory = JSON.parse(storedData);
             for (let siteKey in allHistory) {
                 const siteReports = allHistory[siteKey];
                 if (Array.isArray(siteReports)) {
                     siteReports.forEach(report => {
-                        // ▼【バグ修正】過去の古いデータで「content」ではなく「text」で保存されていた場合にも対応
                         const reportText = report.content || report.text || "";
-                        
                         if (report.timestamp && report.timestamp >= startOfToday) {
                             total += extractHoursFromText(reportText);
                         } 
@@ -903,20 +918,20 @@ function calculateDailyTotalFromHistory() {
                     });
                 }
             }
-        } catch (e) {
-            console.error("履歴解析エラー:", e);
         }
-    }
 
-    const inputArea = document.getElementById('reportText');
-    if (inputArea) {
-        total += extractHoursFromText(inputArea.value);
-    }
+        const inputArea = document.getElementById('reportText');
+        if (inputArea) {
+            total += extractHoursFromText(inputArea.value);
+        }
 
-    const totalSpan = document.getElementById('dailyTotalTime');
-    if (totalSpan) {
-        totalSpan.textContent = total.toFixed(1);
-        updateDailyTarget();
+        const totalSpan = document.getElementById('dailyTotalTime');
+        if (totalSpan) {
+            totalSpan.textContent = total.toFixed(1);
+            updateDailyTarget();
+        }
+    } catch(e) {
+        console.error("履歴計算エラー:", e);
     }
 }
 
