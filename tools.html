@@ -173,15 +173,51 @@
             box-shadow: 0 2px 5px rgba(0,0,0,0.3);
         }
 
-        /* 日報モーダル */
+        /* =====================================
+           日報モーダル（かんたん日報）
+           ===================================== */
+        #reportModal {
+            height: 90vh; /* 画面高さいっぱいまで広げる */
+            max-height: 1000px;
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* 履歴リストの上のdiv（履歴エリア全体）を画面下まで伸ばす */
+        #reportModal > div:nth-last-child(2) {
+            flex-grow: 1;
+            display: flex;
+            flex-direction: column;
+            min-height: 0;
+        }
+
         .rough-paper { background-color: #fff9c4; border: 2px dashed #dcdcdc; border-radius: 8px; padding: 15px; margin-top: 20px; position: relative; }
         .rough-textarea { width: 100%; height: 120px; background: transparent; border: none; outline: none; font-size: 1.1rem; line-height: 1.6; color: #444; font-family: "Yu Gothic", sans-serif; resize: none; }
         .mic-btn { background: #e74c3c; color: white; width: 50px; height: 50px; border-radius: 50%; border: none; font-size: 1.5rem; position: absolute; bottom: 10px; right: 10px; cursor: pointer; display: flex; align-items: center; justify-content: center; }
         .mic-active { animation: pulse 1.5s infinite; background: #c0392b; }
         @keyframes pulse { 0% { box-shadow: 0 0 0 0 rgba(231, 76, 60, 0.7); } 100% { box-shadow: 0 0 0 15px rgba(231, 76, 60, 0); } }
         
-        /* 履歴リスト */
-        .history-list { margin-top: 15px; max-height: 300px; overflow-y: auto; border-top: 1px solid #eee; padding-top: 10px; }
+        /* スマホで押しやすいモダンなトグルボタンのCSS */
+        .mode-switch { display: flex; background: #e0e0e0; border-radius: 8px; overflow: hidden; margin-bottom: 15px; }
+        .mode-switch input[type="radio"] { display: none; }
+        .mode-switch label { flex: 1; text-align: center; padding: 12px 5px; font-size: 0.9rem; font-weight: bold; color: #666; cursor: pointer; transition: background 0.2s, color 0.2s; margin: 0; border-right: 1px solid #ccc; }
+        .mode-switch label:last-child { border-right: none; }
+        .mode-switch input[type="radio"]:checked + label { background: #2e7d32; color: white; }
+        .input-group { margin-bottom: 15px; }
+
+        /* 履歴リスト（スクロールを独立させて広く取る） */
+        .history-list {
+            flex-grow: 1;
+            margin-top: 15px;
+            overflow-y: auto; /* ★ここだけでスクロールさせる */
+            min-height: 300px; /* ★最低300pxの高さを確保 */
+            border-top: 1px solid #eee;
+            padding-top: 10px;
+            /* 背景を白くして見やすくする（お好みで） */
+            background: #ffffff;
+            border-radius: 6px;
+            padding: 10px;
+        }
         .history-card { background: white; padding: 12px; margin-bottom: 10px; border-radius: 8px; border: 1px solid #ddd; box-shadow: 0 2px 5px rgba(0,0,0,0.05); }
         .history-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; border-bottom: 1px dashed #eee; padding-bottom: 4px; }
         .history-date { font-weight: bold; color: #2980b9; font-size: 0.85rem; }
@@ -189,6 +225,7 @@
         .history-actions { display: flex; gap: 8px; }
         .btn-resend { flex: 1; background: #e8f5e9; color: #2e7d32; border: 1px solid #a5d6a7; padding: 8px; border-radius: 6px; font-weight: bold; cursor: pointer; font-size: 0.85rem; display: flex; align-items: center; justify-content: center; gap: 5px; }
         .btn-delete-hist { width: 60px; background: #ffebee; color: #c62828; border: 1px solid #ef9a9a; padding: 8px; border-radius: 6px; cursor: pointer; font-size: 0.85rem; }
+
 
         /* 編集モーダル */
         .edit-footer { display: flex; gap: 10px; margin-top: 20px; }
@@ -513,65 +550,7 @@
 </div>
 
 
-<style>
-    /* 既存のスマホ用トグルボタン等のCSS */
-    .mode-switch {
-        display: flex;
-        background: #e0e0e0;
-        border-radius: 8px;
-        overflow: hidden;
-        margin-bottom: 15px;
-    }
-    .mode-switch input[type="radio"] {
-        display: none;
-    }
-    .mode-switch label {
-        flex: 1;
-        text-align: center;
-        padding: 12px 5px;
-        font-size: 0.9rem;
-        font-weight: bold;
-        color: #666;
-        cursor: pointer;
-        transition: background 0.2s, color 0.2s;
-        margin: 0;
-        border-right: 1px solid #ccc;
-    }
-    .mode-switch label:last-child {
-        border-right: none;
-    }
-    .mode-switch input[type="radio"]:checked + label {
-        background: #2e7d32;
-        color: white;
-    }
-    .input-group { margin-bottom: 15px; }
 
-    /* ▼ 今回追加：モーダル全体と履歴リストを縦に広げるCSS ▼ */
-    #reportModal {
-        height: 90vh;
-        max-height: 1000px;
-        display: flex;
-        flex-direction: column;
-    }
-
-    #reportModal > div:nth-last-child(2) {
-        flex-grow: 1;
-        display: flex;
-        flex-direction: column;
-        min-height: 0;
-    }
-
-    .history-list {
-        flex-grow: 1;
-        overflow-y: auto;
-        min-height: 200px;
-        background: #ffffff;
-        border: 1px solid #ddd;
-        border-radius: 6px;
-        padding: 10px;
-        box-shadow: inset 0 2px 4px rgba(0,0,0,0.05);
-    }
-</style>
 
 <div id="materialModal" class="modal-box" style="background:#ffffff; padding: 20px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.2);">
     <h3 style="margin-top:0; color: #2e7d32; border-bottom: 2px solid #e8f5e9; padding-bottom: 10px;">📦 資材・実績の記録</h3>
@@ -721,7 +700,29 @@
     
     function openCameraModal() { document.getElementById('overlay').classList.add('show'); document.getElementById('cameraModal').classList.add('show'); drawBoard(); }
     function openForm() { document.getElementById('overlay').classList.add('show'); document.getElementById('inputForm').classList.add('show'); document.getElementById('siteName').value = currentSite ? currentSite.name : ''; document.getElementById('address').value = currentSite ? currentSite.address : ''; document.getElementById('status').value = currentSite ? currentSite.status : 'estimate'; document.getElementById('pluscode').value = currentSite ? (currentSite.plusCode || '') : '';}
-    function closeAllModals() { document.querySelectorAll('.modal-box').forEach(el => el.classList.remove('show')); document.getElementById('overlay').classList.remove('show'); stopSpeech(); if(document.getElementById('photoPreviewArea').style.display==='flex') retakePhoto(); }
+    function closeAllModals() {
+    // 1. すべてのモーダルを閉じる（ここは元のままでOK）
+    document.querySelectorAll('.modal-box').forEach(el => el.classList.remove('show'));
+
+    // 2. 背景（overlay）を閉じる（IDでもClassでも確実に拾う安全な書き方）
+    const overlay = document.getElementById('overlay') || document.querySelector('.overlay');
+    if (overlay) {
+        overlay.classList.remove('show');
+    }
+
+    // 3. 音声入力を止める（関数が存在する時だけ実行）
+    if (typeof stopSpeech === 'function') {
+        stopSpeech();
+    }
+
+    // 4. カメラのリセット（要素と関数が存在する時だけ実行）
+    const photoArea = document.getElementById('photoPreviewArea');
+    if (photoArea && photoArea.style.display === 'flex') {
+        if (typeof retakePhoto === 'function') {
+            retakePhoto();
+        }
+    }
+}
 
     // 🟪 過去の送信ログを読み込んで画面に表示する関数
 function loadSendLogs(siteId) {
