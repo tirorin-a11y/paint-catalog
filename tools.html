@@ -839,92 +839,94 @@ function cancelLogItem(rowNumber, summaryText) {
     .catch(err => alert("通信エラーが発生しました。"));
 }
     
-    // ====== 日報の合計時間を管理するロジック ======
+    // ====== 日報の合計時間を管理するロジック（全現場横断・履歴ベース計算版） ======
 
 function updateDailyTarget() {
-    // 変更点：parseInt（整数のみ）から parseFloat（小数もOK）に変更
     const workers = parseFloat(document.getElementById('workerCount').value) || 2;
     const target = workers * 8; 
-    document.getElementById('dailyTargetTime').textContent = `(目標 ${target}h)`;
+    const targetSpan = document.getElementById('dailyTargetTime');
+    if (targetSpan) targetSpan.textContent = `(目標 ${target}h)`;
     checkTotalColor(target);
 }
 
 function checkTotalColor(targetTime) {
     const totalSpan = document.getElementById('dailyTotalTime');
+    if (!totalSpan) return;
     const currentTotal = parseFloat(totalSpan.textContent) || 0;
     
     if (currentTotal < targetTime) {
-        totalSpan.style.color = '#e74c3c'; // 赤
+        totalSpan.style.color = '#e74c3c'; // 赤（未達）
     } else {
-        totalSpan.style.color = '#2e7d32'; // 緑
+        totalSpan.style.color = '#2e7d32'; // 緑（達成）
     }
 }
 
-function getTodayString() {
-    const now = new Date();
-    return `${now.getFullYear()}-${now.getMonth()+1}-${now.getDate()}`;
-}
 
-// 📌 新機能：テキストから「数字＋h（全角半角対応）」を賢く抜き出す関数
 function extractHoursFromText(text) {
-    // 「4h」「0.5h」「４ｈ」などを探し出す正規表現
+    if (!text) return 0;
     const match = text.match(/([0-9０-９\.]+)\s*[hHｈＨ]/);
     if (match) {
-        // 全角数字を半角に変換して数値にする
         let numStr = match[1].replace(/[０-９]/g, s => String.fromCharCode(s.charCodeAt(0) - 0xFEE0));
         return parseFloat(numStr) || 0;
     }
     return 0;
 }
 
-// 📌 画面の合計を更新する関数（保存済みの時間 ＋ 今入力している時間）
-function displayDailyTotal() {
-    const todayStr = getTodayString();
-    let savedDate = localStorage.getItem('reportDate');
-    let savedTotal = parseFloat(localStorage.getItem('dailyTotalHours')) || 0;
+// 📌 全現場の履歴（ローカルストレージ）をかき集めて今日の合計を出す関数
+function calculateDailyTotalFromHistory() {
+    let total = 0;
+    const now = new Date();
+    // 今日の午前0時の時間を取得
+    const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime();
 
-    if (savedDate !== todayStr) {
-        savedTotal = 0;
+    const storedData = localStorage.getItem('dx_reports');
+    if (storedData) {
+        try {
+            const allHistory = JSON.parse(storedData);
+            for (let siteKey in allHistory) {
+                const siteReports = allHistory[siteKey];
+                if (Array.isArray(siteReports)) {
+                    siteReports.forEach(report => {
+                        // 今日のデータなら足す
+                        if (report.timestamp && report.timestamp >= startOfToday) {
+                            total += extractHoursFromText(report.content);
+                        } 
+                        else if (!report.timestamp && report.date) {
+                            if (report.date.startsWith(now.toLocaleDateString())) {
+                                total += extractHoursFromText(report.content);
+                            }
+                        }
+                    });
+                }
+            }
+        } catch (e) {
+            console.error("履歴解析エラー:", e);
+        }
     }
 
-    // 今テキストエリアに入力中の時間も加算する（リアルタイム反映）
-    const text = document.getElementById('reportText').value;
-    const currentInputHours = extractHoursFromText(text);
-    const total = savedTotal + currentInputHours;
+    // 入力中の「仮の時間」も足す
+    const inputArea = document.getElementById('reportText');
+    if (inputArea) {
+        total += extractHoursFromText(inputArea.value);
+    }
 
+    // 画面の数字を更新
     const totalSpan = document.getElementById('dailyTotalTime');
     if (totalSpan) {
         totalSpan.textContent = total.toFixed(1);
-        const workers = parseFloat(document.getElementById('workerCount').value) || 2;
-        checkTotalColor(workers * 8);
+        updateDailyTarget();
     }
 }
 
-// 📌 テキストエリアで文字を打つたびに、即座に計算を走らせる
-document.getElementById('reportText').addEventListener('input', displayDailyTotal);
-
-// 📌 保存ボタンを押した時に、時間をブラウザに記録（確定）させる関数
-function addTimeToDailyTotal() {
-    const text = document.getElementById('reportText').value;
-    const hoursToAdd = extractHoursFromText(text);
-    
-    if (hoursToAdd > 0) {
-        const todayStr = getTodayString();
-        let savedDate = localStorage.getItem('reportDate');
-        let currentTotal = parseFloat(localStorage.getItem('dailyTotalHours')) || 0;
-
-        if (savedDate !== todayStr) {
-            currentTotal = 0;
-            localStorage.setItem('reportDate', todayStr);
-        }
-
-        currentTotal += hoursToAdd;
-        localStorage.setItem('dailyTotalHours', currentTotal);
-        displayDailyTotal();
+// 画面を開いた時と、文字を打った時にリアルタイムで計算する
+window.addEventListener('DOMContentLoaded', () => {
+    calculateDailyTotalFromHistory();
+    const textArea = document.getElementById('reportText');
+    if(textArea) {
+        textArea.addEventListener('input', calculateDailyTotalFromHistory);
     }
-}
+});
 
-window.addEventListener('DOMContentLoaded', displayDailyTotal);
     
     /* --- 日報機能 --- */
     function saveReportLocal() { 
@@ -947,8 +949,11 @@ window.addEventListener('DOMContentLoaded', displayDailyTotal);
         document.getElementById('reportText').value = ''; 
         // 連続投稿に備えてドロップダウンは「通常」に戻しておく（お好みで外してもOKです）
         document.getElementById('reportType').value = '通常'; 
-        alert('履歴に保存しました'); 
-    }
+        ▼ この1行を追加 ▼
+    if(typeof calculateDailyTotalFromHistory === 'function') calculateDailyTotalFromHistory(); 
+    
+    alert('履歴に保存しました'); 
+}
     
     function renderReportHistory() { 
         const listEl = document.getElementById('reportHistoryList'); 
@@ -1091,66 +1096,74 @@ window.addEventListener('DOMContentLoaded', displayDailyTotal);
     }
 
 async function deleteReport(index) {
-        const targetId = siteId || 'preview';
-        const item = reportHistory[targetId][index];
-        if (!item) return;
+    const targetId = siteId || 'preview';
+    const item = reportHistory[targetId][index];
+    if (!item) return;
 
-        // -------------------------------------------------------------
-        // ★パターンA：まだ提出していない場合（誤タップなど）
-        // -------------------------------------------------------------
-        if (!item.submitted) {
-            if(!confirm("この未提出の履歴を削除しますか？")) return;
+    // -------------------------------------------------------------
+    // ★パターンA：まだ提出していない場合（誤タップなど）
+    // -------------------------------------------------------------
+    if (!item.submitted) {
+        if(!confirm("この未提出の履歴を削除しますか？")) return;
+        reportHistory[targetId].splice(index, 1);
+        localStorage.setItem('dx_reports', JSON.stringify(reportHistory));
+        renderReportHistory();
+        
+        // ▼ 追加：削除した後にカウンターを再計算（時間を減らす）
+        if(typeof calculateDailyTotalFromHistory === 'function') calculateDailyTotalFromHistory(); 
+        
+        return;
+    }
+
+    // -------------------------------------------------------------
+    // ★パターンB：すでに提出済みの場合（クラウド側も連動して取り消す）
+    // -------------------------------------------------------------
+    if(!confirm("⚠️この日報はすでにクラウドへ提出済みです。\nスプレッドシートのデータを『取消』に書き換えますか？")) return;
+
+    const gasUrl = localStorage.getItem('dx_gas_url');
+    if (!gasUrl) { alert("【設定エラー】\nナビ画面の設定から「GAS URL」を登録してください。"); return; }
+
+    const btn = event.target;
+    const originalText = btn.innerHTML;
+    btn.innerHTML = "⏳ 取消中...";
+    btn.disabled = true;
+
+    const sendData = {
+        type: "cancel_report",
+        id: currentSite ? currentSite.id : "",
+        timestamp: item.timestamp || new Date(item.date).getTime(),
+        text: item.text || "", 
+        authKey: localStorage.getItem('dx_auth_key') || ""
+    };
+
+    try {
+        const response = await fetch(gasUrl, {
+            method: 'POST',
+            headers: { 'Content-Type': 'text/plain' },
+            keepalive: true, 
+            body: JSON.stringify(sendData)
+        });
+        const resText = await response.text();
+        const resJson = JSON.parse(resText);
+
+        if (resJson.result === "success") {
+            alert("🗑️ クラウドデータを『取消』に更新し、履歴から削除しました。");
             reportHistory[targetId].splice(index, 1);
             localStorage.setItem('dx_reports', JSON.stringify(reportHistory));
             renderReportHistory();
-            return;
+            
+            // ▼ 追加：クラウド取消成功後にもカウンターを再計算（時間を減らす）
+            if(typeof calculateDailyTotalFromHistory === 'function') calculateDailyTotalFromHistory();
+            
+        } else {
+            throw new Error("サーバーエラー");
         }
-
-        // -------------------------------------------------------------
-        // ★パターンB：すでに提出済みの場合（クラウド側も連動して取り消す）
-        // -------------------------------------------------------------
-        if(!confirm("⚠️この日報はすでにクラウドへ提出済みです。\nスプレッドシートのデータを『取消』に書き換えますか？")) return;
-
-        const gasUrl = localStorage.getItem('dx_gas_url');
-        if (!gasUrl) { alert("【設定エラー】\nナビ画面の設定から「GAS URL」を登録してください。"); return; }
-
-        const btn = event.target;
-        const originalText = btn.innerHTML;
-        btn.innerHTML = "⏳ 取消中...";
-        btn.disabled = true;
-
-        const sendData = {
-            type: "cancel_report",
-            id: currentSite ? currentSite.id : "",
-            timestamp: item.timestamp || new Date(item.date).getTime(),
-            text: item.text || "", // ★この1行を追加して本文も一緒に送る
-            authKey: localStorage.getItem('dx_auth_key') || ""
-        };
-
-        try {
-            const response = await fetch(gasUrl, {
-                method: 'POST',
-                headers: { 'Content-Type': 'text/plain' },
-                keepalive: true, // ページを閉じても確実に完遂させる
-                body: JSON.stringify(sendData)
-            });
-            const resText = await response.text();
-            const resJson = JSON.parse(resText);
-
-            if (resJson.result === "success") {
-                alert("🗑️ クラウドデータを『取消』に更新し、履歴から削除しました。");
-                reportHistory[targetId].splice(index, 1);
-                localStorage.setItem('dx_reports', JSON.stringify(reportHistory));
-                renderReportHistory();
-            } else {
-                throw new Error("サーバーエラー");
-            }
-        } catch(e) {
-            alert("通信失敗（データは削除されませんでした）: " + e);
-            btn.innerHTML = originalText;
-            btn.disabled = false;
-        }
+    } catch(e) {
+        alert("通信失敗（データは削除されませんでした）: " + e);
+        btn.innerHTML = originalText;
+        btn.disabled = false;
     }
+}
 
 // =========================================================
 // ■ 顧客向け 作業予定フローチャート機能（エラー回避の安全版）
