@@ -494,14 +494,25 @@
     <h3>🎙️ かんたん日報</h3>
 
     <!-- ▼ ここから追加：合計時間カウンターと人数入力 ▼ -->
-    <div style="display: flex; justify-content: space-between; align-items: center; background: #e3f2fd; padding: 10px; border-radius: 8px; margin-bottom: 15px; border: 1px solid #bbdefb;">
-        <div style="font-size: 0.95rem; font-weight: bold; color: #1565c0;">
-            📅 本日の合計：<span id="dailyTotalTime" style="font-size: 1.3rem;">0.0</span>h 
-            <span id="dailyTargetTime" style="font-size: 0.8rem; color: #666;">(目標 16h)</span>
+    <div style="background: #e3f2fd; padding: 10px 12px; border-radius: 8px; margin-bottom: 15px; border: 1px solid #bbdefb; display: flex; flex-direction: column; gap: 8px;">
+        
+        <!-- 1行目：稼働人数の設定 -->
+        <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px dashed #90caf9; padding-bottom: 5px;">
+            <span style="font-size: 0.85rem; color: #555; font-weight: bold;">👥 稼働人数</span>
+            <div style="font-size: 0.85rem; color: #333;">
+                <input type="number" id="workerCount" value="2" min="1" max="10" step="1" onchange="updateDailyTarget()" style="width: 50px; text-align: center; padding: 4px; border: 1px solid #ccc; border-radius: 4px; font-weight: bold;"> 人
+            </div>
         </div>
-        <div style="font-size: 0.85rem; color: #333;">
-            稼働：<input type="number" id="workerCount" value="2" min="1" max="10" step="1" onchange="updateDailyTarget()" style="width: 45px; text-align: center; padding: 3px; border: 1px solid #ccc; border-radius: 4px;"> 人
+
+        <!-- 2行目：本日の合計時間 -->
+        <div style="display: flex; justify-content: space-between; align-items: baseline;">
+            <span style="font-size: 0.95rem; font-weight: bold; color: #1565c0;">📅 本日の合計</span>
+            <div>
+                <span id="dailyTotalTime" style="font-size: 1.4rem; font-weight: bold; color: #1565c0;">0.0</span><span style="font-size: 0.9rem; color: #1565c0; font-weight: bold;">h</span>
+                <span id="dailyTargetTime" style="font-size: 0.8rem; color: #666; margin-left: 5px;">(目標 16h)</span>
+            </div>
         </div>
+        
     </div>
     <!-- ▲ 追加ここまで ▲ -->
     <div class="rough-paper">
