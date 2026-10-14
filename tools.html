@@ -701,21 +701,21 @@
     function openCameraModal() { document.getElementById('overlay').classList.add('show'); document.getElementById('cameraModal').classList.add('show'); drawBoard(); }
     function openForm() { document.getElementById('overlay').classList.add('show'); document.getElementById('inputForm').classList.add('show'); document.getElementById('siteName').value = currentSite ? currentSite.name : ''; document.getElementById('address').value = currentSite ? currentSite.address : ''; document.getElementById('status').value = currentSite ? currentSite.status : 'estimate'; document.getElementById('pluscode').value = currentSite ? (currentSite.plusCode || '') : '';}
     function closeAllModals() {
-    // 1. すべてのモーダルを閉じる（ここは元のままでOK）
+    // 1. モーダルを閉じる
     document.querySelectorAll('.modal-box').forEach(el => el.classList.remove('show'));
 
-    // 2. 背景（overlay）を閉じる（IDでもClassでも確実に拾う安全な書き方）
+    // 2. overlayを閉じる（IDとClassの両方を探す安全な書き方）
     const overlay = document.getElementById('overlay') || document.querySelector('.overlay');
     if (overlay) {
         overlay.classList.remove('show');
     }
 
-    // 3. 音声入力を止める（関数が存在する時だけ実行）
+    // 3. 音声入力を止める（エラー回避付き）
     if (typeof stopSpeech === 'function') {
         stopSpeech();
     }
 
-    // 4. カメラのリセット（要素と関数が存在する時だけ実行）
+    // 4. カメラリセット（エラー回避付き）
     const photoArea = document.getElementById('photoPreviewArea');
     if (photoArea && photoArea.style.display === 'flex') {
         if (typeof retakePhoto === 'function') {
