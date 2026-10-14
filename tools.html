@@ -468,6 +468,18 @@
 
 <div id="reportModal" class="modal-box" style="background:#fffcf0;">
     <h3>🎙️ かんたん日報</h3>
+
+    <!-- ▼ ここから追加：合計時間カウンターと人数入力 ▼ -->
+    <div style="display: flex; justify-content: space-between; align-items: center; background: #e3f2fd; padding: 10px; border-radius: 8px; margin-bottom: 15px; border: 1px solid #bbdefb;">
+        <div style="font-size: 0.95rem; font-weight: bold; color: #1565c0;">
+            📅 本日の合計：<span id="dailyTotalTime" style="font-size: 1.3rem;">0.0</span>h 
+            <span id="dailyTargetTime" style="font-size: 0.8rem; color: #666;">(目標 16h)</span>
+        </div>
+        <div style="font-size: 0.85rem; color: #333;">
+            稼働：<input type="number" id="workerCount" value="2" min="1" max="10" step="1" onchange="updateDailyTarget()" style="width: 45px; text-align: center; padding: 3px; border: 1px solid #ccc; border-radius: 4px;"> 人
+        </div>
+    </div>
+    <!-- ▲ 追加ここまで ▲ -->
     <div class="rough-paper">
         <textarea id="reportText" class="rough-textarea" placeholder="内容を入力..."></textarea>
         <button class="mic-btn" id="micBtn" onclick="toggleSpeech()">🎤</button>
@@ -500,8 +512,9 @@
     <button class="btn-close" onclick="closeAllModals()">閉じる</button>
 </div>
 
+
 <style>
-    /* スマホで押しやすいモダンなトグルボタンのCSS */
+    /* 既存のスマホ用トグルボタン等のCSS */
     .mode-switch {
         display: flex;
         background: #e0e0e0;
@@ -532,6 +545,32 @@
         color: white;
     }
     .input-group { margin-bottom: 15px; }
+
+    /* ▼ 今回追加：モーダル全体と履歴リストを縦に広げるCSS ▼ */
+    #reportModal {
+        height: 90vh;
+        max-height: 1000px;
+        display: flex;
+        flex-direction: column;
+    }
+
+    #reportModal > div:nth-last-child(2) {
+        flex-grow: 1;
+        display: flex;
+        flex-direction: column;
+        min-height: 0;
+    }
+
+    .history-list {
+        flex-grow: 1;
+        overflow-y: auto;
+        min-height: 200px;
+        background: #ffffff;
+        border: 1px solid #ddd;
+        border-radius: 6px;
+        padding: 10px;
+        box-shadow: inset 0 2px 4px rgba(0,0,0,0.05);
+    }
 </style>
 
 <div id="materialModal" class="modal-box" style="background:#ffffff; padding: 20px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.2);">
@@ -801,6 +840,83 @@ function cancelLogItem(rowNumber, summaryText) {
     .catch(err => alert("通信エラーが発生しました。"));
 }
     
+    // ====== 日報の合計時間を管理するロジック ======
+
+// 1. 人数に応じて目標時間を更新する関数
+function updateDailyTarget() {
+    const workers = parseInt(document.getElementById('workerCount').value) || 2;
+    const target = workers * 8; // 1人あたり8時間
+    document.getElementById('dailyTargetTime').textContent = `(目標 ${target}h)`;
+    
+    // 現在の合計時間と比較して色を変える
+    checkTotalColor(target);
+}
+
+// 2. 色を変える関数（目標未達なら赤、達成で青）
+function checkTotalColor(targetTime) {
+    const totalSpan = document.getElementById('dailyTotalTime');
+    const currentTotal = parseFloat(totalSpan.textContent) || 0;
+    
+    if (currentTotal < targetTime) {
+        totalSpan.style.color = '#e74c3c'; // 赤（未達）
+    } else {
+        totalSpan.style.color = '#2e7d32'; // 緑・青（達成）
+    }
+}
+
+// 3. 今日の日付文字列を取得する補助関数（例: "2026-10-14"）
+function getTodayString() {
+    const now = new Date();
+    return `${now.getFullYear()}-${now.getMonth()+1}-${now.getDate()}`;
+}
+
+// 4. 【重要】日報が送信・保存された時に、時間を加算する関数
+// ※この関数を、既存の「saveReportLocal」や「sendReportLine」等の成功時に呼び出します
+function addTimeToDailyTotal(hoursToAdd) {
+    if (!hoursToAdd || isNaN(hoursToAdd)) return;
+
+    const todayStr = getTodayString();
+    
+    // 保存されている「日付」と「合計時間」をチェック
+    let savedDate = localStorage.getItem('reportDate');
+    let currentTotal = parseFloat(localStorage.getItem('dailyTotalHours')) || 0;
+
+    // もし日付が変わっていたら（翌日になったら）合計をリセット
+    if (savedDate !== todayStr) {
+        currentTotal = 0;
+        localStorage.setItem('reportDate', todayStr);
+    }
+
+    // 新しい時間を足して保存
+    currentTotal += parseFloat(hoursToAdd);
+    localStorage.setItem('dailyTotalHours', currentTotal);
+
+    // 画面の数字を更新
+    displayDailyTotal();
+}
+
+// 5. 画面を開いた時（またはモーダルを開いた時）に現在の合計を表示する関数
+function displayDailyTotal() {
+    const todayStr = getTodayString();
+    let savedDate = localStorage.getItem('reportDate');
+    let currentTotal = parseFloat(localStorage.getItem('dailyTotalHours')) || 0;
+
+    // 日付が変わっていればゼロ表示
+    if (savedDate !== todayStr) {
+        currentTotal = 0;
+    }
+
+    const totalSpan = document.getElementById('dailyTotalTime');
+    if (totalSpan) {
+        totalSpan.textContent = currentTotal.toFixed(1);
+        // 色の更新
+        const workers = parseInt(document.getElementById('workerCount').value) || 2;
+        checkTotalColor(workers * 8);
+    }
+}
+
+// 画面読み込み時に一度表示を更新
+window.addEventListener('DOMContentLoaded', displayDailyTotal);
     
     /* --- 日報機能 --- */
     function saveReportLocal() { 
