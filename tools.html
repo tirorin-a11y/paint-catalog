@@ -882,14 +882,20 @@ function checkTotalColor(targetTime) {
 
 function extractHoursFromText(text) {
     if (!text) return 0;
-    try {
-        const match = text.match(/([0-9０-９\.]+)\s*[hHｈＨ]/);
-        if (match) {
-            let numStr = match[1].replace(/[０-９]/g, s => String.fromCharCode(s.charCodeAt(0) - 0xFEE0));
-            return parseFloat(numStr) || 0;
-        }
-    } catch(e) { console.error(e); }
-    return 0;
+    
+    let totalHours = 0;
+    // 「g」オプションをつけることで、テキスト内のすべての「○h」を最後まで探し尽くします
+    const regex = /([0-9０-９\.]+)\s*[hHｈＨ]/g; 
+    let match;
+
+    // 見つかる限りループして足し算していく
+    while ((match = regex.exec(text)) !== null) {
+        // 全角数字を半角に変換
+        let numStr = match[1].replace(/[０-９]/g, s => String.fromCharCode(s.charCodeAt(0) - 0xFEE0));
+        totalHours += parseFloat(numStr) || 0;
+    }
+    
+    return totalHours;
 }
 
 // 📌 全現場の履歴をかき集める関数
