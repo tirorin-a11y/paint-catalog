@@ -517,29 +517,22 @@
     <!-- ▲ 追加ここまで ▲ -->
     <div class="rough-paper">
         <!-- ▼ タグ生成器（入力補助UI） ▼ -->
-<div style="background-color: #f8f9fa; padding: 10px; border-radius: 8px; margin-bottom: 10px; border: 1px solid #dee2e6;">
+<div id="tagGeneratorUI" style="display: none; background-color: #f8f9fa; padding: 10px; border-radius: 8px; margin-bottom: 10px; border: 1px solid #dee2e6;">
     <div style="font-size: 0.9em; font-weight: bold; color: #555; margin-bottom: 5px;">🏷️ 作業タグ追加</div>
     
     <div style="display: flex; gap: 5px; margin-bottom: 5px;">
         <select id="tagCategory" style="flex: 1; padding: 8px; border-radius: 4px; border: 1px solid #ccc;">
             <option value="">部位を選択...</option>
-            <option value="外壁">外壁</option>
-            <option value="屋根">屋根</option>
-            <option value="コーキング">コーキング</option>
         </select>
-
         <select id="tagTask" style="flex: 1; padding: 8px; border-radius: 4px; border: 1px solid #ccc;">
             <option value="">作業を選択...</option>
-            <!-- 部位を選ぶとここが自動で切り替わる -->
         </select>
     </div>
 
     <div style="display: flex; gap: 5px;">
         <select id="tagMaterial" style="flex: 2; padding: 8px; border-radius: 4px; border: 1px solid #ccc;">
-            <option value="">材料を選択（なしでも可）</option>
-            <!-- 作業を選ぶとここが自動で切り替わる -->
+            <option value="">材料を選択（なし可）</option>
         </select>
-
         <button type="button" id="insertTagBtn" style="flex: 1; background-color: #007bff; color: white; border: none; border-radius: 4px; font-weight: bold;">
             ➕ 挿入
         </button>
@@ -3035,118 +3028,34 @@ function showPopup(trigger, options, lineIndex, lines, textarea, originalSubmitF
 
   popup.style.display = "flex";
 }
-// ====== タグ生成とドロップダウン連動ロジック ======
 
-// 辞書データ（部位 → 作業(コード) → 材料 の関係性）
-const tagDictionary = {
-    "外壁": {
-        "下塗り[G-UNDER]": ["シーラー", "フィラー", "微弾性フィラー"],
-        "上塗り[G-TOP]": ["プレミアムシリコン", "ウォールバリア", "パーフェクトトップ"],
-        "高圧洗浄[WASH]": ["(材料なし)"]
-    },
-    "屋根": {
-        "錆止め[Y-UNDER]": ["マイルドサビガード", "ハイポンファインプライマー"],
-        "上塗り[Y-TOP]": ["屋根ロック", "ヤネフレッシュ"],
-        "高圧洗浄[WASH]": ["(材料なし)"]
-    },
-    "コーキング": {
-        "打ち替え[SEAL]": ["変成シリコン", "オートンイクシード"],
-        "増打ち[SEAL]": ["変成シリコン", "オートンイクシード"]
-    }
-};
 
-const tagCategory = document.getElementById('tagCategory');
-const tagTask = document.getElementById('tagTask');
-const tagMaterial = document.getElementById('tagMaterial');
-const insertTagBtn = document.getElementById('insertTagBtn');
-const reportText = document.getElementById('reportText');
+// ==============================================================
+// ▼ 通信ラグゼロ！スプレッドシートから取得した辞書でUIを作る処理 ▼
+// ==============================================================
 
-if (tagCategory && tagTask && tagMaterial && insertTagBtn) {
-    
-    // 部位が選ばれたら、作業のドロップダウンを更新する
-    tagCategory.addEventListener('change', function() {
-        tagTask.innerHTML = '<option value="">作業を選択...</option>';
-        tagMaterial.innerHTML = '<option value="">材料を選択（なしでも可）</option>';
-        
-        const tasks = tagDictionary[this.value];
-        if (tasks) {
-            for (let taskName in tasks) {
-                let option = document.createElement('option');
-                option.value = taskName;
-                // 表示用にはコード部分 [G-TOP] などを隠して日本語だけ見せることも可能ですが、一旦そのまま表示
-                option.textContent = taskName.split('[')[0]; 
-                tagTask.appendChild(option);
-            }
-        }
-    });
-
-    // 作業が選ばれたら、材料のドロップダウンを更新する
-    tagTask.addEventListener('change', function() {
-        tagMaterial.innerHTML = '<option value="">材料を選択（なしでも可）</option>';
-        
-        const category = tagCategory.value;
-        const task = this.value;
-        
-        if (category && task && tagDictionary[category][task]) {
-            const materials = tagDictionary[category][task];
-            materials.forEach(mat => {
-                let option = document.createElement('option');
-                option.value = mat;
-                option.textContent = mat;
-                tagMaterial.appendChild(option);
-            });
-        }
-    });
-
-    // 挿入ボタンを押した時の処理
-    insertTagBtn.addEventListener('click', function() {
-        const category = tagCategory.value;
-        const taskRaw = tagTask.value; // 例: "上塗り[G-TOP]"
-        const material = tagMaterial.value === "(材料なし)" ? "" : tagMaterial.value;
-
-        if (!category || !taskRaw) {
-            alert("部位と作業を選択してください。");
-            return;
-        }
-
-        // "上塗り[G-TOP]" を "G-TOP/外壁上塗り" に整形する
-        const taskName = taskRaw.split('[')[0]; // "上塗り"
-        const taskCode = taskRaw.match(/\[(.*?)\]/)[1]; // "G-TOP"
-        const tagString = `【${taskCode}/${category}${taskName}】${material}`;
-
-        // テキストエリアに挿入して改行する
-        const currentText = reportText.value;
-        // すでに文字が入っている場合は改行してから挿入
-        const prefix = currentText.length > 0 && !currentText.endsWith('\n') ? '\n' : '';
-        reportText.value = currentText + prefix + tagString + " ";
-
-        // 挿入後、フォーカスをテキストエリアに戻して時間を打ちやすくする
-        reportText.focus();
-        
-        // 最後にドロップダウンをリセットする（お好みで）
-        tagCategory.value = "";
-        tagTask.innerHTML = '<option value="">作業を選択...</option>';
-        tagMaterial.innerHTML = '<option value="">材料を選択（なしでも可）</option>';
-    });
+// 1. スマホの奥底に保存された辞書データを引っ張り出す
+const savedDict = localStorage.getItem('dx_tag_dictionary');
+if (savedDict) {
+    const globalTagDictionary = JSON.parse(savedDict);
+    initTagGenerator(globalTagDictionary); // 下の関数を呼び出してUIを作る
 }
 
-// ==============================================================
-// ▼ ドロップダウンの動きを制御する関数（JSファイルのどこかに置いておく） ▼
-// ==============================================================
+// 2. ドロップダウンの動きを制御する関数
 function initTagGenerator(dict) {
     const tagCategory = document.getElementById('tagCategory');
     const tagTask = document.getElementById('tagTask');
     const tagMaterial = document.getElementById('tagMaterial');
     const insertTagBtn = document.getElementById('insertTagBtn');
-    const reportText = document.getElementById('reportText'); // ※日報のIDに合わせてください
+    const reportText = document.getElementById('reportText');
     const uiBox = document.getElementById('tagGeneratorUI');
 
     if (!tagCategory || !dict || Object.keys(dict).length === 0) return;
 
     // UIを表示する
-    uiBox.style.display = 'block';
+    if(uiBox) uiBox.style.display = 'block';
 
-    // 1. 部位リストの初期化
+    // ① 部位リストの初期化
     tagCategory.innerHTML = '<option value="">部位を選択...</option>';
     for (let cat in dict) {
         let option = document.createElement('option');
@@ -3155,7 +3064,7 @@ function initTagGenerator(dict) {
         tagCategory.appendChild(option);
     }
 
-    // 2. 部位が選ばれた時の連動
+    // ② 部位が選ばれた時の連動
     tagCategory.addEventListener('change', function() {
         tagTask.innerHTML = '<option value="">作業を選択...</option>';
         tagMaterial.innerHTML = '<option value="">材料を選択（なし可）</option>';
@@ -3164,13 +3073,13 @@ function initTagGenerator(dict) {
             for (let taskKey in tasks) {
                 let option = document.createElement('option');
                 option.value = taskKey;
-                option.textContent = taskKey.split('/')[1] || taskKey; // 外壁上塗り だけ表示
+                option.textContent = taskKey.split('/')[1] || taskKey; // 例: 外壁上塗り だけ表示
                 tagTask.appendChild(option);
             }
         }
     });
 
-    // 3. 作業が選ばれた時の連動
+    // ③ 作業が選ばれた時の連動
     tagTask.addEventListener('change', function() {
         tagMaterial.innerHTML = '<option value="">材料を選択（なし可）</option>';
         const category = tagCategory.value;
@@ -3186,8 +3095,11 @@ function initTagGenerator(dict) {
         }
     });
 
-    // 4. 挿入ボタンの処理
-    insertTagBtn.addEventListener('click', function() {
+    // ④ 挿入ボタンの処理（※以前のイベントが重複しないよう、一度要素をクローンして置き換える安全策）
+    const newBtn = insertTagBtn.cloneNode(true);
+    insertTagBtn.parentNode.replaceChild(newBtn, insertTagBtn);
+    
+    newBtn.addEventListener('click', function() {
         const taskKey = tagTask.value; 
         const material = tagMaterial.value;
 
