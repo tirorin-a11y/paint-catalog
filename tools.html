@@ -2905,7 +2905,7 @@ document.addEventListener('click', (e) => {
 <script>
 let translationDict = {};
 
-// ① アプリ起動時にGASから辞書を裏で読み込んでおく
+// ① アプリ起動時にGASから辞書を裏で読み込んでおく（※従来のチェック用）
 async function loadDictionary() {
   try {
     const response = await fetch("https://script.google.com/macros/s/AKfycbxUpH4otUOhFLQOQh33ai8NvSUIpIOd1_ftG9TR11bLhRGl_CYzNhAKd_iVzUpWOotbGA/exec", {
@@ -2923,14 +2923,11 @@ async function loadDictionary() {
           translationDict[item.trigger].push(item.word);
         }
       });
-      console.log("辞書ロード完了:", translationDict);
     }
   } catch (error) {
     console.error("辞書の読み込みに失敗しました", error);
   }
 }
-
-// 画面が読み込まれたら裏で辞書を取得
 window.addEventListener("DOMContentLoaded", loadDictionary);
 
 // ② 送信ボタンを押した時のチェック機能（連鎖バグ防止版）
@@ -2938,7 +2935,6 @@ function checkAndSubmitReport(originalSubmitFunction) {
   const textarea = document.getElementById("reportText");
   const lines = textarea.value.split(/\r?\n/);
 
-  // ★追加：すべての「正式な言葉（A列）」を文字数が長い順に並べたリストを作る
   let allValidWords = [...new Set(Object.values(translationDict).flat())];
   allValidWords.sort((a, b) => b.length - a.length);
 
@@ -2946,29 +2942,21 @@ function checkAndSubmitReport(originalSubmitFunction) {
     let originalLine = lines[i];
     let lineForCheck = originalLine;
 
-    // ★追加：すでに完成している「正式な言葉」をチェック対象から黒塗りで隠す
     allValidWords.forEach(word => {
       if (lineForCheck.includes(word)) {
-        // 例：「プレミアムシリコン」を「■■■■■■■■」に置き換えて隠す
         lineForCheck = lineForCheck.split(word).join("■".repeat(word.length));
       }
     });
 
-    // 隠し終わった後のテキストで、トリガーワードを探す
     for (let trigger in translationDict) {
       let triggerIndex = lineForCheck.indexOf(trigger);
       if (triggerIndex !== -1) {
-        // マスキングされた状態で見つかった ＝ まだ未完成の曖昧ワード！
         const options = translationDict[trigger];
-        
-        // ★修正：トリガーが見つかった正確な位置（triggerIndex）も一緒に渡す
         showPopup(trigger, options, i, lines, textarea, originalSubmitFunction, triggerIndex);
         return; 
       }
     }
   }
-
-  // 問題なければ本来の送信処理を実行
   originalSubmitFunction(); 
 }
 
@@ -2983,7 +2971,6 @@ function showPopup(trigger, options, lineIndex, lines, textarea, originalSubmitF
 
   let selectedOption = null;
 
-  // 1. 選択肢ボタンを生成
   options.forEach(opt => {
     const btn = document.createElement("button");
     btn.className = "popup-btn";
@@ -2998,26 +2985,20 @@ function showPopup(trigger, options, lineIndex, lines, textarea, originalSubmitF
     btnContainer.appendChild(btn);
   });
 
-  // 2. 確定ボタンを生成
   const confirmBtn = document.createElement("button");
   confirmBtn.className = "popup-btn popup-btn-confirm";
   confirmBtn.innerText = "✅ 確定して進む";
   confirmBtn.disabled = true;
   confirmBtn.onclick = () => {
     if (!selectedOption) return; 
-    
-    // ★修正：最初の文字ではなく、「見つかった正確な位置」の文字だけを置き換える
     let currentLine = lines[lineIndex];
     lines[lineIndex] = currentLine.substring(0, triggerIndex) + selectedOption + currentLine.substring(triggerIndex + trigger.length);
-    
     textarea.value = lines.join("\n");
     popup.style.display = "none";
-    // 修正後、もう一度チェックを走らせる
     checkAndSubmitReport(originalSubmitFunction);
   };
   btnContainer.appendChild(confirmBtn);
 
-  // 3. キャンセルボタンを生成
   const cancelBtn = document.createElement("button");
   cancelBtn.className = "popup-btn popup-btn-cancel";
   cancelBtn.innerText = "キャンセルして手動で直す";
@@ -3029,19 +3010,15 @@ function showPopup(trigger, options, lineIndex, lines, textarea, originalSubmitF
   popup.style.display = "flex";
 }
 
-
 // ==============================================================
-// ▼ 通信ラグゼロ！スプレッドシートから取得した辞書でUIを作る処理 ▼
+// ▼ 追加：通信ラグゼロ！スプレッドシートから取得した辞書でUIを作る処理 ▼
 // ==============================================================
-
-// 1. スマホの奥底に保存された辞書データを引っ張り出す
 const savedDict = localStorage.getItem('dx_tag_dictionary');
 if (savedDict) {
     const globalTagDictionary = JSON.parse(savedDict);
-    initTagGenerator(globalTagDictionary); // 下の関数を呼び出してUIを作る
+    initTagGenerator(globalTagDictionary); 
 }
 
-// 2. ドロップダウンの動きを制御する関数
 function initTagGenerator(dict) {
     const tagCategory = document.getElementById('tagCategory');
     const tagTask = document.getElementById('tagTask');
@@ -3052,10 +3029,8 @@ function initTagGenerator(dict) {
 
     if (!tagCategory || !dict || Object.keys(dict).length === 0) return;
 
-    // UIを表示する
     if(uiBox) uiBox.style.display = 'block';
 
-    // ① 部位リストの初期化
     tagCategory.innerHTML = '<option value="">部位を選択...</option>';
     for (let cat in dict) {
         let option = document.createElement('option');
@@ -3064,7 +3039,6 @@ function initTagGenerator(dict) {
         tagCategory.appendChild(option);
     }
 
-    // ② 部位が選ばれた時の連動
     tagCategory.addEventListener('change', function() {
         tagTask.innerHTML = '<option value="">作業を選択...</option>';
         tagMaterial.innerHTML = '<option value="">材料を選択（なし可）</option>';
@@ -3073,13 +3047,12 @@ function initTagGenerator(dict) {
             for (let taskKey in tasks) {
                 let option = document.createElement('option');
                 option.value = taskKey;
-                option.textContent = taskKey.split('/')[1] || taskKey; // 例: 外壁上塗り だけ表示
+                option.textContent = taskKey.split('/')[1] || taskKey;
                 tagTask.appendChild(option);
             }
         }
     });
 
-    // ③ 作業が選ばれた時の連動
     tagTask.addEventListener('change', function() {
         tagMaterial.innerHTML = '<option value="">材料を選択（なし可）</option>';
         const category = tagCategory.value;
@@ -3095,7 +3068,6 @@ function initTagGenerator(dict) {
         }
     });
 
-    // ④ 挿入ボタンの処理（※以前のイベントが重複しないよう、一度要素をクローンして置き換える安全策）
     const newBtn = insertTagBtn.cloneNode(true);
     insertTagBtn.parentNode.replaceChild(newBtn, insertTagBtn);
     
@@ -3121,6 +3093,9 @@ function initTagGenerator(dict) {
         tagMaterial.innerHTML = '<option value="">材料を選択（なし可）</option>';
     });
 }
+</script>
+
+
 
 
 </script>
