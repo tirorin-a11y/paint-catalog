@@ -515,68 +515,65 @@
         
     </div>
     <!-- ▲ 追加ここまで ▲ -->
-    <div class="rough-paper">
-        <!-- ▼ タグ生成器（入力補助UI） ▼ -->
-<div id="tagGeneratorUI" style="display: none; background-color: #f8f9fa; padding: 10px; border-radius: 8px; margin-bottom: 10px; border: 1px solid #dee2e6;">
-    <div style="font-size: 0.9em; font-weight: bold; color: #555; margin-bottom: 5px;">🏷️ 作業タグ追加</div>
-    
-    <!-- 1段目：部位 と 作業 -->
-    <div style="display: flex; gap: 5px; margin-bottom: 5px;">
-        <select id="tagCategory" style="flex: 1; padding: 8px; border-radius: 4px; border: 1px solid #ccc; background: #fff;">
-            <option value="">部位を選択...</option>
-        </select>
-        <select id="tagTask" style="flex: 1; padding: 8px; border-radius: 4px; border: 1px solid #ccc; background: #fff;">
-            <option value="">作業を選択...</option>
-        </select>
-    </div>
 
-    <!-- 2段目：材料（横幅いっぱい） -->
-    <div style="display: flex; gap: 5px; margin-bottom: 5px;">
-        <select id="tagMaterial" style="flex: 1; padding: 8px; border-radius: 4px; border: 1px solid #ccc; background: #fff;">
-            <option value="">材料を選択（なし可）</option>
-        </select>
-    </div>
-
-    <!-- 3段目：時間 と 数量(kgテンキー) と 挿入ボタン -->
-    <div style="display: flex; gap: 5px; align-items: center;">
-        <select id="tagTime" style="flex: 1.2; padding: 8px; border-radius: 4px; border: 1px solid #ccc; background: #fff;">
-            <option value="">時間(なし可)</option>
-            <option value="0.5h">0.5h</option>
-            <option value="1.0h">1.0h</option>
-            <option value="1.5h">1.5h</option>
-            <option value="2.0h">2.0h</option>
-            <option value="2.5h">2.5h</option>
-            <option value="3.0h">3.0h</option>
-            <option value="3.5h">3.5h</option>
-            <option value="4.0h">4.0h</option>
-            <option value="4.5h">4.5h</option>
-            <option value="5.0h">5.0h</option>
-            <option value="5.5h">5.5h</option>
-            <option value="6.0h">6.0h</option>
-            <option value="6.5h">6.5h</option>
-            <option value="7.0h">7.0h</option>
-            <option value="7.5h">7.5h</option>
-            <option value="8.0h">8.0h</option>
-        </select>
-
-        <!-- 数字だけを入れる箱（自動でkgが付く） -->
-        <div style="flex: 1.2; display: flex; align-items: center; background: #fff; border: 1px solid #ccc; border-radius: 4px; padding-right: 6px;">
-            <input type="number" id="tagQuantity" step="0.5" placeholder="数量" style="width: 100%; padding: 8px; border: none; outline: none; border-radius: 4px; font-size: 1rem;">
-            <span style="font-size: 0.85rem; color: #555; font-weight: bold;">kg</span>
+    <!-- ▼ タグ生成器（黄色いエリアの「外側・すぐ上」に配置！） ▼ -->
+    <div id="tagGeneratorUI" style="display: none; background-color: #f8f9fa; padding: 10px; border-radius: 8px; margin-top: 10px; margin-bottom: 10px; border: 1px solid #dee2e6;">
+        <div style="font-size: 0.9em; font-weight: bold; color: #555; margin-bottom: 5px;">🏷️ 作業タグ追加</div>
+        
+        <!-- 1段目：部位 と 作業 -->
+        <div style="display: flex; gap: 5px; margin-bottom: 5px;">
+            <select id="tagCategory" style="flex: 1; padding: 8px; border-radius: 4px; border: 1px solid #ccc; background: #fff;">
+                <option value="">部位を選択...</option>
+            </select>
+            <select id="tagTask" style="flex: 1; padding: 8px; border-radius: 4px; border: 1px solid #ccc; background: #fff;">
+                <option value="">作業を選択...</option>
+            </select>
         </div>
 
-        <button type="button" id="insertTagBtn" style="flex: 1; padding: 8px; background-color: #007bff; color: white; border: none; border-radius: 4px; font-weight: bold;">
-            ➕ 挿入
-        </button>
-    </div>
+        <!-- 2段目：材料（横幅いっぱい） -->
+        <div style="display: flex; gap: 5px; margin-bottom: 5px;">
+            <select id="tagMaterial" style="flex: 1; padding: 8px; border-radius: 4px; border: 1px solid #ccc; background: #fff;">
+                <option value="">材料を選択（なし可）</option>
+            </select>
+        </div>
 
-        <button type="button" id="insertTagBtn" style="flex: 1; padding: 8px; background-color: #007bff; color: white; border: none; border-radius: 4px; font-weight: bold;">
-            ➕ 挿入
-        </button>
-    </div>
-</div>
-<!-- ▲ タグ生成器 ここまで ▲ -->
+        <!-- 3段目：時間 と 数量(kgテンキー) と 挿入ボタン -->
+        <div style="display: flex; gap: 5px; align-items: center;">
+            <select id="tagTime" style="flex: 1.2; padding: 8px; border-radius: 4px; border: 1px solid #ccc; background: #fff;">
+                <option value="">時間(なし可)</option>
+                <option value="0.5h">0.5h</option>
+                <option value="1.0h">1.0h</option>
+                <option value="1.5h">1.5h</option>
+                <option value="2.0h">2.0h</option>
+                <option value="2.5h">2.5h</option>
+                <option value="3.0h">3.0h</option>
+                <option value="3.5h">3.5h</option>
+                <option value="4.0h">4.0h</option>
+                <option value="4.5h">4.5h</option>
+                <option value="5.0h">5.0h</option>
+                <option value="5.5h">5.5h</option>
+                <option value="6.0h">6.0h</option>
+                <option value="6.5h">6.5h</option>
+                <option value="7.0h">7.0h</option>
+                <option value="7.5h">7.5h</option>
+                <option value="8.0h">8.0h</option>
+            </select>
 
+            <!-- 数字だけを入れる箱（自動でkgが付く） -->
+            <div style="flex: 1.2; display: flex; align-items: center; background: #fff; border: 1px solid #ccc; border-radius: 4px; padding-right: 6px;">
+                <input type="number" id="tagQuantity" step="0.5" placeholder="数量" style="width: 100%; padding: 8px; border: none; outline: none; border-radius: 4px; font-size: 1rem;">
+                <span style="font-size: 0.85rem; color: #555; font-weight: bold;">kg</span>
+            </div>
+
+            <button type="button" id="insertTagBtn" style="flex: 1; padding: 8px; background-color: #007bff; color: white; border: none; border-radius: 4px; font-weight: bold;">
+                ➕ 挿入
+            </button>
+        </div>
+    </div>
+    <!-- ▲ タグ生成器 ここまで ▲ -->
+
+    <!-- ▼ 黄色いメモ帳エリア（ここは純粋にテキストとマイクだけにする！） ▼ -->
+    <div class="rough-paper">
         <textarea id="reportText" class="rough-textarea" placeholder="内容を入力..."></textarea>
         <button class="mic-btn" id="micBtn" onclick="toggleSpeech()">🎤</button>
     </div>
