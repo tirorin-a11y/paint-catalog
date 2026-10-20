@@ -709,6 +709,13 @@
         // 黒板描画と履歴読み込み
         if(document.getElementById('boardCanvas')) drawBoard(); 
         if(siteId) renderReportHistory();
+
+        // === 日報画面を開いた時に動くコード ===
+        const savedDict = localStorage.getItem('dx_tag_dictionary');
+        if (savedDict) {
+            const globalTagDictionary = JSON.parse(savedDict);
+            initTagGenerator(globalTagDictionary); // ドロップダウンを作る関数を呼び出す
+        }
     };
 
     
@@ -3122,6 +3129,87 @@ if (tagCategory && tagTask && tagMaterial && insertTagBtn) {
         tagMaterial.innerHTML = '<option value="">材料を選択（なしでも可）</option>';
     });
 }
+
+// ==============================================================
+// ▼ ドロップダウンの動きを制御する関数（JSファイルのどこかに置いておく） ▼
+// ==============================================================
+function initTagGenerator(dict) {
+    const tagCategory = document.getElementById('tagCategory');
+    const tagTask = document.getElementById('tagTask');
+    const tagMaterial = document.getElementById('tagMaterial');
+    const insertTagBtn = document.getElementById('insertTagBtn');
+    const reportText = document.getElementById('reportText'); // ※日報のIDに合わせてください
+    const uiBox = document.getElementById('tagGeneratorUI');
+
+    if (!tagCategory || !dict || Object.keys(dict).length === 0) return;
+
+    // UIを表示する
+    uiBox.style.display = 'block';
+
+    // 1. 部位リストの初期化
+    tagCategory.innerHTML = '<option value="">部位を選択...</option>';
+    for (let cat in dict) {
+        let option = document.createElement('option');
+        option.value = cat;
+        option.textContent = cat;
+        tagCategory.appendChild(option);
+    }
+
+    // 2. 部位が選ばれた時の連動
+    tagCategory.addEventListener('change', function() {
+        tagTask.innerHTML = '<option value="">作業を選択...</option>';
+        tagMaterial.innerHTML = '<option value="">材料を選択（なし可）</option>';
+        const tasks = dict[this.value];
+        if (tasks) {
+            for (let taskKey in tasks) {
+                let option = document.createElement('option');
+                option.value = taskKey;
+                option.textContent = taskKey.split('/')[1] || taskKey; // 外壁上塗り だけ表示
+                tagTask.appendChild(option);
+            }
+        }
+    });
+
+    // 3. 作業が選ばれた時の連動
+    tagTask.addEventListener('change', function() {
+        tagMaterial.innerHTML = '<option value="">材料を選択（なし可）</option>';
+        const category = tagCategory.value;
+        const taskKey = this.value;
+        if (category && taskKey && dict[category][taskKey]) {
+            const materials = dict[category][taskKey];
+            materials.forEach(mat => {
+                let option = document.createElement('option');
+                option.value = mat;
+                option.textContent = mat;
+                tagMaterial.appendChild(option);
+            });
+        }
+    });
+
+    // 4. 挿入ボタンの処理
+    insertTagBtn.addEventListener('click', function() {
+        const taskKey = tagTask.value; 
+        const material = tagMaterial.value;
+
+        if (!tagCategory.value || !taskKey) {
+            alert("部位と作業を選択してください。");
+            return;
+        }
+
+        const taskName = taskKey.split('/')[1]; 
+        const tagString = `【${taskName}】${material}`;
+
+        const currentText = reportText.value;
+        const prefix = currentText.length > 0 && !currentText.endsWith('\n') ? '\n' : '';
+        reportText.value = currentText + prefix + tagString + " ";
+
+        reportText.focus();
+        tagCategory.value = "";
+        tagTask.innerHTML = '<option value="">作業を選択...</option>';
+        tagMaterial.innerHTML = '<option value="">材料を選択（なし可）</option>';
+    });
+}
+
 
 </script>
 

@@ -941,6 +941,14 @@ async function syncAllDataToCloud() {
             const text = await res.text(); 
             const responseData = JSON.parse(text);       
             
+// =========================================================
+            // ★追加：一緒に届いた辞書データをスマホのメモリに記憶させる！
+            // =========================================================
+            if (responseData.dictionary) {
+                localStorage.setItem('dx_tag_dictionary', JSON.stringify(responseData.dictionary));
+            }
+
+
             let finalData = [];
 
             // ★新しい形式に対応
@@ -992,6 +1000,14 @@ async function syncAllDataToCloud() {
             if (text.includes('"result":"error"')) { console.warn("Check Skip: Error"); return; }
 
             const responseData = JSON.parse(text);
+
+            // =========================================================
+            // ★追加：アップデート確認のついでに辞書データも最新版に更新！
+            // =========================================================
+            if (responseData.dictionary) {
+                localStorage.setItem('dx_tag_dictionary', JSON.stringify(responseData.dictionary));
+            }
+
 
             // データ解析
             let cloudTime = 0;
