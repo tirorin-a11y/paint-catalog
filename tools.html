@@ -3080,9 +3080,9 @@ function initTagGenerator(dict) {
             return;
         }
 
-        const taskName = taskKey.split('/')[1]; 
-        const tagString = `【${taskName}】${material}`;
-
+        // 削る処理をやめて、そのまま（G-TOP/外壁上塗り）挿入する！
+        const tagString = `【${taskKey}】${material}`;
+        
         const currentText = reportText.value;
         const prefix = currentText.length > 0 && !currentText.endsWith('\n') ? '\n' : '';
         reportText.value = currentText + prefix + tagString + " ";
