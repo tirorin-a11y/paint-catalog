@@ -3072,7 +3072,7 @@ function initTagGenerator(dict) {
     insertTagBtn.parentNode.replaceChild(newBtn, insertTagBtn);
     
     newBtn.addEventListener('click', function() {
-        const taskKey = tagTask.value; 
+        const taskKey = tagTask.value; // ここに "G-TOP/外壁上塗り" が入っている
         const material = tagMaterial.value;
 
         if (!tagCategory.value || !taskKey) {
@@ -3080,9 +3080,9 @@ function initTagGenerator(dict) {
             return;
         }
 
-        // 削る処理をやめて、そのまま（G-TOP/外壁上塗り）挿入する！
+        // G-TOP/ を切り落とさず、そのまま文字にする！
         const tagString = `【${taskKey}】${material}`;
-        
+
         const currentText = reportText.value;
         const prefix = currentText.length > 0 && !currentText.endsWith('\n') ? '\n' : '';
         reportText.value = currentText + prefix + tagString + " ";
