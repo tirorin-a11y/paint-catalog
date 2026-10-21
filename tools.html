@@ -516,9 +516,15 @@
     </div>
     <!-- ▲ 追加ここまで ▲ -->
 
-    <!-- ▼ タグ生成器（黄色いエリアの「外側・すぐ上」に配置！） ▼ -->
+    <!-- ▼ タグ生成器（板材寸法・面積の統合版！） ▼ -->
     <div id="tagGeneratorUI" style="display: none; background-color: #f8f9fa; padding: 10px; border-radius: 8px; margin-top: 10px; margin-bottom: 10px; border: 1px solid #dee2e6;">
-        <div style="font-size: 0.9em; font-weight: bold; color: #555; margin-bottom: 5px;">🏷️ 作業タグ追加</div>
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 5px;">
+            <span style="font-size: 0.9em; font-weight: bold; color: #555;">🏷️ 作業タグ追加</span>
+            <!-- ★追加：板材や面積がある時だけタップして開くボタン -->
+            <button type="button" onclick="const box = document.getElementById('dimOptionBox'); box.style.display = box.style.display === 'none' ? 'block' : 'none';" style="font-size: 0.75rem; background: #e8f5e9; color: #2e7d32; border: 1px solid #a5d6a7; border-radius: 4px; padding: 2px 8px; font-weight: bold;">
+                📐 寸法・面積を追加 ▼
+            </button>
+        </div>
         
         <!-- 1段目：部位 と 作業 -->
         <div style="display: flex; gap: 5px; margin-bottom: 5px;">
@@ -535,6 +541,22 @@
             <select id="tagMaterial" style="flex: 1; padding: 8px; border-radius: 4px; border: 1px solid #ccc; background: #fff;">
                 <option value="">材料を選択（なし可）</option>
             </select>
+        </div>
+
+        <!-- ★新設：板材の置き塗り寸法 ＆ 直入力面積エリア（普段は隠れている） -->
+        <div id="dimOptionBox" style="display: none; background: #e8f5e9; padding: 8px; border-radius: 6px; margin-bottom: 5px; border: 1px dashed #66bb6a;">
+            <div style="font-size: 0.75rem; color: #2e7d32; font-weight: bold; margin-bottom: 4px;">🪵 板材寸法 (mm × 本数) または 直面積 (㎡)</div>
+            <div style="display: flex; gap: 4px; margin-bottom: 4px;">
+                <input type="number" id="tagDimT" placeholder="厚(18)" style="flex: 1; width: 100%; padding: 6px; border: 1px solid #ccc; border-radius: 4px; font-size: 0.9rem;">
+                <input type="number" id="tagDimW" placeholder="幅(180)" style="flex: 1; width: 100%; padding: 6px; border: 1px solid #ccc; border-radius: 4px; font-size: 0.9rem;">
+                <input type="number" id="tagDimL" placeholder="長(3650)" style="flex: 1.2; width: 100%; padding: 6px; border: 1px solid #ccc; border-radius: 4px; font-size: 0.9rem;">
+                <input type="number" id="tagDimQ" placeholder="本数(60)" style="flex: 1; width: 100%; padding: 6px; border: 1px solid #ccc; border-radius: 4px; font-size: 0.9rem;">
+            </div>
+            <div style="display: flex; align-items: center; gap: 5px;">
+                <span style="font-size: 0.75rem; color: #555;">または直面積:</span>
+                <input type="number" id="tagDirectArea" step="0.1" placeholder="面積(㎡)を直接入力" style="flex: 1; padding: 6px; border: 1px solid #ccc; border-radius: 4px; font-size: 0.9rem;">
+                <span style="font-size: 0.8rem; color: #555; font-weight: bold;">㎡</span>
+            </div>
         </div>
 
         <!-- 3段目：時間 と 数量(kgテンキー) と 挿入ボタン -->
@@ -559,9 +581,8 @@
                 <option value="8.0h">8.0h</option>
             </select>
 
-            <!-- 数字だけを入れる箱（自動でkgが付く） -->
             <div style="flex: 1.2; display: flex; align-items: center; background: #fff; border: 1px solid #ccc; border-radius: 4px; padding-right: 6px;">
-                <input type="number" id="tagQuantity" step="0.5" placeholder="数量" style="width: 100%; padding: 8px; border: none; outline: none; border-radius: 4px; font-size: 1rem;">
+                <input type="number" id="tagQuantity" step="0.1" placeholder="使用量" style="width: 100%; padding: 8px; border: none; outline: none; border-radius: 4px; font-size: 1rem;">
                 <span style="font-size: 0.85rem; color: #555; font-weight: bold;">kg</span>
             </div>
 
@@ -3139,33 +3160,49 @@ function initTagGenerator(dict) {
         const material = tagMaterial.value;
         const timeVal = tagTime ? tagTime.value : "";
         const qtyVal = tagQuantity ? tagQuantity.value : "";
+        
+        // ★追加：板材寸法・直面積の取得
+        const dimT = document.getElementById('tagDimT') ? document.getElementById('tagDimT').value : "";
+        const dimW = document.getElementById('tagDimW') ? document.getElementById('tagDimW').value : "";
+        const dimL = document.getElementById('tagDimL') ? document.getElementById('tagDimL').value : "";
+        const dimQ = document.getElementById('tagDimQ') ? document.getElementById('tagDimQ').value : "";
+        const directArea = document.getElementById('tagDirectArea') ? document.getElementById('tagDirectArea').value : "";
 
         if (!tagCategory.value || !taskKey) {
             alert("部位と作業を選択してください。");
             return;
         }
 
-        // タグの組み立て（例: 【G-TOP/外壁上塗り】プレミアムシリコン 1缶 4.0h）
+        // タグの組み立て
         let parts = [`【${taskKey}】${material}`];
         if (qtyVal) parts.push(qtyVal + "kg");
+        if (dimT && dimW && dimL && dimQ) {
+            parts.push(`[寸法:${dimT}x${dimW}x${dimL}x${dimQ}]`);
+        } else if (directArea) {
+            parts.push(`[面積:${directArea}㎡]`);
+        }
         if (timeVal) parts.push(timeVal);
         
         const tagString = parts.join(" ");
 
-        // テキストエリアへ挿入（最後に改行も入れるので、すぐ次の作業を追加できる！）
         const currentText = reportText.value;
         const prefix = currentText.length > 0 && !currentText.endsWith('\n') ? '\n' : '';
         reportText.value = currentText + prefix + tagString + "\n";
 
-        // 合計時間を再計算！
         updateDailyTotal();
 
-        // ドロップダウンをリセット
+        // リセット処理
         tagCategory.value = "";
         tagTask.innerHTML = '<option value="">作業を選択...</option>';
         tagMaterial.innerHTML = '<option value="">材料を選択（なし可）</option>';
         if (tagTime) tagTime.value = "";
         if (tagQuantity) tagQuantity.value = "";
+        if (document.getElementById('tagDimT')) document.getElementById('tagDimT').value = "";
+        if (document.getElementById('tagDimW')) document.getElementById('tagDimW').value = "";
+        if (document.getElementById('tagDimL')) document.getElementById('tagDimL').value = "";
+        if (document.getElementById('tagDimQ')) document.getElementById('tagDimQ').value = "";
+        if (document.getElementById('tagDirectArea')) document.getElementById('tagDirectArea').value = "";
+        if (document.getElementById('dimOptionBox')) document.getElementById('dimOptionBox').style.display = 'none';
     });
 }
 </script>
