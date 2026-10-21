@@ -543,19 +543,33 @@
             </select>
         </div>
 
-        <!-- ★新設：板材の置き塗り寸法 ＆ 直入力面積エリア（普段は隠れている） -->
+        <!-- ★進化版：外壁の「面・面積」＆「板材寸法」エリア（普段は隠れている） -->
         <div id="dimOptionBox" style="display: none; background: #e8f5e9; padding: 8px; border-radius: 6px; margin-bottom: 5px; border: 1px dashed #66bb6a;">
-            <div style="font-size: 0.75rem; color: #2e7d32; font-weight: bold; margin-bottom: 4px;">🪵 板材寸法 (mm × 本数) または 直面積 (㎡)</div>
-            <div style="display: flex; gap: 4px; margin-bottom: 4px;">
+            
+            <!-- 上段：外壁などの「面（方角）」と「直面積（㎡）」 -->
+            <div style="font-size: 0.75rem; color: #2e7d32; font-weight: bold; margin-bottom: 4px;">🏠 外壁・屋根の「面」と「面積」（片方だけでもOK）</div>
+            <div style="display: flex; align-items: center; gap: 5px; margin-bottom: 8px;">
+                <select id="tagSide" style="flex: 1; padding: 6px; border: 1px solid #ccc; border-radius: 4px; background: #fff; font-size: 0.9rem;">
+                    <option value="">面(指定なし)</option>
+                    <option value="北面">北面</option>
+                    <option value="南面">南面</option>
+                    <option value="東面">東面</option>
+                    <option value="西面">西面</option>
+                    <option value="正面">正面</option>
+                    <option value="裏面">裏面</option>
+                    <option value="全面">全面</option>
+                </select>
+                <input type="number" id="tagDirectArea" step="0.1" placeholder="面積(分かれば)" style="flex: 1.2; width: 100%; padding: 6px; border: 1px solid #ccc; border-radius: 4px; font-size: 0.9rem;">
+                <span style="font-size: 0.8rem; color: #555; font-weight: bold;">㎡</span>
+            </div>
+
+            <!-- 下段：板材の置き塗り寸法 -->
+            <div style="font-size: 0.75rem; color: #2e7d32; font-weight: bold; margin-bottom: 4px;">🪵 板材の置き塗り寸法 (mm × 本数)</div>
+            <div style="display: flex; gap: 4px;">
                 <input type="number" id="tagDimT" placeholder="厚(18)" style="flex: 1; width: 100%; padding: 6px; border: 1px solid #ccc; border-radius: 4px; font-size: 0.9rem;">
                 <input type="number" id="tagDimW" placeholder="幅(180)" style="flex: 1; width: 100%; padding: 6px; border: 1px solid #ccc; border-radius: 4px; font-size: 0.9rem;">
                 <input type="number" id="tagDimL" placeholder="長(3650)" style="flex: 1.2; width: 100%; padding: 6px; border: 1px solid #ccc; border-radius: 4px; font-size: 0.9rem;">
                 <input type="number" id="tagDimQ" placeholder="本数(60)" style="flex: 1; width: 100%; padding: 6px; border: 1px solid #ccc; border-radius: 4px; font-size: 0.9rem;">
-            </div>
-            <div style="display: flex; align-items: center; gap: 5px;">
-                <span style="font-size: 0.75rem; color: #555;">または直面積:</span>
-                <input type="number" id="tagDirectArea" step="0.1" placeholder="面積(㎡)を直接入力" style="flex: 1; padding: 6px; border: 1px solid #ccc; border-radius: 4px; font-size: 0.9rem;">
-                <span style="font-size: 0.8rem; color: #555; font-weight: bold;">㎡</span>
             </div>
         </div>
 
@@ -3161,12 +3175,13 @@ function initTagGenerator(dict) {
         const timeVal = tagTime ? tagTime.value : "";
         const qtyVal = tagQuantity ? tagQuantity.value : "";
         
-        // ★追加：板材寸法・直面積の取得
+        // ★面・面積・板材寸法の取得
+        const sideVal = document.getElementById('tagSide') ? document.getElementById('tagSide').value : "";
+        const directArea = document.getElementById('tagDirectArea') ? document.getElementById('tagDirectArea').value : "";
         const dimT = document.getElementById('tagDimT') ? document.getElementById('tagDimT').value : "";
         const dimW = document.getElementById('tagDimW') ? document.getElementById('tagDimW').value : "";
         const dimL = document.getElementById('tagDimL') ? document.getElementById('tagDimL').value : "";
         const dimQ = document.getElementById('tagDimQ') ? document.getElementById('tagDimQ').value : "";
-        const directArea = document.getElementById('tagDirectArea') ? document.getElementById('tagDirectArea').value : "";
 
         if (!tagCategory.value || !taskKey) {
             alert("部位と作業を選択してください。");
@@ -3176,11 +3191,20 @@ function initTagGenerator(dict) {
         // タグの組み立て
         let parts = [`【${taskKey}】${material}`];
         if (qtyVal) parts.push(qtyVal + "kg");
+        
+        // 板材寸法がある場合
         if (dimT && dimW && dimL && dimQ) {
             parts.push(`[寸法:${dimT}x${dimW}x${dimL}x${dimQ}]`);
+        } 
+        // 外壁などの「面」や「面積」がある場合
+        if (sideVal && directArea) {
+            parts.push(`[${sideVal}:${directArea}㎡]`); // 例: [北面:45㎡]
+        } else if (sideVal) {
+            parts.push(`[${sideVal}]`);                 // 例: [北面]
         } else if (directArea) {
-            parts.push(`[面積:${directArea}㎡]`);
+            parts.push(`[面積:${directArea}㎡]`);       // 例: [面積:106㎡]
         }
+
         if (timeVal) parts.push(timeVal);
         
         const tagString = parts.join(" ");
@@ -3197,11 +3221,12 @@ function initTagGenerator(dict) {
         tagMaterial.innerHTML = '<option value="">材料を選択（なし可）</option>';
         if (tagTime) tagTime.value = "";
         if (tagQuantity) tagQuantity.value = "";
+        if (document.getElementById('tagSide')) document.getElementById('tagSide').value = "";
+        if (document.getElementById('tagDirectArea')) document.getElementById('tagDirectArea').value = "";
         if (document.getElementById('tagDimT')) document.getElementById('tagDimT').value = "";
         if (document.getElementById('tagDimW')) document.getElementById('tagDimW').value = "";
         if (document.getElementById('tagDimL')) document.getElementById('tagDimL').value = "";
         if (document.getElementById('tagDimQ')) document.getElementById('tagDimQ').value = "";
-        if (document.getElementById('tagDirectArea')) document.getElementById('tagDirectArea').value = "";
         if (document.getElementById('dimOptionBox')) document.getElementById('dimOptionBox').style.display = 'none';
     });
 }
