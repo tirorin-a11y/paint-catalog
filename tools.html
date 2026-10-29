@@ -563,8 +563,16 @@
                 <span style="font-size: 0.8rem; color: #555; font-weight: bold;">㎡</span>
             </div>
 
-            <!-- 下段：板材の置き塗り寸法 -->
-            <div style="font-size: 0.75rem; color: #2e7d32; font-weight: bold; margin-bottom: 4px;">🪵 板材の置き塗り寸法 (mm × 本数)</div>
+            <!-- 下段：板材の置き塗り寸法（★右端に面数セレクトを追加・縦幅ゼロ！） -->
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;">
+                <span style="font-size: 0.75rem; color: #2e7d32; font-weight: bold;">🪵 木材寸法 (mm × 本数)</span>
+                <select id="tagDimFaces" style="width: auto; margin-top: 0; padding: 2px 6px; border: 1px solid #66bb6a; border-radius: 4px; background: #fff; font-size: 0.75rem; font-weight: bold; color: #2e7d32;">
+                    <option value="4">4面 (全周・置き塗り)</option>
+                    <option value="3">3面 (表＋両厚み)</option>
+                    <option value="2">2面 (表＋片厚み)</option>
+                    <option value="1">1面 (正面のみ)</option>
+                </select>
+            </div>
             <div style="display: flex; gap: 4px;">
                 <input type="number" id="tagDimT" placeholder="厚(18)" style="flex: 1; width: 100%; padding: 6px; border: 1px solid #ccc; border-radius: 4px; font-size: 0.9rem;">
                 <input type="number" id="tagDimW" placeholder="幅(180)" style="flex: 1; width: 100%; padding: 6px; border: 1px solid #ccc; border-radius: 4px; font-size: 0.9rem;">
@@ -3233,10 +3241,26 @@ function initTagGenerator(dict) {
         let parts = [`【${taskKey}】${material}`];
         if (qtyVal) parts.push(qtyVal + "kg");
         
-        // 板材寸法がある場合
-        if (dimT && dimW && dimL && dimQ) {
-            parts.push(`[寸法:${dimT}x${dimW}x${dimL}x${dimQ}]`);
-        } 
+        // 板材寸法がある場合（★4面・3面・2面・1面対応！）
+        const dimFaces = document.getElementById('tagDimFaces') ? document.getElementById('tagDimFaces').value : "4";
+        if (dimW && dimL && dimQ && (dimT || dimFaces === "1")) {
+            const tVal = parseFloat(dimT) || 0;
+            const wVal = parseFloat(dimW) || 0;
+            const lVal = parseFloat(dimL) || 0;
+            const qVal = parseFloat(dimQ) || 0;
+
+            if (dimFaces === "4") {
+                // 従来の4面（置き塗り）
+                parts.push(`[寸法:${tVal}x${wVal}x${lVal}x${qVal}]`);
+            } else {
+                // 3面・2面・1面のときは、その場で正確な面積(㎡)も計算してタグに添える！
+                let periMm = wVal; // 1面（幅のみ）
+                if (dimFaces === "3") periMm = wVal + (tVal * 2); // 3面（幅＋両厚）
+                if (dimFaces === "2") periMm = wVal + tVal;       // 2面（幅＋片厚）
+                const calcArea = Math.round((periMm * lVal * qVal / 1000000) * 100) / 100;
+                parts.push(`[寸法:${tVal}x${wVal}x${lVal}x${qVal}(${dimFaces}面:${calcArea}㎡)]`);
+            }
+        }
         // 外壁などの「面」や「面積」がある場合
         if (sideVal && directArea) {
             parts.push(`[${sideVal}:${directArea}㎡]`); // 例: [北面:45㎡]
@@ -3269,6 +3293,7 @@ function initTagGenerator(dict) {
         if (document.getElementById('tagDimL')) document.getElementById('tagDimL').value = "";
         if (document.getElementById('tagDimQ')) document.getElementById('tagDimQ').value = "";
         if (document.getElementById('dimOptionBox')) document.getElementById('dimOptionBox').style.display = 'none';
+        if (document.getElementById('tagDimFaces')) document.getElementById('tagDimFaces').value = "4";
     });
 }
 </script>
