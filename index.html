@@ -681,5 +681,167 @@
     }
     // ▲▲ ここまで追加 ▲▲
 </script>
+<script>
+// ==============================================================
+// 📅 予定ピッカー ＆ 1日前・1時間前アラート機能
+// ==============================================================
+function toggleScheduleBox() {
+    const box = document.getElementById('schedulePickerBox');
+    if (!box) return;
+    if (box.style.display === 'none') {
+        box.style.display = 'block';
+        // デフォルトで明日の日付をセット
+        const dInput = document.getElementById('schedDate');
+        if (dInput && !dInput.value) {
+            const tomorrow = new Date(Date.now() + 86400000);
+            dInput.value = tomorrow.toISOString().split('T')[0];
+        }
+    } else {
+        box.style.display = 'none';
+    }
+}
+
+function insertAndSaveSchedule() {
+    const dVal = document.getElementById('schedDate').value;
+    const tVal = document.getElementById('schedTime').value || "09:00";
+    const typeVal = document.getElementById('schedType').value;
+    const memoVal = document.getElementById('schedMemo').value.trim();
+
+    if (!dVal) {
+        alert("日付を選択してください。");
+        return;
+    }
+
+    const formattedDate = dVal.replace(/-/g, '/');
+    const detail = memoVal ? `${typeVal}（${memoVal}）` : typeVal;
+    const schedLine = `【予定】${formattedDate} ${tVal} ${detail}`;
+
+    // 1. 日報のテキスト欄に挿入
+    const reportText = document.getElementById('reportText');
+    if (reportText) {
+        const cur = reportText.value;
+        const prefix = (cur.length > 0 && !cur.endsWith('\n')) ? '\n' : '';
+        reportText.value = cur + prefix + schedLine + '\n';
+    }
+
+    // 2. スマホ内の予定アラートリスト（dx_schedules）に保存
+    const targetTimeMs = new Date(`${dVal}T${tVal}:00`).getTime();
+    let schedules = JSON.parse(localStorage.getItem('dx_schedules') || '[]');
+    schedules.push({
+        id: 'sch_' + Date.now(),
+        siteId: (typeof currentSite !== 'undefined' && currentSite) ? currentSite.id : (siteId || ''),
+        siteName: (typeof currentSite !== 'undefined' && currentSite) ? currentSite.name : '現場',
+        dateStr: `${formattedDate} ${tVal}`,
+        targetTime: targetTimeMs,
+        detail: detail,
+        notified1d: false,
+        notified1h: false
+    });
+    localStorage.setItem('dx_schedules', JSON.stringify(schedules));
+
+    // 3. ピッカーを閉じてメモをリセット
+    document.getElementById('schedMemo').value = '';
+    document.getElementById('schedulePickerBox').style.display = 'none';
+
+    // 4. そのまま履歴に保存＆クラウド自動送信も走らせる！
+    if (typeof saveReportLocal === 'function') {
+        saveReportLocal();
+    }
+    checkUpcomingSchedules();
+}
+
+// 🔔 ピピッという電子アラート音を鳴らす関数（外部音声ファイル不要）
+function playAlertBeep(isUrgent) {
+    try {
+        const AudioCtx = window.AudioContext || window.webkitAudioContext;
+        if (!AudioCtx) return;
+        const ctx = new AudioCtx();
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        osc.connect(gain);
+        gain.connect(ctx.destination);
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(isUrgent ? 880 : 660, ctx.currentTime);
+        gain.gain.setValueAtTime(0.15, ctx.currentTime);
+        osc.start();
+        osc.stop(ctx.currentTime + (isUrgent ? 0.4 : 0.25));
+    } catch(e) {}
+    if (navigator.vibrate) {
+        navigator.vibrate(isUrgent ? [200, 100, 200, 100, 300] : [150, 80, 150]);
+    }
+}
+
+// 🔍 画面を開いた時＆定期的に予定をチェックして最上部バナーを出す関数
+function checkUpcomingSchedules() {
+    let schedules = JSON.parse(localStorage.getItem('dx_schedules') || '[]');
+    if (schedules.length === 0) return;
+
+    const now = Date.now();
+    // 予定時刻から2時間以上過ぎた古い予定は自動お掃除
+    schedules = schedules.filter(s => s.targetTime > now - (2 * 3600 * 1000));
+
+    let bannerContainer = document.getElementById('dxScheduleAlertBanner');
+    if (!bannerContainer) {
+        bannerContainer = document.createElement('div');
+        bannerContainer.id = 'dxScheduleAlertBanner';
+        bannerContainer.style.cssText = 'position:sticky; top:0; z-index:9999; width:100%;';
+        document.body.insertBefore(bannerContainer, document.body.firstChild);
+    }
+    bannerContainer.innerHTML = '';
+
+    let shouldBeepUrgent = false;
+    let shouldBeepNormal = false;
+
+    schedules.sort((a, b) => a.targetTime - b.targetTime).forEach(s => {
+        const diffHours = (s.targetTime - now) / (1000 * 3600);
+
+        // 🚨 【1時間前アラート】（2時間前〜予定時刻経過後30分まで）
+        if (diffHours <= 2.0 && diffHours >= -0.5) {
+            if (!s.notified1h) {
+                shouldBeepUrgent = true;
+                s.notified1h = true;
+            }
+            const remainMin = Math.max(0, Math.round(diffHours * 60));
+            const timeLabel = remainMin > 0 ? `あと約${remainMin}分！` : `予定時刻です！`;
+            bannerContainer.insertAdjacentHTML('beforeend', `
+                <div style="background:#d32f2f; color:white; padding:12px 15px; font-weight:bold; font-size:0.95rem; display:flex; justify-content:space-between; align-items:center; box-shadow:0 3px 8px rgba(0,0,0,0.3); border-bottom:1px solid #b71c1c;">
+                    <div>🚨 【まもなく予定（${timeLabel}）】<br><span style="font-size:1.05rem;">${s.dateStr} ${s.siteName} - ${s.detail}</span></div>
+                    <button onclick="dismissSchedule('${s.id}')" style="background:white; color:#d32f2f; border:none; border-radius:6px; padding:6px 10px; font-weight:bold; cursor:pointer; flex-shrink:0; margin-left:10px;">確認済</button>
+                </div>
+            `);
+        }
+        // 🔔 【1日前アラート】（28時間前〜2時間前まで）
+        else if (diffHours <= 28.0 && diffHours > 2.0) {
+            if (!s.notified1d) {
+                shouldBeepNormal = true;
+                s.notified1d = true;
+            }
+            bannerContainer.insertAdjacentHTML('beforeend', `
+                <div style="background:#f57c00; color:white; padding:10px 15px; font-weight:bold; font-size:0.9rem; display:flex; justify-content:space-between; align-items:center; box-shadow:0 2px 6px rgba(0,0,0,0.2); border-bottom:1px solid #e65100;">
+                    <div>🔔 【明日〜直近の予定】<br>${s.dateStr} ${s.siteName} - ${s.detail}</div>
+                    <button onclick="dismissSchedule('${s.id}')" style="background:rgba(255,255,255,0.2); color:white; border:1px solid white; border-radius:6px; padding:4px 8px; font-size:0.8rem; cursor:pointer; flex-shrink:0; margin-left:10px;">消す</button>
+                </div>
+            `);
+        }
+    });
+
+    localStorage.setItem('dx_schedules', JSON.stringify(schedules));
+    if (shouldBeepUrgent) playAlertBeep(true);
+    else if (shouldBeepNormal) playAlertBeep(false);
+}
+
+function dismissSchedule(schedId) {
+    let schedules = JSON.parse(localStorage.getItem('dx_schedules') || '[]');
+    schedules = schedules.filter(s => s.id !== schedId);
+    localStorage.setItem('dx_schedules', JSON.stringify(schedules));
+    checkUpcomingSchedules();
+}
+
+window.addEventListener('DOMContentLoaded', () => {
+    checkUpcomingSchedules();
+    // 画面を開きっぱなしにしている時も1分ごとに時刻をチェック
+    setInterval(checkUpcomingSchedules, 60000);
+});
+</script>
 </body>
 </html>
