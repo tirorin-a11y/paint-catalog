@@ -127,7 +127,7 @@
         .badge-stop { color: #d9534f; border: 1px solid #d9534f; font-size: 0.7rem; padding: 1px 3px; border-radius: 3px; }
         .loading-msg { text-align: center; color: #666; padding: 20px; }
 
-        /* ▼▼ 追加: グループ化用フレームのスタイル ▼▼ */
+        /* グループ化用フレームのスタイル */
         .feature-group {
             border: 2px dashed #ccc;
             border-radius: 10px;
@@ -151,10 +151,9 @@
             align-items: center;
             gap: 8px;
         }
-        /* ▲▲ ここまで ▲▲ */
     </style>
+    <meta name="google-site-verification" content="CSTsZKSKyMwJQeHbuohGlSGdCP7PkqBNgKAivoCvs3U" />
 </head>
-<meta name="google-site-verification" content="CSTsZKSKyMwJQeHbuohGlSGdCP7PkqBNgKAivoCvs3U" />
 <body>
 
     <header>
@@ -174,6 +173,7 @@
                 </a>
             </div>
         </div>
+
         <div class="feature-group wip">
             <div class="group-label" style="color: #e67e22;">🚧 工事中（テスト・開発中）</div>
             
@@ -182,6 +182,73 @@
                     💰 見積シミュレータ
                 </a>
             </div>
+
+            <!-- ▼▼ 新規追加：勤怠打刻＆前払い・貯金申請セクション ▼▼ -->
+            <section class="tool-section" style="margin-top: 0; border: 2px dashed #0056b3; background-color: #ffffff; box-shadow: none; margin-bottom: 15px;">
+                <h2 style="color: #0056b3; font-size: 1.2rem; display: flex; align-items: center; gap: 8px; border-bottom: 1px dashed #0056b3;">
+                    ⏱️ 勤怠打刻・マイページ
+                </h2>
+
+                <div style="display: grid; grid-template-columns: 2fr 1fr; gap: 10px; margin-bottom: 10px;">
+                    <div>
+                        <label style="font-size: 12px; font-weight: bold; color: #555;">👤 スタッフ名</label>
+                        <select id="attStaffSelect" style="width: 100%; padding: 10px; font-size: 1rem; border: 1px solid #ccc; border-radius: 6px; background: white;">
+                            <option value="">読込中...</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label style="font-size: 12px; font-weight: bold; color: #555;">🔑 PIN(4桁)</label>
+                        <input type="password" id="attPinInput" inputmode="numeric" maxlength="4" placeholder="1234" style="width: 100%; padding: 10px; font-size: 1rem; border: 1px solid #ccc; border-radius: 6px; box-sizing: border-box;">
+                    </div>
+                </div>
+
+                <div style="display: grid; grid-template-columns: 2fr 1fr; gap: 10px; margin-bottom: 15px;">
+                    <div>
+                        <label style="font-size: 12px; font-weight: bold; color: #555;">🏠 本日の現場名（出勤時）</label>
+                        <input type="text" id="attSiteInput" placeholder="例: 菊池様邸" style="width: 100%; padding: 10px; font-size: 1rem; border: 1px solid #ccc; border-radius: 6px; box-sizing: border-box;">
+                    </div>
+                    <div>
+                        <label style="font-size: 12px; font-weight: bold; color: #555;">☕ 休憩(退勤時)</label>
+                        <select id="attBreakSelect" style="width: 100%; padding: 10px; font-size: 1rem; border: 1px solid #ccc; border-radius: 6px; background: white;">
+                            <option value="60">60分</option>
+                            <option value="90">90分</option>
+                            <option value="120">120分</option>
+                            <option value="0">0分</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div style="display: flex; gap: 10px;">
+                    <button id="attBtnIn" onclick="sendTimecard('in')" style="flex: 1; padding: 16px; background: #0056b3; color: white; border: none; border-radius: 8px; font-size: 1.2rem; font-weight: bold; cursor: pointer; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">
+                        🌅 出 勤
+                    </button>
+                    <button id="attBtnOut" onclick="sendTimecard('out')" style="flex: 1; padding: 16px; background: #e67e22; color: white; border: none; border-radius: 8px; font-size: 1.2rem; font-weight: bold; cursor: pointer; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">
+                        🌇 退 勤
+                    </button>
+                </div>
+
+                <div id="attStatusMsg" style="display: none; margin-top: 12px; padding: 10px; border-radius: 6px; font-weight: bold; text-align: center; font-size: 0.95rem;"></div>
+
+                <!-- 折りたたみ：前払い・社内貯金申請 -->
+                <details style="margin-top: 15px; border-top: 1px dashed #ccc; padding-top: 10px;">
+                    <summary style="font-weight: bold; color: #0056b3; cursor: pointer; font-size: 0.95rem;">
+                        💰 前払い・社内貯金の申請を開く
+                    </summary>
+                    <div style="margin-top: 10px; display: flex; flex-direction: column; gap: 8px;">
+                        <select id="attAdjType" style="width: 100%; padding: 10px; font-size: 1rem; border: 1px solid #ccc; border-radius: 6px;">
+                            <option value="前払い（仮払い）">前払い（給料日前の仮払い）</option>
+                            <option value="貯金引き出し">社内貯金の引き出し</option>
+                            <option value="任意積立（追加）">社内貯金の追加積立</option>
+                        </select>
+                        <input type="number" id="attAdjAmount" step="1000" placeholder="希望金額 (例: 10000)" style="width: 100%; padding: 10px; font-size: 1rem; border: 1px solid #ccc; border-radius: 6px; box-sizing: border-box;">
+                        <input type="text" id="attAdjMemo" placeholder="理由・メモ (例: 車の修理代)" style="width: 100%; padding: 10px; font-size: 1rem; border: 1px solid #ccc; border-radius: 6px; box-sizing: border-box;">
+                        <button id="attBtnAdj" onclick="sendAdjustment()" style="padding: 12px; background: #00C853; color: white; border: none; border-radius: 8px; font-weight: bold; font-size: 1rem; cursor: pointer;">
+                            📩 申請を送信する
+                        </button>
+                    </div>
+                </details>
+            </section>
+            <!-- ▲▲ ここまで ▲▲ -->
 
             <section class="tool-section" style="margin-top: 0; border: 2px dashed #e67e22; background-color: #ffffff; box-shadow: none; margin-bottom: 0;">
                 <h2 style="color: #e67e22; font-size: 1.2rem; display: flex; align-items: center; gap: 8px; border-bottom: 1px dashed #e67e22;">
@@ -241,9 +308,8 @@
                     💾 スプレッドシートに記帳中...
                 </div>
             </section>
-
-
         </div>
+
         <section class="tool-section">
             <h2>📢 更新情報</h2>
             <div class="news-scroll-box">
@@ -330,7 +396,6 @@
     <footer><p>&copy; 2025 ペイントハウス(仮)</p></footer>
 
 <script>
-    // ★★★ 重要：ここにカタログ検索用のGAS URLを貼り直してください ★★★
     const GAS_API_URL = "https://script.google.com/macros/s/AKfycbxxDC7Ak1PVF1sWYmDJlnLDokqndsNugtp1koaZgWZg51ihzksYe9hKJ4y_sTqVjUfp/exec"; 
 
     let allMakersList = [];
@@ -513,10 +578,151 @@
 </script>
 
 <script>
-    // ★設定画面（navi.html）で保存した記憶からURLを呼び出す！
     const GAS_WEBAPP_URL = localStorage.getItem("expenseGasUrl") || "";
 
-    // 【追加】読み取ったデータを一時保存する変数
+    // ==============================================================
+    // ⏱️ 勤怠打刻・前払い申請 (fetch POST通信)
+    // ==============================================================
+    let attStaffList = [];
+
+    window.addEventListener('DOMContentLoaded', () => {
+        loadStaffListFromGAS();
+    });
+
+    async function loadStaffListFromGAS() {
+        const select = document.getElementById('attStaffSelect');
+        if (!select) return;
+        if (!GAS_WEBAPP_URL) {
+            select.innerHTML = '<option value="">GAS URL未設定(現場ナビ設定へ)</option>';
+            return;
+        }
+        try {
+            const res = await fetch(GAS_WEBAPP_URL, {
+                method: 'POST',
+                headers: { 'Content-Type': 'text/plain' },
+                body: JSON.stringify({
+                    action: 'getStaffList',
+                    authKey: localStorage.getItem('dx_auth_key') || ""
+                })
+            });
+            const data = await res.json();
+            if (data.status === "error") {
+                select.innerHTML = `<option value="">エラー: ${data.message}</option>`;
+                return;
+            }
+            if (data.list) {
+                attStaffList = data.list;
+                const savedStaffId = localStorage.getItem('dx_my_staff_id') || "";
+                select.innerHTML = '<option value="">-- 名前を選択 --</option>';
+                data.list.forEach(s => {
+                    const opt = document.createElement('option');
+                    opt.value = s.id;
+                    opt.textContent = `${s.name} (${s.role})`;
+                    if (s.id === savedStaffId) opt.selected = true;
+                    select.appendChild(opt);
+                });
+            }
+        } catch (e) {
+            console.error('スタッフ一覧取得エラー:', e);
+            select.innerHTML = '<option value="">通信エラー(デプロイ確認)</option>';
+        }
+    }
+
+    function showAttMsg(msg, isOk) {
+        const box = document.getElementById('attStatusMsg');
+        box.style.display = 'block';
+        box.style.background = isOk ? '#e6f4ea' : '#fce8e6';
+        box.style.color = isOk ? '#137333' : '#c5221f';
+        box.textContent = msg;
+    }
+
+    async function sendTimecard(type) {
+        if (!GAS_WEBAPP_URL) return alert('設定画面でGAS URLを登録してください。');
+        const staffId = document.getElementById('attStaffSelect').value;
+        const pin = document.getElementById('attPinInput').value;
+        const siteName = document.getElementById('attSiteInput').value.trim();
+        const breakMinutes = document.getElementById('attBreakSelect').value;
+
+        if (!staffId || !pin) {
+            return showAttMsg('⚠️ スタッフ名とPINコードを入力してください', false);
+        }
+
+        localStorage.setItem('dx_my_staff_id', staffId);
+        const staff = attStaffList.find(s => s.id === staffId);
+        const btnIn = document.getElementById('attBtnIn');
+        const btnOut = document.getElementById('attBtnOut');
+        btnIn.disabled = true;
+        btnOut.disabled = true;
+        showAttMsg('⏳ 打刻データを送信中...', true);
+
+        try {
+            const res = await fetch(GAS_WEBAPP_URL, {
+                method: 'POST',
+                headers: { 'Content-Type': 'text/plain' },
+                body: JSON.stringify({
+                    action: 'punchTimecard',
+                    authKey: localStorage.getItem('dx_auth_key') || "",
+                    staffId: staffId,
+                    staffName: staff ? staff.name : '',
+                    pin: pin,
+                    type: type,
+                    siteName: siteName,
+                    breakMinutes: breakMinutes
+                })
+            });
+            const result = await res.json();
+            showAttMsg(result.message, result.success);
+        } catch (err) {
+            showAttMsg('通信エラー: ' + err.message, false);
+        } finally {
+            btnIn.disabled = false;
+            btnOut.disabled = false;
+        }
+    }
+
+    async function sendAdjustment() {
+        if (!GAS_WEBAPP_URL) return alert('設定画面でGAS URLを登録してください。');
+        const staffId = document.getElementById('attStaffSelect').value;
+        const adjType = document.getElementById('attAdjType').value;
+        const amount = document.getElementById('attAdjAmount').value;
+        const memo = document.getElementById('attAdjMemo').value.trim();
+
+        if (!staffId || !amount) {
+            return alert('スタッフ名を選択し、希望金額を入力してください。');
+        }
+
+        const staff = attStaffList.find(s => s.id === staffId);
+        const btn = document.getElementById('attBtnAdj');
+        btn.disabled = true;
+
+        try {
+            const res = await fetch(GAS_WEBAPP_URL, {
+                method: 'POST',
+                headers: { 'Content-Type': 'text/plain' },
+                body: JSON.stringify({
+                    action: 'submitAdjustment',
+                    authKey: localStorage.getItem('dx_auth_key') || "",
+                    staffId: staffId,
+                    staffName: staff ? staff.name : '',
+                    adjType: adjType,
+                    amount: amount,
+                    memo: memo
+                })
+            });
+            const result = await res.json();
+            alert(result.message);
+            document.getElementById('attAdjAmount').value = '';
+            document.getElementById('attAdjMemo').value = '';
+        } catch (err) {
+            alert('送信エラー: ' + err.message);
+        } finally {
+            btn.disabled = false;
+        }
+    }
+
+    // ==============================================================
+    // 🤖 AIレシート自動仕訳マシーン
+    // ==============================================================
     let currentReceipt = null;
     document.getElementById('cameraBtn').addEventListener('click', function() {
         document.getElementById('receiptFileInput').click();
@@ -530,7 +736,6 @@
         const loading = document.getElementById('receiptLoading');
         const resultArea = document.getElementById('receiptResult');
         
-        // 【追加】新しく撮り直した時はボタン類を一旦隠す
         const actionBtns = document.getElementById('actionButtons');
         const saveLoading = document.getElementById('saveLoading');
         if(actionBtns) actionBtns.style.display = 'none';
@@ -541,7 +746,6 @@
         loading.style.display = 'block';
         resultArea.style.display = 'none';
 
-        // 画像の軽量化処理
         const reader = new FileReader();
         reader.onload = function(event) {
             const img = new Image();
@@ -564,7 +768,6 @@
                 const compressedDataUrl = canvas.toDataURL('image/jpeg', 0.8);
                 const base64Data = compressedDataUrl.split(',')[1];
                 
-                // 軽量化した画像をGASの金庫へ送信
                 sendToGAS(base64Data);
             };
             img.src = event.target.result;
@@ -573,18 +776,15 @@
     });
 
     async function sendToGAS(base64Image) {
-        // ★★★ try { の直前に、以下のエラーチェックを追加してください ★★★
         if (!GAS_WEBAPP_URL) {
             alert("⚠️ 経費自動記帳用のGAS URLが設定されていません。\n設定画面から登録してください。");
             document.getElementById('receiptLoading').style.display = 'none';
             return;
         }
-        // ★★★ ここまで ★★★
         try {
             const response = await fetch(GAS_WEBAPP_URL, {
                 method: 'POST',
                 headers: { 'Content-Type': 'text/plain' },
-                // ★荷物に authKey を追加して送る！
                 body: JSON.stringify({ 
                     image: base64Image,
                     authKey: localStorage.getItem('dx_auth_key') || ""
@@ -598,22 +798,17 @@
             }
 
             const data = result.data;
-            
-            // 【追加】データを変数に保存
             currentReceipt = data;
 
             document.getElementById('resDate').textContent = data.date || "不明";
             document.getElementById('resAmount').textContent = data.amount || "0";
             document.getElementById('resShop').textContent = data.shop || "不明";
-            // ★AIの推測科目をプルダウンに自動セット！
             if (currentReceipt.category) {
                 document.getElementById('resCategory').value = currentReceipt.category;
             }
             
             document.getElementById('receiptLoading').style.display = 'none';
             document.getElementById('receiptResult').style.display = 'block';
-            
-            // 【追加】仕分けボタンを出現させる！
             document.getElementById('actionButtons').style.display = 'flex';
 
         } catch (error) {
@@ -623,7 +818,6 @@
         }
     }
 
-    // ▼▼ ここから追加：魔法の仕分け＆保存機能 ▼▼
     async function saveRecord(type) {
         if(!currentReceipt) return;
 
@@ -632,34 +826,27 @@
         let amount = currentReceipt.amount;
         let shop = currentReceipt.shop;
         let uniqueId = "REC-" + Date.now();
-        // ★画面のプルダウンで選ばれている科目を取得
         let finalCategory = document.getElementById('resCategory').value; 
 
         if (type === "site") {
             let siteName = prompt("どの現場の経費ですか？\n(例: 鈴木邸)", "〇〇邸");
             if (!siteName) return;
-            // finalCategory を使う！
             record = [uniqueId, date, "会社(塗装)", "経費", finalCategory, amount, "10%", siteName, shop, "未定"];
         } 
         else if (type === "company") {
-            // finalCategory を使う！
             record = [uniqueId, date, "会社(塗装)", "経費", finalCategory, amount, "10%", "共通経費", shop, "未定"];
         } 
         else if (type === "personal") {
-            // 配達は消耗品費などで固定しても良いですが、一応 finalCategory を使います
             record = [uniqueId, date, "個人(配達)", "経費", finalCategory, amount, "0%(免税)", "冬期配達", shop, "未定"];
         }
 
-        // 送信中UI表示
         document.getElementById('actionButtons').style.display = 'none';
         document.getElementById('saveLoading').style.display = 'block';
 
         try {
-            // 今回は「保存してくれ(action: "save")」という合言葉とデータを送る
             const response = await fetch(GAS_WEBAPP_URL, {
                 method: 'POST',
                 headers: { 'Content-Type': 'text/plain' },
-                // ★荷物に authKey を追加して送る！
                 body: JSON.stringify({ 
                     action: "save", 
                     record: record,
@@ -670,7 +857,6 @@
             const result = await response.json();
             if (result.status === "error") throw new Error(result.message);
 
-            // 成功したら完了アラートを出して画面をリセット
             alert("✅ スプレッドシートに記帳しました！");
             document.getElementById('saveLoading').style.display = 'none';
             document.getElementById('receiptResult').style.display = 'none';
@@ -678,10 +864,9 @@
         } catch (error) {
             alert("保存エラー: " + error.message);
             document.getElementById('saveLoading').style.display = 'none';
-            document.getElementById('actionButtons').style.display = 'flex'; // 失敗時はボタンを戻す
+            document.getElementById('actionButtons').style.display = 'flex';
         }
     }
-    // ▲▲ ここまで追加 ▲▲
 </script>
 <script>
 // ==============================================================
@@ -692,7 +877,6 @@ function toggleScheduleBox() {
     if (!box) return;
     if (box.style.display === 'none') {
         box.style.display = 'block';
-        // デフォルトで明日の日付をセット
         const dInput = document.getElementById('schedDate');
         if (dInput && !dInput.value) {
             const tomorrow = new Date(Date.now() + 86400000);
@@ -718,7 +902,6 @@ function insertAndSaveSchedule() {
     const detail = memoVal ? `${typeVal}（${memoVal}）` : typeVal;
     const schedLine = `【予定】${formattedDate} ${tVal} ${detail}`;
 
-    // 1. 日報のテキスト欄に挿入
     const reportText = document.getElementById('reportText');
     if (reportText) {
         const cur = reportText.value;
@@ -726,7 +909,6 @@ function insertAndSaveSchedule() {
         reportText.value = cur + prefix + schedLine + '\n';
     }
 
-    // 2. スマホ内の予定アラートリスト（dx_schedules）に保存
     const targetTimeMs = new Date(`${dVal}T${tVal}:00`).getTime();
     let schedules = JSON.parse(localStorage.getItem('dx_schedules') || '[]');
     schedules.push({
@@ -741,18 +923,15 @@ function insertAndSaveSchedule() {
     });
     localStorage.setItem('dx_schedules', JSON.stringify(schedules));
 
-    // 3. ピッカーを閉じてメモをリセット
     document.getElementById('schedMemo').value = '';
     document.getElementById('schedulePickerBox').style.display = 'none';
 
-    // 4. そのまま履歴に保存＆クラウド自動送信も走らせる！
     if (typeof saveReportLocal === 'function') {
         saveReportLocal();
     }
     checkUpcomingSchedules();
 }
 
-// 🔔 ピピッという電子アラート音を鳴らす関数（外部音声ファイル不要）
 function playAlertBeep(isUrgent) {
     try {
         const AudioCtx = window.AudioContext || window.webkitAudioContext;
@@ -773,13 +952,11 @@ function playAlertBeep(isUrgent) {
     }
 }
 
-// 🔍 画面を開いた時＆定期的に予定をチェックして最上部バナーを出す関数
 function checkUpcomingSchedules() {
     let schedules = JSON.parse(localStorage.getItem('dx_schedules') || '[]');
     if (schedules.length === 0) return;
 
     const now = Date.now();
-    // 予定時刻から2時間以上過ぎた古い予定は自動お掃除
     schedules = schedules.filter(s => s.targetTime > now - (2 * 3600 * 1000));
 
     let bannerContainer = document.getElementById('dxScheduleAlertBanner');
@@ -797,7 +974,6 @@ function checkUpcomingSchedules() {
     schedules.sort((a, b) => a.targetTime - b.targetTime).forEach(s => {
         const diffHours = (s.targetTime - now) / (1000 * 3600);
 
-        // 🚨 【1時間前アラート】（2時間前〜予定時刻経過後30分まで）
         if (diffHours <= 2.0 && diffHours >= -0.5) {
             if (!s.notified1h) {
                 shouldBeepUrgent = true;
@@ -812,7 +988,6 @@ function checkUpcomingSchedules() {
                 </div>
             `);
         }
-        // 🔔 【1日前アラート】（28時間前〜2時間前まで）
         else if (diffHours <= 28.0 && diffHours > 2.0) {
             if (!s.notified1d) {
                 shouldBeepNormal = true;
@@ -841,145 +1016,8 @@ function dismissSchedule(schedId) {
 
 window.addEventListener('DOMContentLoaded', () => {
     checkUpcomingSchedules();
-    // 画面を開きっぱなしにしている時も1分ごとに時刻をチェック
     setInterval(checkUpcomingSchedules, 60000);
 });
-
-// ==============================================================
-// ⏱️ 勤怠打刻・前払い申請 (fetch POST通信)
-// ==============================================================
-let attStaffList = [];
-
-window.addEventListener('DOMContentLoaded', () => {
-    loadStaffListFromGAS();
-});
-
-async function loadStaffListFromGAS() {
-    const select = document.getElementById('attStaffSelect');
-    if (!select || !GAS_WEBAPP_URL) {
-        if (select) select.innerHTML = '<option value="">GAS未設定</option>';
-        return;
-    }
-    try {
-        const res = await fetch(GAS_WEBAPP_URL, {
-            method: 'POST',
-            headers: { 'Content-Type': 'text/plain' },
-            body: JSON.stringify({
-                action: 'getStaffList',
-                authKey: localStorage.getItem('dx_auth_key') || ""
-            })
-        });
-        const data = await res.json();
-        if (data.list) {
-            attStaffList = data.list;
-            const savedStaffId = localStorage.getItem('dx_my_staff_id') || "";
-            select.innerHTML = '<option value="">-- 名前を選択 --</option>';
-            data.list.forEach(s => {
-                const opt = document.createElement('option');
-                opt.value = s.id;
-                opt.textContent = `${s.name} (${s.role})`;
-                if (s.id === savedStaffId) opt.selected = true;
-                select.appendChild(opt);
-            });
-        }
-    } catch (e) {
-        console.error('スタッフ一覧取得エラー:', e);
-        select.innerHTML = '<option value="">読込エラー</option>';
-    }
-}
-
-function showAttMsg(msg, isOk) {
-    const box = document.getElementById('attStatusMsg');
-    box.style.display = 'block';
-    box.style.background = isOk ? '#e6f4ea' : '#fce8e6';
-    box.style.color = isOk ? '#137333' : '#c5221f';
-    box.textContent = msg;
-}
-
-async function sendTimecard(type) {
-    if (!GAS_WEBAPP_URL) return alert('設定画面でGAS URLを登録してください。');
-    const staffId = document.getElementById('attStaffSelect').value;
-    const pin = document.getElementById('attPinInput').value;
-    const siteName = document.getElementById('attSiteInput').value.trim();
-    const breakMinutes = document.getElementById('attBreakSelect').value;
-
-    if (!staffId || !pin) {
-        return showAttMsg('⚠️ スタッフ名とPINコードを入力してください', false);
-    }
-
-    localStorage.setItem('dx_my_staff_id', staffId);
-    const staff = attStaffList.find(s => s.id === staffId);
-    const btnIn = document.getElementById('attBtnIn');
-    const btnOut = document.getElementById('attBtnOut');
-    btnIn.disabled = true;
-    btnOut.disabled = true;
-    showAttMsg('⏳ 打刻データを送信中...', true);
-
-    try {
-        const res = await fetch(GAS_WEBAPP_URL, {
-            method: 'POST',
-            headers: { 'Content-Type': 'text/plain' },
-            body: JSON.stringify({
-                action: 'punchTimecard',
-                authKey: localStorage.getItem('dx_auth_key') || "",
-                staffId: staffId,
-                staffName: staff ? staff.name : '',
-                pin: pin,
-                type: type,
-                siteName: siteName,
-                breakMinutes: breakMinutes
-            })
-        });
-        const result = await res.json();
-        showAttMsg(result.message, result.success);
-    } catch (err) {
-        showAttMsg('通信エラー: ' + err.message, false);
-    } finally {
-        btnIn.disabled = false;
-        btnOut.disabled = false;
-    }
-}
-
-async function sendAdjustment() {
-    if (!GAS_WEBAPP_URL) return alert('設定画面でGAS URLを登録してください。');
-    const staffId = document.getElementById('attStaffSelect').value;
-    const adjType = document.getElementById('attAdjType').value;
-    const amount = document.getElementById('attAdjAmount').value;
-    const memo = document.getElementById('attAdjMemo').value.trim();
-
-    if (!staffId || !amount) {
-        return alert('スタッフ名を選択し、希望金額を入力してください。');
-    }
-
-    const staff = attStaffList.find(s => s.id === staffId);
-    const btn = document.getElementById('attBtnAdj');
-    btn.disabled = true;
-
-    try {
-        const res = await fetch(GAS_WEBAPP_URL, {
-            method: 'POST',
-            headers: { 'Content-Type': 'text/plain' },
-            body: JSON.stringify({
-                action: 'submitAdjustment',
-                authKey: localStorage.getItem('dx_auth_key') || "",
-                staffId: staffId,
-                staffName: staff ? staff.name : '',
-                adjType: adjType,
-                amount: amount,
-                memo: memo
-            })
-        });
-        const result = await res.json();
-        alert(result.message);
-        document.getElementById('attAdjAmount').value = '';
-        document.getElementById('attAdjMemo').value = '';
-    } catch (err) {
-        alert('送信エラー: ' + err.message);
-    } finally {
-        btn.disabled = false;
-    }
-}
-
 </script>
 </body>
 </html>
