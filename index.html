@@ -241,6 +241,8 @@
                     💾 スプレッドシートに記帳中...
                 </div>
             </section>
+
+
         </div>
         <section class="tool-section">
             <h2>📢 更新情報</h2>
@@ -842,6 +844,142 @@ window.addEventListener('DOMContentLoaded', () => {
     // 画面を開きっぱなしにしている時も1分ごとに時刻をチェック
     setInterval(checkUpcomingSchedules, 60000);
 });
+
+// ==============================================================
+// ⏱️ 勤怠打刻・前払い申請 (fetch POST通信)
+// ==============================================================
+let attStaffList = [];
+
+window.addEventListener('DOMContentLoaded', () => {
+    loadStaffListFromGAS();
+});
+
+async function loadStaffListFromGAS() {
+    const select = document.getElementById('attStaffSelect');
+    if (!select || !GAS_WEBAPP_URL) {
+        if (select) select.innerHTML = '<option value="">GAS未設定</option>';
+        return;
+    }
+    try {
+        const res = await fetch(GAS_WEBAPP_URL, {
+            method: 'POST',
+            headers: { 'Content-Type': 'text/plain' },
+            body: JSON.stringify({
+                action: 'getStaffList',
+                authKey: localStorage.getItem('dx_auth_key') || ""
+            })
+        });
+        const data = await res.json();
+        if (data.list) {
+            attStaffList = data.list;
+            const savedStaffId = localStorage.getItem('dx_my_staff_id') || "";
+            select.innerHTML = '<option value="">-- 名前を選択 --</option>';
+            data.list.forEach(s => {
+                const opt = document.createElement('option');
+                opt.value = s.id;
+                opt.textContent = `${s.name} (${s.role})`;
+                if (s.id === savedStaffId) opt.selected = true;
+                select.appendChild(opt);
+            });
+        }
+    } catch (e) {
+        console.error('スタッフ一覧取得エラー:', e);
+        select.innerHTML = '<option value="">読込エラー</option>';
+    }
+}
+
+function showAttMsg(msg, isOk) {
+    const box = document.getElementById('attStatusMsg');
+    box.style.display = 'block';
+    box.style.background = isOk ? '#e6f4ea' : '#fce8e6';
+    box.style.color = isOk ? '#137333' : '#c5221f';
+    box.textContent = msg;
+}
+
+async function sendTimecard(type) {
+    if (!GAS_WEBAPP_URL) return alert('設定画面でGAS URLを登録してください。');
+    const staffId = document.getElementById('attStaffSelect').value;
+    const pin = document.getElementById('attPinInput').value;
+    const siteName = document.getElementById('attSiteInput').value.trim();
+    const breakMinutes = document.getElementById('attBreakSelect').value;
+
+    if (!staffId || !pin) {
+        return showAttMsg('⚠️ スタッフ名とPINコードを入力してください', false);
+    }
+
+    localStorage.setItem('dx_my_staff_id', staffId);
+    const staff = attStaffList.find(s => s.id === staffId);
+    const btnIn = document.getElementById('attBtnIn');
+    const btnOut = document.getElementById('attBtnOut');
+    btnIn.disabled = true;
+    btnOut.disabled = true;
+    showAttMsg('⏳ 打刻データを送信中...', true);
+
+    try {
+        const res = await fetch(GAS_WEBAPP_URL, {
+            method: 'POST',
+            headers: { 'Content-Type': 'text/plain' },
+            body: JSON.stringify({
+                action: 'punchTimecard',
+                authKey: localStorage.getItem('dx_auth_key') || "",
+                staffId: staffId,
+                staffName: staff ? staff.name : '',
+                pin: pin,
+                type: type,
+                siteName: siteName,
+                breakMinutes: breakMinutes
+            })
+        });
+        const result = await res.json();
+        showAttMsg(result.message, result.success);
+    } catch (err) {
+        showAttMsg('通信エラー: ' + err.message, false);
+    } finally {
+        btnIn.disabled = false;
+        btnOut.disabled = false;
+    }
+}
+
+async function sendAdjustment() {
+    if (!GAS_WEBAPP_URL) return alert('設定画面でGAS URLを登録してください。');
+    const staffId = document.getElementById('attStaffSelect').value;
+    const adjType = document.getElementById('attAdjType').value;
+    const amount = document.getElementById('attAdjAmount').value;
+    const memo = document.getElementById('attAdjMemo').value.trim();
+
+    if (!staffId || !amount) {
+        return alert('スタッフ名を選択し、希望金額を入力してください。');
+    }
+
+    const staff = attStaffList.find(s => s.id === staffId);
+    const btn = document.getElementById('attBtnAdj');
+    btn.disabled = true;
+
+    try {
+        const res = await fetch(GAS_WEBAPP_URL, {
+            method: 'POST',
+            headers: { 'Content-Type': 'text/plain' },
+            body: JSON.stringify({
+                action: 'submitAdjustment',
+                authKey: localStorage.getItem('dx_auth_key') || "",
+                staffId: staffId,
+                staffName: staff ? staff.name : '',
+                adjType: adjType,
+                amount: amount,
+                memo: memo
+            })
+        });
+        const result = await res.json();
+        alert(result.message);
+        document.getElementById('attAdjAmount').value = '';
+        document.getElementById('attAdjMemo').value = '';
+    } catch (err) {
+        alert('送信エラー: ' + err.message);
+    } finally {
+        btn.disabled = false;
+    }
+}
+
 </script>
 </body>
 </html>
