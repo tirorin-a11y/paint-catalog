@@ -205,7 +205,10 @@
                 <div style="display: grid; grid-template-columns: 2fr 1fr; gap: 10px; margin-bottom: 15px;">
                     <div>
                         <label style="font-size: 12px; font-weight: bold; color: #555;">🏠 本日の現場名（出勤時）</label>
-                        <input type="text" id="attSiteInput" placeholder="例: 菊池様邸" style="width: 100%; padding: 10px; font-size: 1rem; border: 1px solid #ccc; border-radius: 6px; box-sizing: border-box;">
+                        <select id="attSiteSelect" onchange="toggleCustomSiteInput()" style="width: 100%; padding: 10px; font-size: 1rem; border: 1px solid #ccc; border-radius: 6px; background: white;">
+                            <option value="">-- 現場を選択 --</option>
+                        </select>
+                        <input type="text" id="attSiteInput" placeholder="現場名を手入力" style="width: 100%; padding: 10px; font-size: 1rem; border: 1px solid #ccc; border-radius: 6px; box-sizing: border-box; margin-top: 6px; display: none;">
                     </div>
                     <div>
                         <label style="font-size: 12px; font-weight: bold; color: #555;">☕ 休憩(退勤時)</label>
@@ -587,8 +590,55 @@
 
     window.addEventListener('DOMContentLoaded', () => {
         loadStaffListFromGAS();
+        loadSitesFromLocalStorage(); // ★追加：現場ナビのデータを読み込む
     });
 
+    // ★新規追加：現場ナビ(dx_sites)から稼働中の現場をプルダウンに並べる
+    function loadSitesFromLocalStorage() {
+        const select = document.getElementById('attSiteSelect');
+        if (!select) return;
+
+        const sites = JSON.parse(localStorage.getItem('dx_sites') || '[]');
+        // 完了・失注以外の現場を抽出（契約済・施工中を優先して上に並べる）
+        const activeSites = sites.filter(s => s.status !== 'complete' && s.status !== 'done' && s.status !== 'lost');
+        activeSites.sort((a, b) => {
+            const isAContract = (a.status === 'contract' || a.status === 'active') ? 0 : 1;
+            const isBContract = (b.status === 'contract' || b.status === 'active') ? 0 : 1;
+            if (isAContract !== isBContract) return isAContract - isBContract;
+            return (b.updatedAt || 0) - (a.updatedAt || 0);
+        });
+
+        const savedSite = localStorage.getItem('dx_last_att_site') || '';
+        select.innerHTML = '<option value="">-- 現場を選択 --</option>';
+
+        activeSites.forEach(s => {
+            const opt = document.createElement('option');
+            // 「菊池様邸」のように現場名をセット（必要に応じて `${s.id} ${s.name}` にも変更可）
+            opt.value = s.name;
+            const badge = (s.status === 'contract' || s.status === 'active') ? '🤝' : (s.status === 'billing' ? '💰' : '📄');
+            opt.textContent = `${badge} ${s.name}`;
+            if (s.name === savedSite) opt.selected = true;
+            select.appendChild(opt);
+        });
+
+        // リストにない応援現場や倉庫作業用
+        const customOpt = document.createElement('option');
+        customOpt.value = '__custom__';
+        customOpt.textContent = '✏️ その他（手入力する）';
+        select.appendChild(customOpt);
+    }
+
+    function toggleCustomSiteInput() {
+        const select = document.getElementById('attSiteSelect');
+        const input = document.getElementById('attSiteInput');
+        if (select.value === '__custom__') {
+            input.style.display = 'block';
+            input.focus();
+        } else {
+            input.style.display = 'none';
+            input.value = '';
+        }
+    }
     async function loadStaffListFromGAS() {
         const select = document.getElementById('attStaffSelect');
         if (!select) return;
@@ -640,7 +690,12 @@
         if (!GAS_WEBAPP_URL) return alert('設定画面でGAS URLを登録してください。');
         const staffId = document.getElementById('attStaffSelect').value;
         const pin = document.getElementById('attPinInput').value;
-        const siteName = document.getElementById('attSiteInput').value.trim();
+        const siteSelectVal = document.getElementById('attSiteSelect').value;
+        const siteName = (siteSelectVal === '__custom__') 
+            ? document.getElementById('attSiteInput').value.trim() 
+            : siteSelectVal;
+        if (siteName) localStorage.setItem('dx_last_att_site', siteName);
+        
         const breakMinutes = document.getElementById('attBreakSelect').value;
 
         if (!staffId || !pin) {
