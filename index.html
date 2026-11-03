@@ -111,6 +111,7 @@
         .btn-navi { background-color: #00C853; } /* 緑 */
         .btn-manager { background-color: #2c3e50; } /* 紺 */
         .btn-sim { background-color: #e67e22; } /* オレンジ */
+        .btn-attendance { background-color: #0056b3; } /* 青：出退勤・マイページ */
 
         /* 検索エリア */
         .search-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
@@ -171,6 +172,9 @@
                 <a href="manager.html" class="nav-btn-large btn-manager">
                     📊 工程管理
                 </a>
+                <a href="attendance.html" class="nav-btn-large btn-attendance">
+                    ⏱️ 出退勤・マイページ
+                </a>
             </div>
         </div>
 
@@ -183,75 +187,7 @@
                 </a>
             </div>
 
-            <!-- ▼▼ 新規追加：勤怠打刻＆前払い・貯金申請セクション ▼▼ -->
-            <section class="tool-section" style="margin-top: 0; border: 2px dashed #0056b3; background-color: #ffffff; box-shadow: none; margin-bottom: 15px;">
-                <h2 style="color: #0056b3; font-size: 1.2rem; display: flex; align-items: center; gap: 8px; border-bottom: 1px dashed #0056b3;">
-                    ⏱️ 勤怠打刻・マイページ
-                </h2>
-
-                <div style="display: grid; grid-template-columns: 2fr 1fr; gap: 10px; margin-bottom: 10px;">
-                    <div>
-                        <label style="font-size: 12px; font-weight: bold; color: #555;">👤 スタッフ名</label>
-                        <select id="attStaffSelect" style="width: 100%; padding: 10px; font-size: 1rem; border: 1px solid #ccc; border-radius: 6px; background: white;">
-                            <option value="">読込中...</option>
-                        </select>
-                    </div>
-                    <div>
-                        <label style="font-size: 12px; font-weight: bold; color: #555;">🔑 PIN(4桁)</label>
-                        <input type="password" id="attPinInput" inputmode="numeric" maxlength="4" placeholder="1234" style="width: 100%; padding: 10px; font-size: 1rem; border: 1px solid #ccc; border-radius: 6px; box-sizing: border-box;">
-                    </div>
-                </div>
-
-                <div style="display: grid; grid-template-columns: 2fr 1fr; gap: 10px; margin-bottom: 15px;">
-                    <div>
-                        <label style="font-size: 12px; font-weight: bold; color: #555;">🏠 本日の現場名（出勤時）</label>
-                        <select id="attSiteSelect" onchange="toggleCustomSiteInput()" style="width: 100%; padding: 10px; font-size: 1rem; border: 1px solid #ccc; border-radius: 6px; background: white;">
-                            <option value="">-- 現場を選択 --</option>
-                        </select>
-                        <input type="text" id="attSiteInput" placeholder="現場名を手入力" style="width: 100%; padding: 10px; font-size: 1rem; border: 1px solid #ccc; border-radius: 6px; box-sizing: border-box; margin-top: 6px; display: none;">
-                    </div>
-                    <div>
-                        <label style="font-size: 12px; font-weight: bold; color: #555;">☕ 休憩(退勤時)</label>
-                        <select id="attBreakSelect" style="width: 100%; padding: 10px; font-size: 1rem; border: 1px solid #ccc; border-radius: 6px; background: white;">
-                            <option value="60">60分</option>
-                            <option value="90">90分</option>
-                            <option value="120">120分</option>
-                            <option value="0">0分</option>
-                        </select>
-                    </div>
-                </div>
-
-                <div style="display: flex; gap: 10px;">
-                    <button id="attBtnIn" onclick="sendTimecard('in')" style="flex: 1; padding: 16px; background: #0056b3; color: white; border: none; border-radius: 8px; font-size: 1.2rem; font-weight: bold; cursor: pointer; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">
-                        🌅 出 勤
-                    </button>
-                    <button id="attBtnOut" onclick="sendTimecard('out')" style="flex: 1; padding: 16px; background: #e67e22; color: white; border: none; border-radius: 8px; font-size: 1.2rem; font-weight: bold; cursor: pointer; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">
-                        🌇 退 勤
-                    </button>
-                </div>
-
-                <div id="attStatusMsg" style="display: none; margin-top: 12px; padding: 10px; border-radius: 6px; font-weight: bold; text-align: center; font-size: 0.95rem;"></div>
-
-                <!-- 折りたたみ：前払い・社内貯金申請 -->
-                <details style="margin-top: 15px; border-top: 1px dashed #ccc; padding-top: 10px;">
-                    <summary style="font-weight: bold; color: #0056b3; cursor: pointer; font-size: 0.95rem;">
-                        💰 前払い・社内貯金の申請を開く
-                    </summary>
-                    <div style="margin-top: 10px; display: flex; flex-direction: column; gap: 8px;">
-                        <select id="attAdjType" style="width: 100%; padding: 10px; font-size: 1rem; border: 1px solid #ccc; border-radius: 6px;">
-                            <option value="前払い（仮払い）">前払い（給料日前の仮払い）</option>
-                            <option value="貯金引き出し">社内貯金の引き出し</option>
-                            <option value="任意積立（追加）">社内貯金の追加積立</option>
-                        </select>
-                        <input type="number" id="attAdjAmount" step="1000" placeholder="希望金額 (例: 10000)" style="width: 100%; padding: 10px; font-size: 1rem; border: 1px solid #ccc; border-radius: 6px; box-sizing: border-box;">
-                        <input type="text" id="attAdjMemo" placeholder="理由・メモ (例: 車の修理代)" style="width: 100%; padding: 10px; font-size: 1rem; border: 1px solid #ccc; border-radius: 6px; box-sizing: border-box;">
-                        <button id="attBtnAdj" onclick="sendAdjustment()" style="padding: 12px; background: #00C853; color: white; border: none; border-radius: 8px; font-weight: bold; font-size: 1rem; cursor: pointer;">
-                            📩 申請を送信する
-                        </button>
-                    </div>
-                </details>
-            </section>
-            <!-- ▲▲ ここまで ▲▲ -->
+            
 
             <section class="tool-section" style="margin-top: 0; border: 2px dashed #e67e22; background-color: #ffffff; box-shadow: none; margin-bottom: 0;">
                 <h2 style="color: #e67e22; font-size: 1.2rem; display: flex; align-items: center; gap: 8px; border-bottom: 1px dashed #e67e22;">
