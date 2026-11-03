@@ -6,7 +6,6 @@
     window.dataLayer = window.dataLayer || [];
     function gtag(){dataLayer.push(arguments);}
     gtag('js', new Date());
-
     gtag('config', 'G-EPKTC39SQG');
     </script>
     <meta charset="UTF-8">
@@ -15,302 +14,733 @@
 
     <link rel="icon" href="icon-192x192.png">
     <link rel="apple-touch-icon" href="icon-192x192.png">
-    
     <link rel="manifest" href="manifest.json">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="theme-color" content="#2c3e50">
 
-    <meta name="description" content="現場の工程表（ガントチャート）をスマホで簡単作成。進捗管理やカレンダー登録もこれひとつで。">
-    <meta property="og:site_name" content="職人ギア">
-    <meta property="og:title" content="工程管理 - 職人ギア">
-    <meta property="og:type" content="article">
-    <meta property="og:image" content="https://tirorin-ally.github.io/icon-192x192.png">
-
     <style>
-        body { font-family: -apple-system, BlinkMacSystemFont, "Helvetica Neue", "Yu Gothic", sans-serif; background: #f0f2f5; margin: 0; padding-bottom: 50px; overflow: hidden; color: #333; }
-        
-        header { background: #2c3e50; color: white; padding: 10px 15px; position: sticky; top: 0; z-index: 100; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
-        
-        .nav-links { display: flex; gap: 10px; padding: 10px; justify-content: center; background: #fff; box-shadow: 0 1px 3px rgba(0,0,0,0.05); position: sticky; top: 50px; z-index: 90; }
-        .nav-btn { text-decoration: none; font-size: 0.85rem; padding: 8px 20px; border-radius: 20px; background: #f8f9fa; color: #555; border: 1px solid #ddd; font-weight: bold; }
+        body { font-family: -apple-system, BlinkMacSystemFont, "Helvetica Neue", "Yu Gothic", sans-serif; background-color: #f0f2f5; margin: 0; padding: 0; color: #333; -webkit-font-smoothing: antialiased; }
 
-        .toggle-area { padding: 10px 15px; background: #fff; border-bottom: 1px solid #eee; border-top: 1px solid #eee; display: flex; justify-content: space-between; align-items: center; position: sticky; top: 98px; z-index: 90; }
-        .current-month { font-size: 1.2rem; font-weight: bold; color: #2c3e50; display: flex; align-items: center; gap: 5px; }
-        .btn-toggle { background: #fff; border: 1px solid #2980b9; color: #2980b9; padding: 5px 12px; border-radius: 20px; font-size: 0.85rem; cursor: pointer; transition: 0.2s; }
-        .btn-toggle.active { background: #2980b9; color: white; }
-        
-        /* ガントチャートエリア */
-        .gantt-container { overflow-x: auto; background: white; position: relative; height: calc(100vh - 150px); cursor: grab; }
-        .gantt-container:active { cursor: grabbing; }
-        
-        /* ヘッダー行 */
-        .gantt-header { display: flex; position: sticky; top: 0; background: #ecf0f1; z-index: 50; border-bottom: 1px solid #ddd; height: 40px; }
-        
-        /* ボディ（レイヤー重ね合わせ用コンテナ） */
-        .gantt-body { position: relative; min-height: calc(100% - 40px); }
+        /* 固定ヘッダー群（navi.htmlと統一） */
+        .fixed-header-group {
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            background-color: #34495e;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+        }
+        header {
+            background-color: #2c3e50;
+            color: white;
+            padding: 10px 15px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .header-title-area { display: flex; align-items: baseline; gap: 8px; }
+        h1 { margin: 0; font-size: 1.1rem; letter-spacing: 0.05em; font-weight: bold; }
+        .link-control { font-size: 0.75rem; color: white; text-decoration: none; border: 1px solid white; padding: 2px 8px; border-radius: 4px; }
 
-        /* 背景レイヤー（縦縞） */
-        .grid-layer { display: flex; position: absolute; top: 0; left: 0; height: 100%; z-index: 1; pointer-events: none; }
-        
-        /* データレイヤー（現場行） */
-        .data-layer { position: relative; width: 100%; z-index: 10; }
-        
-        /* 共通セル定義 */
-        .gantt-cell { min-width: 40px; width: 40px; height: 100%; border-right: 1px solid #eee; box-sizing: border-box; flex-shrink: 0; }
-        .header-cell { height: 40px; line-height: 40px; text-align: center; font-size: 0.8rem; border-bottom: 1px solid #ddd; }
-        
-        /* 背景色 */
-        .month-odd { background-color: #ffffff; } 
-        .month-even { background-color: #f0f8ff; }
-        .is-past { background-color: #eeeeee !important; }
-        .is-sunday { background-color: #ffcdd2 !important; }
-        .is-today { background-color: #fff9c4 !important; border-left: 2px solid #fbc02d; border-right: 2px solid #fbc02d; }
-        
-        /* 現場行 */
-        .site-row { position: relative; height: 50px; border-bottom: 1px solid rgba(0,0,0,0.05); display: flex; align-items: center; }
-        .site-row:hover { background-color: rgba(41, 128, 185, 0.05); }
+        .filter-area {
+            background: #34495e;
+            padding: 10px 15px;
+            display: flex;
+            gap: 8px;
+            overflow-x: auto;
+            white-space: nowrap;
+            -webkit-overflow-scrolling: touch;
+        }
+        .filter-area::-webkit-scrollbar { display: none; }
+        .filter-btn { padding: 6px 14px; border-radius: 20px; font-size: 0.85rem; font-weight: bold; border: 1px solid rgba(255,255,255,0.3); background: rgba(255,255,255,0.1); color: #ccc; cursor: pointer; flex-shrink: 0; }
+        .filter-btn.active { background: white; color: #2c3e50; border-color: white; box-shadow: 0 2px 5px rgba(0,0,0,0.2); }
 
-        /* 固定列（現場名） */
-        .site-name-col { position: sticky; left: 0; width: 120px; min-width: 120px; height: 50px; background: white; z-index: 20; font-size: 0.8rem; padding: 0 5px; border-right: 2px solid #ddd; display: flex; align-items: center; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; box-shadow: 2px 0 5px rgba(0,0,0,0.05); cursor: pointer; color: #2980b9; font-weight: bold; border-bottom: 1px solid #eee; box-sizing: border-box; }
-        
-        /* 工期未定の現場を目立たせる */
-        .site-name-col.no-date { 
-            background-color: #ffebee; 
-            color: #c62828;            
-            border-left: 5px solid #e74c3c; 
+        .container { max-width: 600px; margin: 0 auto; padding: 15px; padding-bottom: 100px; }
+
+        /* 重なり状況サマリーバー */
+        .overlap-summary {
+            background: linear-gradient(135deg, #2c3e50, #34495e);
+            color: white;
+            border-radius: 12px;
+            padding: 14px 16px;
+            margin-bottom: 16px;
+            box-shadow: 0 3px 8px rgba(0,0,0,0.12);
+        }
+        .overlap-title { font-size: 0.85rem; color: #f39c12; font-weight: bold; margin-bottom: 6px; display: flex; justify-content: space-between; }
+        .overlap-chips { display: flex; flex-wrap: wrap; gap: 6px; }
+        .overlap-chip { background: rgba(255,255,255,0.15); padding: 4px 10px; border-radius: 15px; font-size: 0.8rem; font-weight: bold; }
+
+        /* セクション見出し */
+        .section-divider {
+            font-size: 0.85rem;
+            font-weight: bold;
+            color: #555;
+            margin: 18px 0 8px 4px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
         }
 
-        /* ガントチャートのバー */
-        .bar { position: absolute; height: 24px; top: 13px; border-radius: 12px; font-size: 0.7rem; color: white; display: flex; align-items: center; justify-content: center; overflow: hidden; white-space: nowrap; box-shadow: 0 2px 4px rgba(0,0,0,0.2); opacity: 0.9; cursor: pointer; z-index: 15; pointer-events: auto; }
-        .bar-plan { background: #f39c12; }
-        .bar-active { background: #2980b9; }
-        .bar-done { background: #7f8c8d; }
+        /* 現場タイルカード（navi.htmlベース＋工程特化） */
+        .site-card {
+            background: white;
+            border-radius: 12px;
+            padding: 16px;
+            margin-bottom: 14px;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.06);
+            border-left: 6px solid #2980b9;
+            position: relative;
+        }
+        .site-card.card-active { border-left-color: #00C853; background: #fcfffc; }
+        .site-card.card-sched { border-left-color: #f39c12; }
+        .site-card.card-nodate { border-left-color: #e74c3c; background: #fffafa; }
+        .site-card.card-done { border-left-color: #95a5a6; opacity: 0.75; }
+
+        .card-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; flex-wrap: wrap; gap: 6px; }
+        .case-no { font-size: 0.75rem; color: #666; background: #eee; padding: 2px 7px; border-radius: 4px; font-family: monospace; font-weight: bold; }
+        
+        .status-badge { font-size: 0.75rem; padding: 3px 10px; border-radius: 20px; font-weight: bold; }
+        .st-estimate { background-color: #fff3e0; color: #f57c00; border: 1px solid #ffe0b2; }
+        .st-contract { background-color: #e3f2fd; color: #1976d2; border: 1px solid #bbdefb; }
+        .st-billing { background-color: #f3e5f5; color: #8e24aa; border: 1px solid #e1bee7; }
+        .st-complete { background-color: #f5f5f5; color: #757575; border: 1px solid #e0e0e0; }
+
+        .site-name { font-size: 1.2rem; font-weight: bold; margin-bottom: 8px; color: #2c3e50; display: flex; align-items: center; justify-content: space-between; }
+
+        /* 日報の【予定】タグ表示ボックス */
+        .sched-tag-box {
+            background: #fff8e1;
+            border: 1px solid #ffe082;
+            border-radius: 8px;
+            padding: 8px 10px;
+            margin-bottom: 8px;
+            font-size: 0.85rem;
+            color: #d35400;
+            font-weight: bold;
+        }
+        .sched-tag-item { display: flex; justify-content: space-between; align-items: center; padding: 2px 0; }
+
+        /* 工期＆重なりバー表示 */
+        .period-box {
+            background: #f8f9fa;
+            border-radius: 8px;
+            padding: 10px;
+            margin-bottom: 10px;
+            border: 1px solid #eee;
+        }
+        .period-row { display: flex; justify-content: space-between; align-items: center; font-size: 0.9rem; font-weight: bold; }
+        .days-badge { font-size: 0.78rem; padding: 2px 8px; border-radius: 10px; background: #e3f2fd; color: #1565c0; }
+        .days-badge.urgent { background: #e8f5e9; color: #2e7d32; }
+        .days-badge.warn { background: #ffebee; color: #c62828; }
+
+        /* ミニ進捗バー */
+        .progress-track { height: 6px; background: #e0e0e0; border-radius: 3px; margin-top: 8px; overflow: hidden; }
+        .progress-fill { height: 100%; background: #00C853; border-radius: 3px; transition: width 0.3s; }
+
+        /* 重なり（重複）警告バッジ */
+        .overlap-alert {
+            margin-top: 8px;
+            font-size: 0.78rem;
+            color: #c62828;
+            background: #ffebee;
+            padding: 4px 8px;
+            border-radius: 6px;
+            font-weight: bold;
+            display: inline-block;
+        }
+
+        /* カード下部アクションボタン */
+        .card-actions { display: flex; gap: 8px; margin-top: 10px; }
+        .btn-card {
+            flex: 1;
+            padding: 10px 8px;
+            border: none;
+            border-radius: 8px;
+            font-weight: bold;
+            font-size: 0.85rem;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 4px;
+            text-decoration: none;
+        }
+        .btn-edit-date { background: #2980b9; color: white; flex: 1.4; }
+        .btn-quick-shift { background: #ecf0f1; color: #2c3e50; border: 1px solid #bdc3c7; }
+        .btn-open-tool { background: #fdf2e9; color: #d35400; border: 1px solid #f5c6cb; }
 
         /* モーダル */
         .overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 150; display: none; }
         .overlay.show { display: block; }
-        .modal-box { position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 85%; max-width: 400px; background: white; padding: 20px; border-radius: 12px; z-index: 160; box-shadow: 0 10px 25px rgba(0,0,0,0.3); display: none; }
+        .modal-box { position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 90%; max-width: 420px; background: white; padding: 20px; border-radius: 14px; z-index: 160; box-shadow: 0 10px 25px rgba(0,0,0,0.3); display: none; max-height: 90vh; overflow-y: auto; box-sizing: border-box; }
         .modal-box.show { display: block; }
-        
-        input, select { width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 6px; box-sizing: border-box; margin-top: 5px; font-size: 1rem; }
-        label { display: block; margin-top: 15px; font-size: 0.9rem; font-weight: bold; color: #555; }
+
+        label { display: block; margin-top: 12px; font-size: 0.85rem; font-weight: bold; color: #555; }
+        input[type="date"], input[type="time"], input[type="text"], select { width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 8px; box-sizing: border-box; margin-top: 4px; font-size: 1rem; }
+
+        .shift-btn-group { display: flex; gap: 6px; margin-top: 8px; }
+        .shift-btn { flex: 1; padding: 8px; background: #f1f2f6; border: 1px solid #ccc; border-radius: 6px; font-size: 0.8rem; font-weight: bold; cursor: pointer; color: #333; }
+        .shift-btn:active { background: #dfe4ea; }
+
+        .notification { position: fixed; top: 80px; left: 50%; transform: translateX(-50%); background: rgba(44, 62, 80, 0.95); color: #fff; padding: 10px 20px; border-radius: 30px; opacity: 0; pointer-events: none; transition: opacity 0.3s; z-index: 200; font-weight: bold; font-size: 0.9rem; }
+        .notification.show { opacity: 1; }
     </style>
 </head>
 <body>
 
-<header>
-    <div style="font-weight:bold; font-size:1.1rem;">📊 工程管理</div>
-    <a href="navi.html" style="color:white; text-decoration:none; font-size:1.2rem;">✕</a>
-</header>
+<div class="fixed-header-group">
+    <header>
+        <div class="header-title-area">
+            <h1>📊 工程・予定管理</h1>
+            <a href="navi.html" class="link-control">🚗 現場ナビへ</a>
+            <a href="index.html" class="link-control">🏠 ホーム</a>
+        </div>
+    </header>
 
-<div class="nav-links">
-    <a href="navi.html" class="nav-btn">🏠 現場ナビ</a>
-    <a href="index.html" class="nav-btn">🔍 検索</a>
+    <div class="filter-area">
+        <button class="filter-btn active" onclick="setFilter('upcoming', this)">🔥 予定・稼働順</button>
+        <button class="filter-btn" onclick="setFilter('activeOnly', this)">🤝 着工・契約済のみ</button>
+        <button class="filter-btn" onclick="setFilter('nodate', this)">⚠️ 日程未定</button>
+        <button class="filter-btn" onclick="setFilter('all', this)">📋 完了含む全て</button>
+    </div>
 </div>
 
-<div class="toggle-area">
-    <div class="current-month"><span style="font-size:1.5rem;">📅</span> <span id="monthDisplay">--月</span></div>
-    <button class="btn-toggle" id="btnShowAll" onclick="toggleShowAll()">全ての現場を表示</button>
+<div class="container">
+    <!-- 本日・同時進行の重なりサマリー -->
+    <div id="overlapSummary" class="overlap-summary"></div>
+
+    <!-- 現場タイル一覧 -->
+    <div id="scheduleTileList"></div>
 </div>
 
-<div id="ganttArea" class="gantt-container"></div>
-
+<!-- 日程調整＆Gカレンダー連動モーダル -->
 <div class="overlay" id="overlay" onclick="closeModal()"></div>
 <div id="dateModal" class="modal-box">
-    <h3 style="margin-top:0; color:#2c3e50;">📅 日程の調整</h3>
-    <p id="editSiteName" style="font-weight:bold; color:#2980b9; border-bottom:1px solid #eee; padding-bottom:10px;"></p>
-    <label>開始日</label><input type="date" id="editStart">
-    <label>終了日</label><input type="date" id="editEnd">
-    
-    <div style="margin-top:20px; display:flex; justify-content:space-between; align-items:center; gap: 8px;">
-        <button onclick="sendCalendarFromManager()" style="background:#f39c12; color:white; border:none; padding:10px 12px; border-radius:6px; font-weight:bold; cursor:pointer; font-size:0.8rem; white-space:nowrap;">📅 カレンダー登録</button>
-        
+    <h3 style="margin-top:0; margin-bottom:6px; color:#2c3e50;">📅 工期・予定の変更</h3>
+    <p id="editSiteName" style="font-weight:bold; font-size:1.1rem; color:#2980b9; border-bottom:1px solid #eee; padding-bottom:8px; margin-top:0;"></p>
+
+    <div style="background:#f8f9fa; padding:10px; border-radius:8px; border:1px solid #eee;">
+        <div style="font-size:0.8rem; font-weight:bold; color:#555;">⚡ 雨天・予定変更クイック順延（全体スライド）</div>
+        <div class="shift-btn-group">
+            <button type="button" class="shift-btn" onclick="shiftModalDates(-1, -1)">◀ -1日</button>
+            <button type="button" class="shift-btn" onclick="shiftModalDates(1, 1)">+1日 ▶</button>
+            <button type="button" class="shift-btn" onclick="shiftModalDates(2, 2)">+2日 ▶▶</button>
+            <button type="button" class="shift-btn" onclick="shiftModalDates(0, 1)">完工のみ+1日</button>
+        </div>
+    </div>
+
+    <div style="display:grid; grid-template-columns: 1fr 1fr; gap:10px;">
+        <div>
+            <label>着工日（開始日）</label>
+            <input type="date" id="editStart">
+        </div>
+        <div>
+            <label>完工予定（終了日）</label>
+            <input type="date" id="editEnd">
+        </div>
+    </div>
+
+    <label>ステータス変更</label>
+    <select id="editStatus">
+        <option value="estimate">📄 見積中（現調・打合せ）</option>
+        <option value="contract">🤝 契約済み・施工中</option>
+        <option value="billing">💰 請求中</option>
+        <option value="complete">✅ 完了</option>
+    </select>
+
+    <!-- ピンポイント予定（日報の【予定】と同じdx_schedulesへ追加） -->
+    <details style="margin-top:14px; border-top:1px dashed #ccc; padding-top:10px;">
+        <summary style="font-size:0.85rem; font-weight:bold; color:#d35400; cursor:pointer;">➕ ピンポイント予定（現調・足場・打合せ等）を追加</summary>
+        <div style="margin-top:8px; background:#fff8e1; padding:10px; border-radius:8px;">
+            <div style="display:grid; grid-template-columns: 1.3fr 1fr; gap:8px;">
+                <input type="date" id="pinDate">
+                <input type="time" id="pinTime" value="09:00">
+            </div>
+            <input type="text" id="pinDetail" placeholder="内容 (例: 現調 / 足場組立 / 色打合せ)" style="margin-top:6px;">
+            <button type="button" onclick="addPinScheduleFromManager()" style="width:100%; margin-top:8px; padding:8px; background:#e67e22; color:white; border:none; border-radius:6px; font-weight:bold; cursor:pointer;">🔔 この予定タグを追加</button>
+        </div>
+    </details>
+
+    <!-- お客さん公開用 Googleカレンダー連携ボタン -->
+    <div style="margin-top:18px; padding-top:12px; border-top:1px solid #eee;">
+        <button onclick="sendCalendarFromManager(event)" style="width:100%; background:#f39c12; color:white; border:none; padding:12px; border-radius:8px; font-weight:bold; cursor:pointer; font-size:0.95rem; margin-bottom:10px; box-shadow: 0 2px 5px rgba(0,0,0,0.1);">
+            📅 Gカレンダーに反映（名刺QR連動）＆保存
+        </button>
+
         <div style="display:flex; gap:8px;">
-            <button onclick="closeModal()" style="background:#95a5a6; color:white; border:none; padding:10px 15px; border-radius:6px; cursor:pointer; font-weight:bold;">キャンセル</button>
-            <button onclick="saveSchedule()" style="background:#2980b9; color:white; border:none; padding:10px 15px; border-radius:6px; font-weight:bold; cursor:pointer;">保 存</button>
+            <button onclick="closeModal()" style="flex:1; background:#95a5a6; color:white; border:none; padding:12px; border-radius:8px; cursor:pointer; font-weight:bold;">閉じる</button>
+            <button onclick="saveSchedule()" style="flex:1.5; background:#2980b9; color:white; border:none; padding:12px; border-radius:8px; font-weight:bold; cursor:pointer;">💾 アプリのみ保存</button>
         </div>
     </div>
 </div>
 
+<div id="notification" class="notification"></div>
 
 <script>
-    let sites = JSON.parse(localStorage.getItem('dx_sites')) || [];
-    let isShowAll = false, editingId = null, gStartDate = null;
+    let sites = [];
+    let schedules = [];
+    let currentFilter = 'upcoming';
+    let editingId = null;
 
-    function toggleShowAll() {
-        isShowAll = !isShowAll;
-        const btn = document.getElementById('btnShowAll');
-        if(isShowAll) { btn.classList.add('active'); btn.textContent = "完了現場を隠す"; } 
-        else { btn.classList.remove('active'); btn.textContent = "全ての現場を表示"; }
-        renderGantt();
+    function loadData() {
+        sites = JSON.parse(localStorage.getItem('dx_sites') || '[]');
+        schedules = JSON.parse(localStorage.getItem('dx_schedules') || '[]');
     }
 
-    function parseDate(str) { return str ? new Date(str.replace(/-/g, '/')) : null; }
+    function setFilter(filterName, btn) {
+        currentFilter = filterName;
+        document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        renderTiles();
+    }
+
+    function parseYMD(str) {
+        if (!str) return null;
+        const clean = str.trim().replace(/-/g, '/');
+        const d = new Date(clean);
+        return isNaN(d.getTime()) ? null : new Date(d.getFullYear(), d.getMonth(), d.getDate());
+    }
+
+    function formatYMD(dateObj) {
+        const y = dateObj.getFullYear();
+        const m = ('0' + (dateObj.getMonth() + 1)).slice(-2);
+        const d = ('0' + dateObj.getDate()).slice(-2);
+        return `${y}-${m}-${d}`;
+    }
+
+    function formatShortDate(str) {
+        const d = parseYMD(str);
+        if (!d) return '';
+        const w = ['日','月','火','水','木','金','土'][d.getDay()];
+        return `${d.getMonth()+1}/${d.getDate()}(${w})`;
+    }
+
     function getDiffDays(d1, d2) {
-        const dt1 = new Date(d1.getFullYear(), d1.getMonth(), d1.getDate());
-        const dt2 = new Date(d2.getFullYear(), d2.getMonth(), d2.getDate());
-        return Math.floor((dt2 - dt1) / (1000 * 60 * 60 * 24));
+        const t1 = new Date(d1.getFullYear(), d1.getMonth(), d1.getDate()).getTime();
+        const t2 = new Date(d2.getFullYear(), d2.getMonth(), d2.getDate()).getTime();
+        return Math.round((t2 - t1) / 86400000);
     }
 
-    function openEditModal(id) {
-        const s = sites.find(x=>x.id===id); if(!s) return;
-        editingId = id; document.getElementById('editSiteName').textContent=s.name;
-        document.getElementById('editStart').value=s.start||''; document.getElementById('editEnd').value=s.end||'';
-        document.getElementById('overlay').classList.add('show'); document.getElementById('dateModal').classList.add('show');
+    // 現場に紐づく日報の「【予定】」（dx_schedules）を取得
+    function getSiteSchedules(site) {
+        const now = Date.now() - (12 * 3600 * 1000); // 半日前以降の予定をすべて対象（1ヶ月先でも全て拾う）
+        return schedules.filter(sc => {
+            if (sc.targetTime && sc.targetTime < now) return false;
+            return (sc.siteId && String(sc.siteId) === String(site.id)) ||
+                   (sc.siteName && site.name && sc.siteName === site.name);
+        }).sort((a, b) => (a.targetTime || 0) - (b.targetTime || 0));
     }
-    function closeModal() { document.getElementById('overlay').classList.remove('show'); document.getElementById('dateModal').classList.remove('show'); editingId=null; }
 
-    function saveSchedule() {
-        if(!editingId) return;
-        const idx = sites.findIndex(s=>s.id===editingId);
-        if(idx!==-1) {
-            const s=document.getElementById('editStart').value, e=document.getElementById('editEnd').value;
-            if(s&&e&&s>e){ alert("開始日が終了日より後です"); return; }
-            sites[idx].start=s; sites[idx].end=e; sites[idx].updatedAt=Date.now();
-            localStorage.setItem('dx_sites', JSON.stringify(sites));
-            renderGantt(); closeModal();
+    // 「現調 7/15 10:00」などのworkDays文字列からも日付を推測
+    function parseWorkDaysDate(workDaysStr) {
+        if (!workDaysStr) return null;
+        const m = String(workDaysStr).match(/(\d{1,2})\/(\d{1,2})/);
+        if (!m) return null;
+        const now = new Date();
+        let year = now.getFullYear();
+        const month = parseInt(m[1], 10) - 1;
+        const day = parseInt(m[2], 10);
+        let dt = new Date(year, month, day);
+        if (dt.getTime() < now.getTime() - 60 * 86400000) {
+            dt = new Date(year + 1, month, day);
         }
+        return dt;
     }
 
-    function updateMonthDisplay() {
-        const c = document.getElementById('ganttArea'); if(!gStartDate) return;
-        const days = Math.floor((c.scrollLeft + 20) / 40);
-        const d = new Date(gStartDate); d.setDate(gStartDate.getDate() + days);
-        document.getElementById('monthDisplay').textContent = `${d.getFullYear()}年 ${d.getMonth()+1}月`;
+    // 他の現場との工期重なり（重複）を検出
+    function findOverlappingSites(site, allActiveSites) {
+        const s1 = parseYMD(site.start);
+        const e1 = parseYMD(site.end) || s1;
+        if (!s1) return [];
+
+        return allActiveSites.filter(other => {
+            if (other.id === site.id) return false;
+            const s2 = parseYMD(other.start);
+            const e2 = parseYMD(other.end) || s2;
+            if (!s2) return false;
+            return s1 <= e2 && e1 >= s2;
+        });
     }
 
-    function renderGantt() {
-        const container = document.getElementById('ganttArea'); 
-        container.innerHTML = '';
+    function renderTiles() {
+        loadData();
+        const listEl = document.getElementById('scheduleTileList');
+        const summaryEl = document.getElementById('overlapSummary');
+        listEl.innerHTML = '';
 
-        const today = new Date(); const todayZero = new Date(today.getFullYear(), today.getMonth(), today.getDate());
-        const startDate = new Date(today.getFullYear(), today.getMonth()-1, 1); gStartDate=startDate;
-        const endDate = new Date(today.getFullYear(), today.getMonth()+4, 0);
-        const totalDays = getDiffDays(startDate, endDate) + 1;
+        const today = new Date();
+        const todayZero = new Date(today.getFullYear(), today.getMonth(), today.getDate());
 
-        let headerHTML = `<div class="gantt-header"><div class="site-name-col" style="background:#ecf0f1; cursor:default; z-index:60;">現場名</div>`;
-        let gridHTML = `<div class="grid-layer" style="padding-left:120px; width:${totalDays*40}px;">`;
+        // 完了・失注を除いた稼働系現場
+        const activePool = sites.filter(s => s.status !== 'complete' && s.status !== 'done' && s.status !== 'lost');
 
-        let todayLeft = 0;
+        // ① 本日稼働中（または今日予定がある）現場のサマリーを作成
+        const todayRunning = activePool.filter(s => {
+            const st = parseYMD(s.start);
+            const ed = parseYMD(s.end) || st;
+            const inPeriod = st && st <= todayZero && ed >= todayZero;
+            const siteScheds = getSiteSchedules(s);
+            const hasTodaySched = siteScheds.some(sc => {
+                const scDate = new Date(sc.targetTime);
+                return scDate.toDateString() === today.toDateString();
+            });
+            return inPeriod || hasTodaySched;
+        });
 
-        for (let i=0; i<totalDays; i++) {
-            const d = new Date(startDate); d.setDate(startDate.getDate()+i);
-            const isSun = d.getDay()===0, isToday = d.toDateString()===today.toDateString(), isPast = d<todayZero;
-            const mClass = (d.getMonth()+1)%2===0 ? 'month-even' : 'month-odd';
-            
-            let classes = `gantt-cell ${mClass}`;
-            if(isPast) classes += ' is-past';
-            if(isSun) classes += ' is-sunday';
-            if(isToday) { classes += ' is-today'; todayLeft = i*40; }
-
-            headerHTML += `<div class="${classes} header-cell">${d.getDate()}</div>`;
-            gridHTML += `<div class="${classes}"></div>`;
+        if (todayRunning.length > 0) {
+            const chips = todayRunning.map(s => `<span class="overlap-chip">🔨 ${s.name}</span>`).join('');
+            summaryEl.innerHTML = `
+                <div class="overlap-title">
+                    <span>🔥 本日の稼働・予定現場（同時進行: ${todayRunning.length}件）</span>
+                    <span>${today.getMonth()+1}/${today.getDate()}</span>
+                </div>
+                <div class="overlap-chips">${chips}</div>
+            `;
+        } else {
+            summaryEl.innerHTML = `
+                <div class="overlap-title" style="margin-bottom:0;">
+                    <span>📅 本日（${today.getMonth()+1}/${today.getDate()}）に工期が重なっている現場はありません</span>
+                </div>
+            `;
         }
-        headerHTML += '</div>';
-        gridHTML += '</div>';
 
-        const target = isShowAll ? sites : sites.filter(s => s.status!=='complete' && s.status!=='lost' && s.status!=='done' && s.status!=='handover');
-        
-        let rowsHTML = `<div class="data-layer" style="width:${120 + totalDays*40}px;">`;
-        
-        target.forEach(site => {
-            let barHTML = '';
-            const hasDate = site.start && site.end;
-            const nameClass = hasDate ? '' : 'no-date';
+        // ② 各現場にソート用の優先度スコアと直近日付を付与
+        const enriched = sites.map(site => {
+            const isDone = (site.status === 'complete' || site.status === 'done' || site.status === 'lost');
+            const stDate = parseYMD(site.start);
+            const edDate = parseYMD(site.end) || stDate;
+            const siteScheds = getSiteSchedules(site);
+            const nextSchedTime = siteScheds.length > 0 ? siteScheds[0].targetTime : null;
+            const workDaysDate = parseWorkDaysDate(site.workDays);
 
-            if(hasDate) {
-                const sDate = parseDate(site.start), eDate = parseDate(site.end);
-                if(eDate >= startDate && sDate <= endDate) {
-                    const off = getDiffDays(startDate, sDate);
-                    const dur = getDiffDays(sDate, eDate) + 1;
-                    let l = off * 40; 
-                    let w = dur * 40;
-                    if(l < 0) { w += l; l = 0; }
-                    
-                    let bClass = 'bar-plan';
-                    if(site.status==='contract'||site.status==='active'||site.status==='billing') bClass='bar-active';
-                    if(site.status==='complete'||site.status==='lost'||site.status==='done') bClass='bar-done';
+            // 今まさに工期中かどうか
+            const isCurrentlyRunning = !isDone && stDate && stDate <= todayZero && edDate >= todayZero;
 
-                    barHTML = `<div class="bar ${bClass}" style="left:${120 + l}px; width:${Math.max(0, w)}px;">${dur}日</div>`;
-                }
+            // ソート用の基準日時（日報の【予定】、開始日、現調予定日のうち最も早い未来・直近の日付）
+            let candidates = [];
+            if (nextSchedTime) candidates.push(nextSchedTime);
+            if (stDate) candidates.push(stDate.getTime());
+            if (workDaysDate) candidates.push(workDaysDate.getTime());
+
+            const earliestTime = candidates.length > 0 ? Math.min(...candidates) : null;
+
+            // グループ分け: 1=現在着工中, 2=予定・工期あり(日付順), 3=日程未定, 4=完了・失注
+            let group = 3;
+            if (isDone) group = 4;
+            else if (isCurrentlyRunning) group = 1;
+            else if (earliestTime !== null) group = 2;
+
+            return {
+                site,
+                isDone,
+                stDate,
+                edDate,
+                siteScheds,
+                workDaysDate,
+                isCurrentlyRunning,
+                earliestTime,
+                group
+            };
+        });
+
+        // ③ フィルター適用
+        let filtered = enriched.filter(item => {
+            if (currentFilter === 'upcoming') return !item.isDone;
+            if (currentFilter === 'activeOnly') return !item.isDone && (item.site.status === 'contract' || item.site.status === 'active' || item.isCurrentlyRunning);
+            if (currentFilter === 'nodate') return !item.isDone && item.group === 3;
+            return true; // 'all'
+        });
+
+        // ④ ソート（着工中 ➔ 日報予定・着工日が近い順 ➔ 未定 ➔ 完了）
+        filtered.sort((a, b) => {
+            if (a.group !== b.group) return a.group - b.group;
+            if (a.earliestTime !== null && b.earliestTime !== null) {
+                return a.earliestTime - b.earliestTime;
+            }
+            return (b.site.updatedAt || 0) - (a.site.updatedAt || 0);
+        });
+
+        if (filtered.length === 0) {
+            listEl.innerHTML = `<div style="text-align:center; padding:40px; color:#888;">該当する現場がありません。</div>`;
+            return;
+        }
+
+        let currentGroupHeader = 0;
+        const groupTitles = {
+            1: '🟢 現在稼働中・着工中の現場',
+            2: '📅 今後の予定・着工順（日報予定・工期連動）',
+            3: '⚠️ 日程・予定が未定の現場',
+            4: '✅ 完了・その他の現場'
+        };
+
+        filtered.forEach(item => {
+            const { site, stDate, edDate, siteScheds, isCurrentlyRunning, group } = item;
+
+            if (group !== currentGroupHeader) {
+                currentGroupHeader = group;
+                listEl.insertAdjacentHTML('beforeend', `<div class="section-divider">${groupTitles[group]}</div>`);
             }
 
-            rowsHTML += `
-                <div class="site-row">
-                    <div class="site-name-col ${nameClass}" onclick="openEditModal('${site.id}')">
-                        ${site.name} <span style="font-size:0.6rem; color:#888;">✎</span>
+            // カードの枠色クラス
+            let cardClass = 'card-nodate';
+            if (group === 1) cardClass = 'card-active';
+            else if (group === 2) cardClass = 'card-sched';
+            else if (group === 4) cardClass = 'card-done';
+
+            // ステータスバッジ
+            let stLabel = '見積中', stClass = 'st-estimate';
+            if (site.status === 'contract' || site.status === 'active') { stLabel = '契約済・施工'; stClass = 'st-contract'; }
+            if (site.status === 'billing') { stLabel = '請求'; stClass = 'st-billing'; }
+            if (site.status === 'complete' || site.status === 'done') { stLabel = '完了'; stClass = 'st-complete'; }
+
+            // 日報の【予定】タグHTML
+            let schedHtml = '';
+            if (siteScheds.length > 0) {
+                const rows = siteScheds.map(sc => {
+                    const diffD = getDiffDays(todayZero, new Date(sc.targetTime));
+                    const dBadge = diffD === 0 ? '【今日】' : (diffD > 0 ? `【あと${diffD}日】` : '【経過】');
+                    return `<div class="sched-tag-item">
+                        <span>🔔 ${sc.dateStr} ${sc.detail}</span>
+                        <span style="font-size:0.78rem;">${dBadge}</span>
+                    </div>`;
+                }).join('');
+                schedHtml = `<div class="sched-tag-box">${rows}</div>`;
+            } else if (site.workDays) {
+                schedHtml = `<div class="sched-tag-box">📝 工期・現調メモ: ${site.workDays}</div>`;
+            }
+
+            // 工期＆進捗バー＆重複チェック
+            let periodHtml = '';
+            if (stDate && edDate) {
+                const totalDur = Math.max(1, getDiffDays(stDate, edDate) + 1);
+                let badgeText = `全${totalDur}日間`;
+                let badgeClass = '';
+                let progressPct = 0;
+
+                if (isCurrentlyRunning) {
+                    const elapsed = getDiffDays(stDate, todayZero) + 1;
+                    const remain = getDiffDays(todayZero, edDate);
+                    progressPct = Math.min(100, Math.max(10, Math.round((elapsed / totalDur) * 100)));
+                    badgeText = `稼働中（残り${remain}日 / 全${totalDur}日）`;
+                    badgeClass = 'urgent';
+                } else if (stDate > todayZero) {
+                    const untilStart = getDiffDays(todayZero, stDate);
+                    badgeText = `着工まであと${untilStart}日（${totalDur}日間）`;
+                } else {
+                    progressPct = 100;
+                    badgeText = `工期終了（${totalDur}日間）`;
+                }
+
+                // 重なり（他現場との重複）検出
+                const overlaps = findOverlappingSites(site, activePool);
+                let overlapHtml = '';
+                if (overlaps.length > 0) {
+                    const names = overlaps.slice(0, 2).map(o => o.name).join('・');
+                    const extra = overlaps.length > 2 ? ` 他${overlaps.length - 2}件` : '';
+                    overlapHtml = `<div class="overlap-alert">⚠️ 工期重複(${overlaps.length}件): ${names}${extra}</div>`;
+                }
+
+                periodHtml = `
+                    <div class="period-box">
+                        <div class="period-row">
+                            <span>📅 ${formatShortDate(site.start)} 〜 ${formatShortDate(site.end)}</span>
+                            <span class="days-badge ${badgeClass}">${badgeText}</span>
+                        </div>
+                        <div class="progress-track">
+                            <div class="progress-fill" style="width:${progressPct}%;"></div>
+                        </div>
+                        ${overlapHtml}
                     </div>
-                    ${barHTML}
-                </div>`;
+                `;
+            } else {
+                periodHtml = `
+                    <div class="period-box" style="background:#fff5f5; border-color:#ffcdd2; color:#c62828; font-size:0.85rem; font-weight:bold;">
+                        ⚠️ 着工日・完工日が未設定です
+                    </div>
+                `;
+            }
+
+            const quickShiftBtns = (stDate && edDate)
+                ? `<button class="btn-card btn-quick-shift" onclick="quickShiftSite('${site.id}', 1)">☔ +1日順延</button>`
+                : '';
+
+            const cardHtml = `
+                <div class="site-card ${cardClass}">
+                    <div class="card-header">
+                        <span class="case-no">${site.id}</span>
+                        <span class="status-badge ${stClass}">${stLabel}</span>
+                    </div>
+                    <div class="site-name">
+                        <span>${site.name}</span>
+                    </div>
+                    ${schedHtml}
+                    ${periodHtml}
+                    <div class="card-actions">
+                        <button class="btn-card btn-edit-date" onclick="openEditModal('${site.id}')">📅 日程・Gカレンダー</button>
+                        ${quickShiftBtns}
+                        <a href="tools.html?id=${site.id}" class="btn-card btn-open-tool">🧰 日報・黒板</a>
+                    </div>
+                </div>
+            `;
+            listEl.insertAdjacentHTML('beforeend', cardHtml);
         });
-        rowsHTML += '</div>';
-
-        const bodyHTML = `<div class="gantt-body" style="width:${120 + totalDays*40}px;">${gridHTML}${rowsHTML}</div>`;
-        container.innerHTML = headerHTML + bodyHTML;
-
-        container.onscroll = updateMonthDisplay;
-        updateMonthDisplay();
-        if(todayLeft > 0) setTimeout(()=>container.scrollTo({left:todayLeft-100, behavior:'smooth'}), 100);
-        setupPCScroll(container);
     }
 
-    function setupPCScroll(c) {
-        document.addEventListener('keydown', e => { if(e.key==='ArrowRight')c.scrollBy({left:100,behavior:'smooth'}); if(e.key==='ArrowLeft')c.scrollBy({left:-100,behavior:'smooth'}); });
-        let isDown=false, sX, sL;
-        c.addEventListener('mousedown', e => { isDown=true; c.classList.add('active'); sX=e.pageX-c.offsetLeft; sL=c.scrollLeft; });
-        c.addEventListener('mouseleave', () => isDown=false); c.addEventListener('mouseup', () => isDown=false);
-        c.addEventListener('mousemove', e => { if(!isDown)return; e.preventDefault(); const x=e.pageX-c.offsetLeft; c.scrollLeft=sL-(x-sX)*2; });
+    // タイル上の「☔ +1日順延」ワンタップ処理
+    function quickShiftSite(siteId, days) {
+        const idx = sites.findIndex(s => s.id === siteId);
+        if (idx === -1) return;
+        const s = sites[idx];
+        const st = parseYMD(s.start);
+        const ed = parseYMD(s.end);
+        if (!st || !ed) return;
+
+        st.setDate(st.getDate() + days);
+        ed.setDate(ed.getDate() + days);
+        s.start = formatYMD(st);
+        s.end = formatYMD(ed);
+        s.updatedAt = Date.now();
+
+        localStorage.setItem('dx_sites', JSON.stringify(sites));
+        renderTiles();
+        showNotification(`☔ ${s.name} の工期を+${days}日順延しました`);
     }
 
-    document.addEventListener('DOMContentLoaded', renderGantt);
+    // モーダル操作
+    function openEditModal(id) {
+        const s = sites.find(x => x.id === id);
+        if (!s) return;
+        editingId = id;
+        document.getElementById('editSiteName').textContent = s.name;
+        document.getElementById('editStart').value = s.start || '';
+        document.getElementById('editEnd').value = s.end || '';
+        document.getElementById('editStatus').value = s.status || 'estimate';
+        document.getElementById('pinDate').value = s.start || formatYMD(new Date());
+        document.getElementById('overlay').classList.add('show');
+        document.getElementById('dateModal').classList.add('show');
+    }
 
-    function sendCalendarFromManager() {
+    function closeModal() {
+        document.getElementById('overlay').classList.remove('show');
+        document.getElementById('dateModal').classList.remove('show');
+        editingId = null;
+    }
+
+    // モーダル内のクイック順延ボタン
+    function shiftModalDates(startDelta, endDelta) {
+        const sInput = document.getElementById('editStart');
+        const eInput = document.getElementById('editEnd');
+        const todayStr = formatYMD(new Date());
+        const st = parseYMD(sInput.value || todayStr);
+        const ed = parseYMD(eInput.value || sInput.value || todayStr);
+
+        st.setDate(st.getDate() + startDelta);
+        ed.setDate(ed.getDate() + endDelta);
+        sInput.value = formatYMD(st);
+        eInput.value = formatYMD(ed);
+    }
+
+    // モーダルからピンポイント予定（dx_schedules）を追加
+    function addPinScheduleFromManager() {
         if (!editingId) return;
-        
+        const site = sites.find(x => x.id === editingId);
+        if (!site) return;
+
+        const dVal = document.getElementById('pinDate').value;
+        const tVal = document.getElementById('pinTime').value || '09:00';
+        const detail = document.getElementById('pinDetail').value.trim();
+        if (!dVal || !detail) {
+            alert('予定の日付と内容を入力してください。');
+            return;
+        }
+
+        const formattedDate = dVal.replace(/-/g, '/');
+        const targetTimeMs = new Date(`${dVal}T${tVal}:00`).getTime();
+
+        schedules.push({
+            id: 'sch_' + Date.now(),
+            siteId: site.id,
+            siteName: site.name,
+            dateStr: `${formattedDate} ${tVal}`,
+            targetTime: targetTimeMs,
+            detail: detail,
+            notified1d: false,
+            notified1h: false
+        });
+        localStorage.setItem('dx_schedules', JSON.stringify(schedules));
+        document.getElementById('pinDetail').value = '';
+        renderTiles();
+        showNotification(`🔔 ${site.name} に予定タグを追加しました`);
+    }
+
+    function saveSchedule() {
+        if (!editingId) return;
+        const idx = sites.findIndex(s => s.id === editingId);
+        if (idx !== -1) {
+            const s = document.getElementById('editStart').value;
+            const e = document.getElementById('editEnd').value;
+            const st = document.getElementById('editStatus').value;
+            if (s && e && s > e) { alert('開始日が終了日より後になっています'); return; }
+            sites[idx].start = s;
+            sites[idx].end = e;
+            sites[idx].status = st;
+            sites[idx].updatedAt = Date.now();
+            localStorage.setItem('dx_sites', JSON.stringify(sites));
+            renderTiles();
+            closeModal();
+            showNotification('💾 工期・ステータスを保存しました');
+        }
+    }
+
+    // 既存のGoogleカレンダー連携（名刺QR連動）
+    function sendCalendarFromManager(ev) {
+        if (!editingId) return;
         const idx = sites.findIndex(s => s.id === editingId);
         if (idx === -1) return;
         const site = sites[idx];
 
         const inputStart = document.getElementById('editStart').value;
         const inputEnd = document.getElementById('editEnd').value;
-        
-        if(inputStart && inputEnd && inputStart > inputEnd){ 
-            alert("開始日が終了日より後です"); return; 
+        const inputStatus = document.getElementById('editStatus').value;
+
+        if (inputStart && inputEnd && inputStart > inputEnd) {
+            alert('開始日が終了日より後です');
+            return;
         }
 
-        const targetStart = inputStart || site.start || new Date().toISOString().split('T')[0];
+        const targetStart = inputStart || site.start || formatYMD(new Date());
         const targetEnd = inputEnd || site.end || targetStart;
 
-        if(!confirm(`この工期でカレンダーに登録しますか？\n（同時にこの工期でアプリに保存します）\n\n期間: ${targetStart} 〜 ${targetEnd}\n現場: ${site.name}`)) return;
+        if (!confirm(`この工期でGoogleカレンダー（名刺QR連動）に登録・更新しますか？\n\n期間: ${targetStart} 〜 ${targetEnd}\n現場: ${site.name}`)) return;
 
-        // アプリ保存
-        site.start = inputStart;
-        site.end = inputEnd;
+        // ローカル保存も同時実行
+        site.start = targetStart;
+        site.end = targetEnd;
+        site.status = inputStatus;
         site.updatedAt = Date.now();
         localStorage.setItem('dx_sites', JSON.stringify(sites));
-        renderGantt(); 
+        renderTiles();
 
         const gasUrl = localStorage.getItem('dx_gas_url');
         const calId = localStorage.getItem('dx_calendar_id');
 
-        if (!gasUrl) { alert("設定エラー: navi画面でGAS URLを設定してください"); return; }
-        if (!calId) { alert("設定エラー: navi画面でカレンダーIDを設定してください"); return; }
+        if (!gasUrl) { alert('設定エラー: 現場ナビの設定画面でGAS URLを設定してください'); return; }
+        if (!calId) { alert('設定エラー: 現場ナビの設定画面でカレンダーIDを設定してください'); return; }
 
         const data = {
-            type: "calendar",
+            type: 'calendar',
             calendarId: calId,
             title: `【${getStatusText(site.status)}】${site.name}`,
-            description: `案件No: ${site.id}\n住所: ${site.address}`,
-            address: site.address,
+            description: `案件No: ${site.id}\n住所: ${site.address || ''}`,
+            address: site.address || '',
             start: targetStart,
             end: targetEnd,
-            authKey: localStorage.getItem('dx_auth_key') || "" 
+            authKey: localStorage.getItem('dx_auth_key') || ''
         };
 
-        const btn = event.target;
+        const btn = ev.currentTarget;
         const orgText = btn.innerText;
-        btn.innerText = "送信中...";
+        btn.innerText = '⏳ カレンダーへ送信中...';
         btn.disabled = true;
 
         fetch(gasUrl, {
@@ -320,14 +750,14 @@
         })
         .then(res => res.json())
         .then(json => {
-            if(json.result === 'success') {
-                alert("✅ カレンダー登録＆保存完了！");
+            if (json.result === 'success') {
+                showNotification('✅ Gカレンダー反映＆保存完了！');
                 closeModal();
             } else {
-                alert("エラー: " + json.error);
+                alert('カレンダー登録エラー: ' + json.error);
             }
         })
-        .catch(e => alert("通信エラー: " + e))
+        .catch(e => alert('通信エラー: ' + e))
         .finally(() => {
             btn.innerText = orgText;
             btn.disabled = false;
@@ -338,6 +768,15 @@
         const map = { 'estimate':'見積', 'contract':'施工', 'billing':'請求', 'complete':'完了', 'lost':'失注' };
         return map[st] || '予定';
     }
+
+    function showNotification(msg) {
+        const el = document.getElementById('notification');
+        el.textContent = msg;
+        el.classList.add('show');
+        setTimeout(() => el.classList.remove('show'), 2200);
+    }
+
+    document.addEventListener('DOMContentLoaded', renderTiles);
 </script>
 </body>
 </html>
