@@ -184,7 +184,7 @@
         .shift-btn { flex: 1; padding: 8px; background: #f1f2f6; border: 1px solid #ccc; border-radius: 6px; font-size: 0.8rem; font-weight: bold; cursor: pointer; color: #333; }
         .shift-btn:active { background: #dfe4ea; }
 
-        .notification { position: fixed; top: 80px; left: 50%; transform: translateX(-50%); background: rgba(44, 62, 80, 0.95); color: #fff; padding: 10px 20px; border-radius: 30px; opacity: 0; pointer-events: none; transition: opacity 0.3s; z-index: 200; font-weight: bold; font-size: 0.9rem; }
+        .notification { position: fixed; top: 80px; left: 50%; transform: translateX(-50%); background: rgba(44, 62, 80, 0.95); color: #fff; padding: 10px 20px; border-radius: 30px; opacity: 0; pointer-events: none; transition: opacity 0.3s; z-index: 200; font-weight: bold; font-size: 0.9rem; width: max-content; max-width: 85%; text-align: center; }
         .notification.show { opacity: 1; }
     </style>
 </head>
@@ -193,7 +193,7 @@
 <div class="fixed-header-group">
     <header>
         <div class="header-title-area">
-            <h1>📊 工程・予定管理</h1>
+            <h1>📊 工程・予定管理 <span id="syncBadge" style="font-size:0.75rem; font-weight:normal; opacity:0.8;"></span></h1>
             <a href="navi.html" class="link-control">🚗 現場ナビへ</a>
             <a href="index.html" class="link-control">🏠 ホーム</a>
         </div>
@@ -218,7 +218,7 @@
 <!-- 日程調整＆Gカレンダー連動モーダル -->
 <div class="overlay" id="overlay" onclick="closeModal()"></div>
 <div id="dateModal" class="modal-box">
-    <h3 style="margin-top:0; margin-bottom:6px; color:#2c3e50;">📅 工期・予定・現調メモの編集</h3>
+    <h3 style="margin-top:0; margin-bottom:6px; color:#2c3e50;">📅 工期・現調メモの編集</h3>
     <p id="editSiteName" style="font-weight:bold; font-size:1.1rem; color:#2980b9; border-bottom:1px solid #eee; padding-bottom:8px; margin-top:0;"></p>
 
     <div style="background:#f8f9fa; padding:10px; border-radius:8px; border:1px solid #eee;">
@@ -245,11 +245,11 @@
         <button type="button" onclick="document.getElementById('editStart').value=''; document.getElementById('editEnd').value='';" style="background:none; border:none; color:#c62828; font-size:0.78rem; text-decoration:underline; cursor:pointer;">× 着工・完工日を空欄に戻す</button>
     </div>
 
-    <!-- ★追加：現場ナビで直打ちした「現調メモ（workDays）」をここで編集・クリア可能に -->
-    <label>📝 現調・工期メモ（現場ナビ連動）</label>
+    <!-- 現場ナビで直打ちした「現調メモ・施工日数（workDays）」の編集・消去 -->
+    <label>📝 現調メモ・施工日数（現場ナビ連動）</label>
     <div style="display:flex; gap:6px; align-items:center;">
         <input type="text" id="editWorkDays" placeholder="例: 現調 7/15 10:00 / 約12日間" style="margin-top:0; flex:1;">
-        <button type="button" onclick="document.getElementById('editWorkDays').value='';" style="padding:10px 12px; background:#ffebee; color:#c62828; border:1px solid #ffcdd2; border-radius:8px; font-weight:bold; cursor:pointer; white-space:nowrap;">🗑️ 消去</button>
+        <button type="button" onclick="document.getElementById('editWorkDays').value='';" style="padding:10px 12px; background:#ffebee; color:#c62828; border:1px solid #ffcdd2; border-radius:8px; font-weight:bold; cursor:pointer; white-space:nowrap;">🗑️ クリア</button>
     </div>
 
     <label>ステータス変更</label>
@@ -260,19 +260,6 @@
         <option value="complete">✅ 完了</option>
     </select>
 
-    <!-- ピンポイント予定（日報の【予定】と同じdx_schedulesへ追加） -->
-    <details style="margin-top:14px; border-top:1px dashed #ccc; padding-top:10px;">
-        <summary style="font-size:0.85rem; font-weight:bold; color:#d35400; cursor:pointer;">➕ ピンポイント予定（現調・足場・集金等）を追加</summary>
-        <div style="margin-top:8px; background:#fff8e1; padding:10px; border-radius:8px;">
-            <div style="display:grid; grid-template-columns: 1.3fr 1fr; gap:8px;">
-                <input type="date" id="pinDate">
-                <input type="time" id="pinTime" value="09:00">
-            </div>
-            <input type="text" id="pinDetail" placeholder="内容 (例: 現調 / 足場組立 / 集金・手直し)" style="margin-top:6px;">
-            <button type="button" onclick="addPinScheduleFromManager()" style="width:100%; margin-top:8px; padding:8px; background:#e67e22; color:white; border:none; border-radius:6px; font-weight:bold; cursor:pointer;">🔔 この予定タグを追加</button>
-        </div>
-    </details>
-
     <!-- お客さん公開用 Googleカレンダー連携ボタン -->
     <div style="margin-top:18px; padding-top:12px; border-top:1px solid #eee;">
         <button onclick="sendCalendarFromManager(event)" style="width:100%; background:#f39c12; color:white; border:none; padding:12px; border-radius:8px; font-weight:bold; cursor:pointer; font-size:0.95rem; margin-bottom:10px; box-shadow: 0 2px 5px rgba(0,0,0,0.1);">
@@ -281,7 +268,7 @@
 
         <div style="display:flex; gap:8px;">
             <button onclick="closeModal()" style="flex:1; background:#95a5a6; color:white; border:none; padding:12px; border-radius:8px; cursor:pointer; font-weight:bold;">閉じる</button>
-            <button onclick="saveSchedule()" style="flex:1.5; background:#2980b9; color:white; border:none; padding:12px; border-radius:8px; cursor:pointer; font-weight:bold;">💾 アプリに保存</button>
+            <button onclick="saveSchedule()" style="flex:1.5; background:#2980b9; color:white; border:none; padding:12px; border-radius:8px; cursor:pointer; font-weight:bold;">💾 保存（クラウド同期）</button>
         </div>
     </div>
 </div>
@@ -297,6 +284,44 @@
     function loadData() {
         sites = JSON.parse(localStorage.getItem('dx_sites') || '[]');
         schedules = JSON.parse(localStorage.getItem('dx_schedules') || '[]');
+    }
+
+    // ★追加：日程や現調メモを変更した際、案件管理表（クラウド）へ自動でバックグラウンド送信する関数
+    function syncSitesToCloudSilently() {
+        const targetUrl = localStorage.getItem('dx_gas_url');
+        const authKey = localStorage.getItem('dx_auth_key') || '';
+        if (!targetUrl || !targetUrl.includes('script.google.com') || !authKey) return;
+
+        const badge = document.getElementById('syncBadge');
+        if (badge) badge.textContent = '☁️ 同期中...';
+
+        fetch(targetUrl, {
+            method: 'POST',
+            headers: { 'Content-Type': 'text/plain' },
+            body: JSON.stringify({
+                type: 'sync',
+                data: sites,
+                reporter: localStorage.getItem('dx_reporter_name') || '職人',
+                clientTime: Number(localStorage.getItem('dx_sync_time') || 0),
+                authKey: authKey
+            }),
+            keepalive: true
+        })
+        .then(res => res.json())
+        .then(json => {
+            if (json.result === 'success') {
+                localStorage.setItem('dx_sync_time', Date.now());
+                if (badge) {
+                    badge.textContent = '✅ 同期済';
+                    setTimeout(() => { badge.textContent = ''; }, 2500);
+                }
+            } else {
+                if (badge) badge.textContent = '';
+            }
+        })
+        .catch(() => {
+            if (badge) badge.textContent = '';
+        });
     }
 
     function setFilter(filterName, btn) {
@@ -361,7 +386,7 @@
 
     // 他の現場との工期重なり（重複）を検出
     function findOverlappingSites(site, allActiveSites) {
-        if (site.status === 'billing') return []; // 請求済み現場は工期重複の対象外
+        if (site.status === 'billing') return [];
         const s1 = parseYMD(site.start);
         const e1 = parseYMD(site.end) || s1;
         if (!s1) return [];
@@ -375,7 +400,7 @@
         });
     }
 
-    // カード上から現調メモ（workDays）をワンタップ消去または編集
+    // カード上から現調メモ（workDays）を消去＆クラウド同期
     function quickClearWorkDays(siteId) {
         const idx = sites.findIndex(s => s.id === siteId);
         if (idx === -1) return;
@@ -384,15 +409,8 @@
         sites[idx].updatedAt = Date.now();
         localStorage.setItem('dx_sites', JSON.stringify(sites));
         renderTiles();
+        syncSitesToCloudSilently();
         showNotification('🗑️ 現調メモを消去しました');
-    }
-
-    // カード上から予定タグ（dx_schedules）を個別削除
-    function removePinSchedule(schedId) {
-        schedules = schedules.filter(sc => sc.id !== schedId);
-        localStorage.setItem('dx_schedules', JSON.stringify(schedules));
-        renderTiles();
-        showNotification('🗑️ 予定タグを削除しました');
     }
 
     function renderTiles() {
@@ -404,7 +422,6 @@
         const today = new Date();
         const todayZero = new Date(today.getFullYear(), today.getMonth(), today.getDate());
 
-        // 完了・失注・請求（施工完了分）を除いた実稼働プール
         const activePool = sites.filter(s => {
             if (s.status === 'complete' || s.status === 'done' || s.status === 'lost' || s.status === 'billing') return false;
             return true;
@@ -452,10 +469,8 @@
             const nextSchedTime = hasPinSchedule ? siteScheds[0].targetTime : null;
             const workDaysDate = parseWorkDaysDate(site.workDays);
 
-            // 請求中の現場は施工自体は終わっているため「現在着工中(グループ1)」には入れない
             const isCurrentlyRunning = !isDone && !isBilling && stDate && stDate <= todayZero && edDate >= todayZero;
 
-            // ソート用の基準日時（※請求ステータスの場合は過去の着工日を無視し、予定タグのみを基準にする）
             let candidates = [];
             if (nextSchedTime) candidates.push(nextSchedTime);
             if (!isBilling && stDate) candidates.push(stDate.getTime());
@@ -463,7 +478,6 @@
 
             const earliestTime = candidates.length > 0 ? Math.min(...candidates) : null;
 
-            // グループ分け: 1=現在着工中, 2=予定・工期あり(日付順), 3=日程未定, 4=完了・請求(予定なし)・失注
             let group = 3;
             if (isDone || (isBilling && !hasPinSchedule)) group = 4;
             else if (isCurrentlyRunning) group = 1;
@@ -488,7 +502,6 @@
         let filtered = enriched.filter(item => {
             if (currentFilter === 'upcoming') {
                 if (item.isDone) return false;
-                // ★ステータス「請求」は、予定タグが入っている場合のみ表示！
                 if (item.isBilling && !item.hasPinSchedule) return false;
                 return true;
             }
@@ -498,10 +511,10 @@
             if (currentFilter === 'nodate') {
                 return !item.isDone && !item.isBilling && item.group === 3;
             }
-            return true; // 'all'
+            return true;
         });
 
-        // ④ ソート（着工中 ➔ 日報予定・着工日が近い順 ➔ 未定 ➔ 完了・請求）
+        // ④ ソート
         filtered.sort((a, b) => {
             if (a.group !== b.group) return a.group - b.group;
             if (a.earliestTime !== null && b.earliestTime !== null) {
@@ -541,7 +554,7 @@
             if (site.status === 'billing') { stLabel = '請求中'; stClass = 'st-billing'; }
             if (site.status === 'complete' || site.status === 'done') { stLabel = '完了'; stClass = 'st-complete'; }
 
-            // 日報の【予定】タグ ＆ 現場ナビの現調メモ（workDays）の両方を表示・削除可能に
+            // ★修正：「予定」タグには✕ボタンを付けず、日報側で管理する仕様に統一
             let schedItemsHtml = '';
             if (siteScheds.length > 0) {
                 schedItemsHtml += siteScheds.map(sc => {
@@ -549,10 +562,7 @@
                     const dBadge = diffD === 0 ? '【今日】' : (diffD > 0 ? `【あと${diffD}日】` : '【経過】');
                     return `<div class="sched-tag-item">
                         <span>🔔 ${sc.dateStr} ${sc.detail}</span>
-                        <span>
-                            <span style="font-size:0.78rem;">${dBadge}</span>
-                            <button class="btn-mini-del" onclick="removePinSchedule('${sc.id}')" title="この予定を削除">✕</button>
-                        </span>
+                        <span style="font-size:0.78rem;">${dBadge}</span>
                     </div>`;
                 }).join('');
             }
@@ -663,6 +673,7 @@
 
         localStorage.setItem('dx_sites', JSON.stringify(sites));
         renderTiles();
+        syncSitesToCloudSilently(); // ★クラウド（案件管理表）にも自動同期
         showNotification(`☔ ${s.name} の工期を+${days}日順延しました`);
     }
 
@@ -675,7 +686,6 @@
         document.getElementById('editEnd').value = s.end || '';
         document.getElementById('editWorkDays').value = s.workDays || '';
         document.getElementById('editStatus').value = s.status || 'estimate';
-        document.getElementById('pinDate').value = s.start || formatYMD(new Date());
         document.getElementById('overlay').classList.add('show');
         document.getElementById('dateModal').classList.add('show');
     }
@@ -699,38 +709,6 @@
         eInput.value = formatYMD(ed);
     }
 
-    function addPinScheduleFromManager() {
-        if (!editingId) return;
-        const site = sites.find(x => x.id === editingId);
-        if (!site) return;
-
-        const dVal = document.getElementById('pinDate').value;
-        const tVal = document.getElementById('pinTime').value || '09:00';
-        const detail = document.getElementById('pinDetail').value.trim();
-        if (!dVal || !detail) {
-            alert('予定の日付と内容を入力してください。');
-            return;
-        }
-
-        const formattedDate = dVal.replace(/-/g, '/');
-        const targetTimeMs = new Date(`${dVal}T${tVal}:00`).getTime();
-
-        schedules.push({
-            id: 'sch_' + Date.now(),
-            siteId: site.id,
-            siteName: site.name,
-            dateStr: `${formattedDate} ${tVal}`,
-            targetTime: targetTimeMs,
-            detail: detail,
-            notified1d: false,
-            notified1h: false
-        });
-        localStorage.setItem('dx_schedules', JSON.stringify(schedules));
-        document.getElementById('pinDetail').value = '';
-        renderTiles();
-        showNotification(`🔔 ${site.name} に予定タグを追加しました`);
-    }
-
     function saveSchedule() {
         if (!editingId) return;
         const idx = sites.findIndex(s => s.id === editingId);
@@ -748,7 +726,8 @@
             localStorage.setItem('dx_sites', JSON.stringify(sites));
             renderTiles();
             closeModal();
-            showNotification('💾 工期・現調メモを保存しました');
+            syncSitesToCloudSilently(); // ★クラウド（案件管理表）にも自動同期
+            showNotification('💾 保存＆クラウド同期しました');
         }
     }
 
@@ -780,6 +759,7 @@
         site.updatedAt = Date.now();
         localStorage.setItem('dx_sites', JSON.stringify(sites));
         renderTiles();
+        syncSitesToCloudSilently(); // ★案件管理表へも同時同期
 
         const gasUrl = localStorage.getItem('dx_gas_url');
         const calId = localStorage.getItem('dx_calendar_id');
