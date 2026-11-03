@@ -371,8 +371,12 @@
         const today = new Date();
         const todayZero = new Date(today.getFullYear(), today.getMonth(), today.getDate());
 
-        // 完了・失注を除いた稼働系現場
-        const activePool = sites.filter(s => s.status !== 'complete' && s.status !== 'done' && s.status !== 'lost');
+        // 完了・失注を除き、「請求(billing)」も予定タグが無い限り重複計算から外す
+        const activePool = sites.filter(s => {
+            if (s.status === 'complete' || s.status === 'done' || s.status === 'lost') return false;
+            if (s.status === 'billing') return getSiteSchedules(s).length > 0;
+            return true;
+        });
 
         // ① 本日稼働中（または今日予定がある）現場のサマリーを作成
         const todayRunning = activePool.filter(s => {
@@ -407,32 +411,37 @@
         // ② 各現場にソート用の優先度スコアと直近日付を付与
         const enriched = sites.map(site => {
             const isDone = (site.status === 'complete' || site.status === 'done' || site.status === 'lost');
+            const isBilling = (site.status === 'billing');
             const stDate = parseYMD(site.start);
             const edDate = parseYMD(site.end) || stDate;
             const siteScheds = getSiteSchedules(site);
-            const nextSchedTime = siteScheds.length > 0 ? siteScheds[0].targetTime : null;
+            const hasPinSchedule = siteScheds.length > 0;
+            const nextSchedTime = hasPinSchedule ? siteScheds[0].targetTime : null;
             const workDaysDate = parseWorkDaysDate(site.workDays);
 
-            // 今まさに工期中かどうか
-            const isCurrentlyRunning = !isDone && stDate && stDate <= todayZero && edDate >= todayZero;
+            // 請求中の現場は、現場自体は完工しているため「現在着工中(グループ1)」には入れない
+            const isCurrentlyRunning = !isDone && !isBilling && stDate && stDate <= todayZero && edDate >= todayZero;
 
-            // ソート用の基準日時（日報の【予定】、開始日、現調予定日のうち最も早い未来・直近の日付）
+            // ソート用の基準日時
+            // ※「請求」ステータスの場合は過去の着工日を無視し、予定タグ(nextSchedTime)のみを基準にする
             let candidates = [];
             if (nextSchedTime) candidates.push(nextSchedTime);
-            if (stDate) candidates.push(stDate.getTime());
-            if (workDaysDate) candidates.push(workDaysDate.getTime());
+            if (!isBilling && stDate) candidates.push(stDate.getTime());
+            if (!isBilling && workDaysDate) candidates.push(workDaysDate.getTime());
 
             const earliestTime = candidates.length > 0 ? Math.min(...candidates) : null;
 
-            // グループ分け: 1=現在着工中, 2=予定・工期あり(日付順), 3=日程未定, 4=完了・失注
+            // グループ分け: 1=現在着工中, 2=予定・工期あり(日付順), 3=日程未定, 4=完了・請求(予定なし)・失注
             let group = 3;
-            if (isDone) group = 4;
+            if (isDone || (isBilling && !hasPinSchedule)) group = 4;
             else if (isCurrentlyRunning) group = 1;
             else if (earliestTime !== null) group = 2;
 
             return {
                 site,
                 isDone,
+                isBilling,
+                hasPinSchedule,
                 stDate,
                 edDate,
                 siteScheds,
@@ -445,12 +454,21 @@
 
         // ③ フィルター適用
         let filtered = enriched.filter(item => {
-            if (currentFilter === 'upcoming') return !item.isDone;
-            if (currentFilter === 'activeOnly') return !item.isDone && (item.site.status === 'contract' || item.site.status === 'active' || item.isCurrentlyRunning);
-            if (currentFilter === 'nodate') return !item.isDone && item.group === 3;
-            return true; // 'all'
+            if (currentFilter === 'upcoming') {
+                // 完了・失注は除外。「請求」は予定タグ(hasPinSchedule)がある時だけ表示！
+                if (item.isDone) return false;
+                if (item.isBilling && !item.hasPinSchedule) return false;
+                return true;
+            }
+            if (currentFilter === 'activeOnly') {
+                return !item.isDone && (item.site.status === 'contract' || item.site.status === 'active' || item.isCurrentlyRunning);
+            }
+            if (currentFilter === 'nodate') {
+                return !item.isDone && !item.isBilling && item.group === 3;
+            }
+            return true; // 'all'（完了や予定なしの請求現場もすべて表示）
         });
-
+        
         // ④ ソート（着工中 ➔ 日報予定・着工日が近い順 ➔ 未定 ➔ 完了）
         filtered.sort((a, b) => {
             if (a.group !== b.group) return a.group - b.group;
