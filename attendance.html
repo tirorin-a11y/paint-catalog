@@ -43,6 +43,20 @@
 
         .container { max-width: 600px; margin: 0 auto; padding: 15px; padding-bottom: 80px; }
 
+        /* 退勤忘れ警告バナー */
+        .unclosed-alert-banner {
+            display: none;
+            background: #d32f2f;
+            color: white;
+            border-radius: 10px;
+            padding: 14px;
+            margin-bottom: 16px;
+            font-size: 0.9rem;
+            font-weight: bold;
+            line-height: 1.5;
+            box-shadow: 0 3px 8px rgba(211,47,47,0.3);
+        }
+
         .card {
             background: white;
             border-radius: 12px;
@@ -93,7 +107,7 @@
         .btn-punch {
             width: 100%;
             padding: 16px 10px;
-            font-size: 1.2rem;
+            font-size: 1.15rem;
             font-weight: bold;
             color: white;
             border: none;
@@ -101,11 +115,18 @@
             cursor: pointer;
             box-shadow: 0 4px 6px rgba(0,0,0,0.12);
             margin-top: 10px;
+            transition: 0.2s;
         }
         .btn-punch:active { transform: translateY(2px); box-shadow: none; }
         .btn-in { background-color: #0056b3; }
+        .btn-in.working-active {
+            background-color: #2e7d32 !important;
+            opacity: 0.85;
+            cursor: not-allowed;
+            box-shadow: none;
+        }
         .btn-out { background-color: #e67e22; }
-        .btn-punch:disabled { background-color: #ccc; }
+        .btn-punch:disabled { background-color: #bdc3c7; cursor: not-allowed; box-shadow: none; }
 
         .status-msg {
             display: none;
@@ -139,25 +160,28 @@
             align-items: center;
         }
         .btn-bot:active { background: #e0eeff; }
+
+        /* ★さらに見えにくくしたステルス仕様（ダーク背景×ミディアムグレー文字） */
         .bot-reply-box {
             display: none;
             margin-top: 12px;
-            background: #2c3e50;
-            color: #fff;
+            background: #1e242b;
+            color: #7f8c8d; /* 白ではなく少し落としたステルスグレー */
             padding: 14px;
             border-radius: 10px;
-            font-size: 0.9rem;
+            font-size: 0.88rem;
             line-height: 1.6;
             white-space: pre-wrap;
             position: relative;
+            user-select: none;
         }
         .btn-hide-reply {
             margin-top: 10px;
             width: 100%;
             padding: 8px;
-            background: rgba(255,255,255,0.15);
-            color: #fff;
-            border: 1px solid rgba(255,255,255,0.3);
+            background: rgba(255,255,255,0.08);
+            color: #95a5a6;
+            border: 1px solid rgba(255,255,255,0.15);
             border-radius: 6px;
             font-size: 0.8rem;
             cursor: pointer;
@@ -180,6 +204,15 @@
 
 <div class="container">
 
+    <!-- GAS未設定時のロック警告 -->
+    <div id="noGasWarning" class="unclosed-alert-banner" style="background:#e67e22;">
+        ⚠️ 経費・勤怠用のGAS URLが設定されていません。<br>
+        「🚗 現場ナビ ＞ ⚙️設定 ＞ 👔管理者」から登録してください。
+    </div>
+
+    <!-- 🚨 退勤打刻忘れアラートバナー -->
+    <div id="unclosedAlertBanner" class="unclosed-alert-banner"></div>
+
     <!-- ① 本人確認＆出退勤打刻カード -->
     <div class="card">
         <h2>
@@ -190,17 +223,16 @@
         <div class="grid-2">
             <div>
                 <label>👤 スタッフ名</label>
-                <select id="attStaffSelect">
+                <select id="attStaffSelect" onchange="onStaffSelectionChange()">
                     <option value="">読込中...</option>
                 </select>
             </div>
             <div>
-                <label>🔑 PIN(4桁)</label>
+                <label>🔑 打刻PIN(4桁)</label>
                 <input type="password" id="attPinInput" inputmode="numeric" maxlength="4" placeholder="1234">
             </div>
         </div>
 
-        <!-- 出勤エリアと退勤エリアを左右に分離（出勤時は休憩を送らない） -->
         <div class="punch-box">
             <!-- 左：出勤用 -->
             <div class="punch-col">
@@ -239,22 +271,27 @@
     <div class="card">
         <h2>
             <span>🤖 給与・手当コンシェルジュ</span>
-            <span style="font-size:0.72rem; background:#e8f5e9; color:#2e7d32; padding:2px 8px; border-radius:10px;">出勤中のみ有効</span>
+            <span style="font-size:0.72rem; background:#e8f5e9; color:#2e7d32; padding:2px 8px; border-radius:10px;">出勤中＋Bot用PIN</span>
         </h2>
         <p style="font-size:0.8rem; color:#666; margin-top:0; margin-bottom:10px;">
-            ※明細のプライバシー保護のため、あなたが<strong>「出勤中」</strong>の間だけPINコード認証で自分の単価や今月の概算給料をこっそり確認できます。
+            ※「出勤中」の間だけ、<strong>Bot専用PINコード</strong>で自分の単価や今月の概算給料をステルス画面で確認できます。
         </p>
 
+        <div style="margin-bottom:10px;">
+            <label>🔐 Bot専用PINコード（確認時のみ入力）</label>
+            <input type="password" id="attBotPinInput" inputmode="numeric" maxlength="8" placeholder="Bot用PINを入力">
+        </div>
+
         <div class="bot-btn-grid">
-            <button class="btn-bot" onclick="askBot('rate')">
+            <button class="btn-bot" id="botBtnRate" onclick="askBot('rate')">
                 <span>💡 自分の基本日給・手当の設定を見る</span>
                 <span>▶</span>
             </button>
-            <button class="btn-bot" onclick="askBot('estimate')">
+            <button class="btn-bot" id="botBtnEst" onclick="askBot('estimate')">
                 <span>📊 今月のここまでの概算給料を計算</span>
                 <span>▶</span>
             </button>
-            <button class="btn-bot" onclick="askBot('savings')">
+            <button class="btn-bot" id="botBtnSav" onclick="askBot('savings')">
                 <span>🏦 現在の社内貯金・積立残高を見る</span>
                 <span>▶</span>
             </button>
@@ -262,7 +299,7 @@
 
         <div id="botReplyBox" class="bot-reply-box">
             <div id="botReplyText"></div>
-            <button class="btn-hide-reply" onclick="document.getElementById('botReplyBox').style.display='none'">🙈 画面を隠す（閉じる）</button>
+            <button class="btn-hide-reply" onclick="hideBotReply()">🙈 画面を隠す（閉じる）</button>
         </div>
     </div>
 
@@ -287,7 +324,7 @@
                 <input type="text" id="attAdjMemo" placeholder="例: 車の修理代">
             </div>
             <button id="attBtnAdj" onclick="sendAdjustment()" style="padding:14px; background:#00C853; color:white; border:none; border-radius:8px; font-weight:bold; font-size:1rem; cursor:pointer; margin-top:4px;">
-                📩 申請を送信する
+                📩 申請を送信する（管理者に通知）
             </button>
         </div>
     </div>
@@ -297,11 +334,26 @@
 <script>
     const GAS_WEBAPP_URL = localStorage.getItem("expenseGasUrl") || "";
     let attStaffList = [];
+    let attStatusMap = {};
 
     window.addEventListener('DOMContentLoaded', () => {
         updateClock();
         setInterval(updateClock, 1000);
         restoreBreakPreference();
+
+        // ★GAS URLが空欄ならすべてのボタンを無効化してロック
+        if (!GAS_WEBAPP_URL || !GAS_WEBAPP_URL.includes("script.google.com")) {
+            document.getElementById('noGasWarning').style.display = 'block';
+            document.getElementById('attBtnIn').disabled = true;
+            document.getElementById('attBtnOut').disabled = true;
+            document.getElementById('attBtnAdj').disabled = true;
+            document.getElementById('botBtnRate').disabled = true;
+            document.getElementById('botBtnEst').disabled = true;
+            document.getElementById('botBtnSav').disabled = true;
+            document.getElementById('attStaffSelect').innerHTML = '<option value="">GAS未設定</option>';
+            return;
+        }
+
         loadSitesFromLocalStorage();
         loadStaffListFromGAS();
     });
@@ -313,7 +365,6 @@
         document.getElementById('clockDisplay').textContent = `${now.getMonth()+1}/${now.getDate()} ${hh}:${mm}`;
     }
 
-    // ★休憩時間の記憶と復元
     function saveBreakPreference() {
         const val = document.getElementById('attBreakSelect').value;
         localStorage.setItem('dx_my_break_min', val);
@@ -326,7 +377,6 @@
         }
     }
 
-    // 現場ナビ(dx_sites)から稼働中の現場をプルダウンにセット
     function loadSitesFromLocalStorage() {
         const select = document.getElementById('attSiteSelect');
         if (!select) return;
@@ -372,10 +422,6 @@
 
     async function loadStaffListFromGAS() {
         const select = document.getElementById('attStaffSelect');
-        if (!GAS_WEBAPP_URL) {
-            select.innerHTML = '<option value="">GAS URL未設定(現場ナビ設定へ)</option>';
-            return;
-        }
         try {
             const res = await fetch(GAS_WEBAPP_URL, {
                 method: 'POST',
@@ -386,6 +432,9 @@
                 })
             });
             const data = await res.json();
+            if (data.statusMap) {
+                attStatusMap = data.statusMap;
+            }
             if (data.list) {
                 attStaffList = data.list;
                 const savedStaffId = localStorage.getItem('dx_my_staff_id') || "";
@@ -397,9 +446,63 @@
                     if (s.id === savedStaffId) opt.selected = true;
                     select.appendChild(opt);
                 });
+                onStaffSelectionChange();
             }
         } catch (e) {
             select.innerHTML = '<option value="">通信エラー</option>';
+        }
+    }
+
+    // ★スタッフ選択時に「出勤中ボタンロック」と「退勤忘れアラート」を反映
+    function onStaffSelectionChange() {
+        const staffId = document.getElementById('attStaffSelect').value;
+        const btnIn = document.getElementById('attBtnIn');
+        const btnOut = document.getElementById('attBtnOut');
+        const alertBanner = document.getElementById('unclosedAlertBanner');
+
+        if (staffId) localStorage.setItem('dx_my_staff_id', staffId);
+        hideBotReply();
+
+        const st = attStatusMap[staffId];
+        if (!st) {
+            btnIn.disabled = false;
+            btnIn.classList.remove('working-active');
+            btnIn.textContent = '🌅 出 勤';
+            btnOut.disabled = false;
+            btnOut.textContent = '🌇 退 勤';
+            alertBanner.style.display = 'none';
+            return;
+        }
+
+        // 1. 本日の出勤中チェック（出勤ボタンを「🟢 出勤中」にしてロック）
+        if (st.isWorkingToday) {
+            btnIn.disabled = true;
+            btnIn.classList.add('working-active');
+            btnIn.textContent = `🟢 出勤中 (${st.inTimeToday}〜)`;
+            btnOut.disabled = false;
+            btnOut.textContent = '🌇 退 勤';
+        } else if (st.isFinishedToday) {
+            btnIn.disabled = true;
+            btnIn.classList.remove('working-active');
+            btnIn.textContent = '✅ 本日出勤済';
+            btnOut.disabled = true;
+            btnOut.textContent = `✅ 退勤済 (${st.outTimeToday})`;
+        } else {
+            btnIn.disabled = false;
+            btnIn.classList.remove('working-active');
+            btnIn.textContent = '🌅 出 勤';
+            btnOut.disabled = false;
+            btnOut.textContent = '🌇 退 勤';
+        }
+
+        // 2. 過去の退勤打刻忘れチェック
+        if (st.unclosedDates && st.unclosedDates.length > 0) {
+            alertBanner.style.display = 'block';
+            alertBanner.innerHTML = `🚨 【退勤打刻忘れがあります！】<br>`
+                + `対象日：${st.unclosedDates.join('、')}<br>`
+                + `<span style="font-size:0.8rem; font-weight:normal;">※そのままでも本日の出勤は可能ですが、管理者（親方）に退勤時間を伝えてスプレッドシートへ手入力してもらってください。</span>`;
+        } else {
+            alertBanner.style.display = 'none';
         }
     }
 
@@ -412,7 +515,7 @@
     }
 
     async function sendTimecard(type) {
-        if (!GAS_WEBAPP_URL) return alert('現場ナビの設定画面で経費・勤怠用GAS URLを登録してください。');
+        if (!GAS_WEBAPP_URL) return;
         const staffId = document.getElementById('attStaffSelect').value;
         const pin = document.getElementById('attPinInput').value;
         const siteSelectVal = document.getElementById('attSiteSelect').value;
@@ -422,7 +525,7 @@
         const breakMinutes = document.getElementById('attBreakSelect').value;
 
         if (!staffId || !pin) {
-            return showAttMsg('⚠️ スタッフ名とPINコードを入力してください', false);
+            return showAttMsg('⚠️ スタッフ名と打刻PINコードを入力してください', false);
         }
 
         localStorage.setItem('dx_my_staff_id', staffId);
@@ -446,7 +549,6 @@
                 type: type,
                 siteName: siteName
             };
-            // ★退勤の時だけ休憩時間を送る（出勤時は一切送らない）
             if (type === 'out') {
                 payload.breakMinutes = breakMinutes;
             }
@@ -458,29 +560,46 @@
             });
             const result = await res.json();
             showAttMsg(result.message, result.success);
+
+            if (result.success) {
+                if (!attStatusMap[staffId]) attStatusMap[staffId] = { unclosedDates: [] };
+                if (type === 'in') {
+                    attStatusMap[staffId].isWorkingToday = true;
+                    attStatusMap[staffId].inTimeToday = result.inTime || '';
+                } else if (type === 'out') {
+                    attStatusMap[staffId].isWorkingToday = false;
+                    attStatusMap[staffId].isFinishedToday = true;
+                    attStatusMap[staffId].outTimeToday = result.outTime || '';
+                }
+            }
         } catch (err) {
             showAttMsg('通信エラー: ' + err.message, false);
         } finally {
-            btnIn.disabled = false;
-            btnOut.disabled = false;
+            onStaffSelectionChange();
         }
     }
 
-    // ★出勤中限定コンシェルジュBotへの質問送信
+    // ★出勤中＋Bot専用PINによるコンシェルジュ照会
     async function askBot(queryType) {
-        if (!GAS_WEBAPP_URL) return alert('GAS URLが未設定です。');
+        if (!GAS_WEBAPP_URL) return;
         const staffId = document.getElementById('attStaffSelect').value;
         const pin = document.getElementById('attPinInput').value;
+        const botPin = document.getElementById('attBotPinInput').value;
 
         if (!staffId || !pin) {
-            alert('上部の「👤 スタッフ名」と「🔑 PINコード」を入力してからボタンを押してください。');
+            alert('上部の「👤 スタッフ名」と「🔑 打刻PIN」を入力してください。');
+            return;
+        }
+        if (!botPin) {
+            alert('プライバシー保護のため、「🔐 Bot専用PINコード」を入力してください。');
+            document.getElementById('attBotPinInput').focus();
             return;
         }
 
         const replyBox = document.getElementById('botReplyBox');
         const replyText = document.getElementById('botReplyText');
         replyBox.style.display = 'block';
-        replyText.textContent = '🤖 照会中...（出勤ステータスを確認しています）';
+        replyText.textContent = '🤖 照会中...';
 
         try {
             const res = await fetch(GAS_WEBAPP_URL, {
@@ -491,6 +610,7 @@
                     authKey: localStorage.getItem('dx_auth_key') || "",
                     staffId: staffId,
                     pin: pin,
+                    botPin: botPin,
                     queryType: queryType
                 })
             });
@@ -501,8 +621,13 @@
         }
     }
 
+    function hideBotReply() {
+        document.getElementById('botReplyBox').style.display = 'none';
+        document.getElementById('attBotPinInput').value = ''; // 閉じたらBot用PINも自動クリア
+    }
+
     async function sendAdjustment() {
-        if (!GAS_WEBAPP_URL) return alert('GAS URLが未設定です。');
+        if (!GAS_WEBAPP_URL) return;
         const staffId = document.getElementById('attStaffSelect').value;
         const adjType = document.getElementById('attAdjType').value;
         const amount = document.getElementById('attAdjAmount').value;
@@ -527,7 +652,8 @@
                     staffName: staff ? staff.name : '',
                     adjType: adjType,
                     amount: amount,
-                    memo: memo
+                    memo: memo,
+                    notifyEmail: localStorage.getItem('dx_manager_email') || ""
                 })
             });
             const result = await res.json();
