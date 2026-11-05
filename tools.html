@@ -1175,16 +1175,16 @@ window.addEventListener('DOMContentLoaded', () => {
         } 
         
         reportHistory[targetId].forEach((item, index) => { 
-            let btnText = "📤 未提出（タップで送信）"; 
-            let btnStyle = "background: #fff3e0 !important; color: #e65100 !important; border: 2px solid #ff9800 !important;";
+            // ★自動送信時代に合わせてクラウド送信ボタンの文字と幅をコンパクト化
+            let btnText = "📤 未送信"; 
+            let btnStyle = "background: #fff3e0 !important; color: #e65100 !important; border: 2px solid #ff9800 !important; flex: none; width: auto; padding: 6px 10px; font-size: 0.75rem;";
             
             if (item.submitted) { 
-                btnText = "✅ クラウド反映済"; 
-                btnStyle = "background: #27ae60 !important; color: white !important; border-color: #27ae60 !important;"; 
+                btnText = "✅ 済"; 
+                btnStyle = "background: #eceff1 !important; color: #607d8b !important; border: 1px solid #cfd8dc !important; flex: none; width: auto; padding: 6px 10px; font-size: 0.75rem; font-weight: bold;"; 
             } else if (item.sending) {
-                // 前回画面を早く閉じて中断された可能性がある場合、または現在通信中の場合
-                btnText = "⚠️ 未完了・再送する"; 
-                btnStyle = "background: #ffebee !important; color: #c62828 !important; border: 2px solid #e74c3c !important; font-weight:bold;";
+                btnText = "⚠️ 再送"; 
+                btnStyle = "background: #ffebee !important; color: #c62828 !important; border: 2px solid #e74c3c !important; font-weight: bold; flex: none; width: auto; padding: 6px 10px; font-size: 0.75rem;";
             }
             
             let typeBadge = "";
@@ -1197,9 +1197,87 @@ window.addEventListener('DOMContentLoaded', () => {
                 typeBadge = `<span style="background:#2ecc71; color:white; padding:2px 6px; border-radius:4px; font-size:0.75rem; margin-left:8px;">🟢 通常</span>`;
             }
 
-            const html = `<div class="history-card"><div class="history-header"><span class="history-date">📅 ${item.date}${typeBadge}</span></div><div class="history-content">${item.content}</div><div class="history-actions"><button class="btn-resend" style="${btnStyle}" onclick="resendReport(${index}, event)">${btnText}</button><button class="btn-delete-hist" onclick="deleteReport(${index}, event)">削除</button></div></div>`;
+            // ★ボタン配置：左端に「🗑️削除」、中央に「✅済(再送)」、右端にメインの「📋引用コピー」
+            const html = `
+                <div class="history-card">
+                    <div class="history-header">
+                        <span class="history-date">📅 ${item.date}${typeBadge}</span>
+                    </div>
+                    <div class="history-content">${item.content}</div>
+                    <div class="history-actions" style="display:flex; justify-content:space-between; align-items:center; gap:6px;">
+                        <button class="btn-delete-hist" style="width:auto; padding:6px 10px; font-size:0.75rem; border-radius:6px;" onclick="deleteReport(${index}, event)">🗑️ 削除</button>
+                        <div style="display:flex; gap:6px; margin-left:auto;">
+                            <button class="btn-resend" style="${btnStyle}" onclick="resendReport(${index}, event)">${btnText}</button>
+                            <button type="button" style="background:#e3f2fd; color:#0d47a1; border:1px solid #90caf9; padding:6px 14px; border-radius:6px; font-size:0.82rem; font-weight:bold; cursor:pointer; width:auto;" onclick="copyReportToInput(${index})">📋 コピー</button>
+                        </div>
+                    </div>
+                </div>`;
             listEl.insertAdjacentHTML('beforeend', html); 
         }); 
+    }
+
+    // ★新設：履歴から「黄色いメモ欄への文章コピー」＆「上のタグ選択プルダウンへの自動セット」を同時に行う関数
+    function copyReportToInput(index) {
+        const targetId = siteId || 'preview';
+        const item = reportHistory[targetId] && reportHistory[targetId][index];
+        if (!item || !item.content) return;
+
+        // 1. 黄色い日報テキスト欄（reportText）に履歴の文章を挿入
+        const reportInput = document.getElementById('reportText');
+        if (reportInput) {
+            const cur = reportInput.value.trim();
+            reportInput.value = cur ? (cur + '\n' + item.content) : item.content;
+            if (typeof calculateDailyTotalFromHistory === 'function') {
+                calculateDailyTotalFromHistory();
+            }
+        }
+
+        // 2. もし履歴の中に「【コード/作業名】材料名」が含まれていれば、上のプルダウン3つ（tagCategory / tagTask / tagMaterial）にも自動セット！
+        const tagMatch = item.content.match(/【([^】]+)】([^\s\[]*)/);
+        const savedDictStr = localStorage.getItem('dx_tag_dictionary');
+        if (tagMatch && savedDictStr) {
+            try {
+                const dict = JSON.parse(savedDictStr);
+                const taskKey = tagMatch[1].trim(); // 例: "W-TOP/木部上塗り"
+                const matName = (tagMatch[2] || '').trim(); // 例: "ガードラックpro（4kg）"
+
+                // 辞書（dict[部位][作業キー]）の中から該当する「部位（cat）」を探し出す
+                let foundCat = "";
+                for (let cat in dict) {
+                    if (dict[cat] && dict[cat][taskKey] !== undefined) {
+                        foundCat = cat;
+                        break;
+                    }
+                }
+
+                const tagCategory = document.getElementById('tagCategory');
+                const tagTask = document.getElementById('tagTask');
+                const tagMaterial = document.getElementById('tagMaterial');
+
+                if (foundCat && tagCategory) {
+                    tagCategory.value = foundCat;
+                    tagCategory.dispatchEvent(new Event('change')); // 作業プルダウンを展開
+
+                    if (tagTask) {
+                        tagTask.value = taskKey;
+                        tagTask.dispatchEvent(new Event('change')); // 材料プルダウンを展開
+
+                        if (tagMaterial && matName) {
+                            tagMaterial.value = matName;
+                        }
+                    }
+                }
+            } catch(e) {
+                console.error("タグ復元エラー:", e);
+            }
+        }
+
+        // 3. 入力欄までスッとスクロールしてすぐ編集できるようにする
+        if (reportInput) {
+            reportInput.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            setTimeout(() => reportInput.focus(), 300);
+        }
+        if (navigator.vibrate) navigator.vibrate(40);
     }
 
     // --- クラウドから履歴を同期する機能（未送信データの保護 ＆ 同一時刻の行結合版！） ---
