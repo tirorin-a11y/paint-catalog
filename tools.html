@@ -1084,6 +1084,84 @@ window.addEventListener('DOMContentLoaded', () => {
         textArea.addEventListener('input', calculateDailyTotalFromHistory);
     }
 });
+
+// --- 日報機能（確実送信・未送信検知・時間ズレ完全防止版！） ---// ==============================================================
+// 🔄 日報テキスト内の「【予定】YYYY/MM/DD HH:MM 内容」から予定を復元・同期する関数
+// ==============================================================
+    function syncSchedulesFromReportText(askConfirm = false) {
+        const reportEl = document.getElementById('reportText');
+        if (!reportEl) return 0;
+
+        const text = reportEl.value;
+        // 「【予定】2026/11/10 09:00 現調（メモ）」のような行をすべて抽出
+        const regex = /【予定】\s*(\d{4}[\/\-]\d{1,2}[\/\-]\d{1,2})\s+(\d{1,2}:\d{2})\s+(.+)/g;
+        let match;
+        const foundList = [];
+
+        const now = Date.now();
+        while ((match = regex.exec(text)) !== null) {
+            const rawDate = match[1].replace(/\//g, '-');
+            // 月・日を2桁に整形 (例: 2026-11-5 -> 2026-11-05)
+            const dParts = rawDate.split('-');
+            const ymd = `${dParts[0]}-${('0' + dParts[1]).slice(-2)}-${('0' + dParts[2]).slice(-2)}`;
+            const hm = ('0' + match[2].trim()).slice(-5);
+            const detail = match[3].trim();
+
+            const targetTimeMs = new Date(`${ymd}T${hm}:00`).getTime();
+            // 未来（または過去12時間以内）の予定のみ対象
+            if (!isNaN(targetTimeMs) && targetTimeMs > now - (12 * 3600 * 1000)) {
+                foundList.push({
+                    dateStr: `${ymd.replace(/-/g, '/')} ${hm}`,
+                    targetTime: targetTimeMs,
+                    detail: detail
+                });
+            }
+        }
+
+        if (foundList.length === 0) return 0;
+
+        let schedules = JSON.parse(localStorage.getItem('dx_schedules') || '[]');
+        const sId = (typeof currentSite !== 'undefined' && currentSite) ? currentSite.id : (typeof siteId !== 'undefined' ? siteId : '');
+        const sName = (typeof currentSite !== 'undefined' && currentSite) ? currentSite.name : '現場';
+
+        // まだ dx_schedules に存在しない予定だけをピックアップ
+        const missing = foundList.filter(f => {
+            return !schedules.some(sc =>
+                String(sc.siteId) === String(sId) &&
+                sc.dateStr === f.dateStr &&
+                sc.detail === f.detail
+            );
+        });
+
+        if (missing.length === 0) return 0;
+
+        // コピーボタン等から呼ばれた場合は確認ダイアログを出す
+        if (askConfirm) {
+            const preview = missing.map(m => `・${m.dateStr} ${m.detail}`).join('\n');
+            if (!confirm(`🔔 日報内に未登録の【予定】が ${missing.length}件 見つかりました。\n工程管理・アラートに再登録（復元）しますか？\n\n${preview}`)) {
+                return 0;
+            }
+        }
+
+        missing.forEach((m, idx) => {
+            schedules.push({
+                id: 'sch_' + Date.now() + '_' + idx,
+                siteId: sId,
+                siteName: sName,
+                dateStr: m.dateStr,
+                targetTime: m.targetTime,
+                detail: m.detail,
+                notified1d: false,
+                notified1h: false,
+                dismissed1d: false,
+                dismissed1h: false
+            });
+        });
+
+        localStorage.setItem('dx_schedules', JSON.stringify(schedules));
+        if (typeof checkUpcomingSchedules === 'function') checkUpcomingSchedules();
+        return missing.length;
+    }   
     
     /* --- 日報機能（確実送信・未送信検知・時間ズレ完全防止版！） --- */
     function saveReportLocal() { 
@@ -1091,6 +1169,10 @@ window.addEventListener('DOMContentLoaded', () => {
         const rType = document.getElementById('reportType').value;
         
         if(!text || !text.trim()) { alert('日報の内容が空です'); return; }
+
+        // ★ここに追加：入力欄を空にする前に【予定】を自動スキャンして登録（確認なし）
+        syncSchedulesFromReportText(false);
+
         const targetId = siteId || 'preview';
         if (!reportHistory[targetId]) { reportHistory[targetId] = []; } 
         const now = new Date();
@@ -1230,6 +1312,8 @@ window.addEventListener('DOMContentLoaded', () => {
             if (typeof calculateDailyTotalFromHistory === 'function') {
                 calculateDailyTotalFromHistory();
             }
+            // ★ここに追加：未登録の未来の【予定】があれば「再登録しますか？」とポップアップで確認！
+            syncSchedulesFromReportText(true);
         }
 
         // 2. もし履歴の中に「【コード/作業名】材料名」が含まれていれば、上のプルダウン3つ（tagCategory / tagTask / tagMaterial）にも自動セット！
@@ -1338,6 +1422,11 @@ window.addEventListener('DOMContentLoaded', () => {
                 localStorage.setItem('dx_reports', JSON.stringify(reportHistory));
                 renderReportHistory();
                 if(typeof calculateDailyTotalFromHistory === 'function') calculateDailyTotalFromHistory();
+                // ★ここに追加：クラウドから同期した履歴の中に未登録の未来の【予定】があれば一括復元！
+                const tempText = document.getElementById('reportText').value;
+                document.getElementById('reportText').value = reportHistory[targetId].map(r => r.content).join('\n');
+                syncSchedulesFromReportText(true);
+                document.getElementById('reportText').value = tempText;
             } else {
                 throw new Error("サーバーエラー");
             }
@@ -3404,10 +3493,6 @@ function initTagGenerator(dict) {
 }
 </script>
 
-
-
-
-</script>
 <script>
 // ==============================================================
 // 📅 予定ピッカー ＆ 1日前・1時間前アラート機能
