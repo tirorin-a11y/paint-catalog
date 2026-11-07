@@ -189,22 +189,43 @@
 
             
 
-            <section class="tool-section" style="margin-top: 0; border: 2px dashed #e67e22; background-color: #ffffff; box-shadow: none; margin-bottom: 0;">
-                <h2 style="color: #e67e22; font-size: 1.2rem; display: flex; align-items: center; gap: 8px; border-bottom: 1px dashed #e67e22;">
+            <!-- ==========================================
+            🏦 会計ギア（新設セクション）
+            ========================================== -->
+        <section class="tool-section" style="margin-top: 20px; border: 2px solid #e67e22; background-color: #fffaf5; border-radius: 12px; padding: 15px; box-shadow: 0 4px 10px rgba(0,0,0,0.06);">
+            <h2 style="color: #d35400; font-size: 1.25rem; margin-top: 0; margin-bottom: 12px; display: flex; align-items: center; gap: 8px; border-bottom: 2px solid #e67e22; padding-bottom: 8px;">
+                🏦 会計ギア
+            </h2>
+
+            <!-- 📊 スプレッドシート直通ショートカット（2列ボタン） -->
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 15px;">
+                <a href="【ここに経費管理表のURL】" target="_blank" rel="noopener"
+                style="display: flex; align-items: center; justify-content: center; gap: 6px; padding: 12px 8px; background: #2c3e50; color: #ffffff; text-decoration: none; border-radius: 8px; font-weight: bold; font-size: 0.95rem; box-shadow: 0 2px 4px rgba(0,0,0,0.15); text-align: center;">
+                    📋 経費管理表
+                </a>
+                <a href="【ここに確定申告集計シートのURL】" target="_blank" rel="noopener"
+                style="display: flex; align-items: center; justify-content: center; gap: 6px; padding: 12px 8px; background: #16a085; color: #ffffff; text-decoration: none; border-radius: 8px; font-weight: bold; font-size: 0.95rem; box-shadow: 0 2px 4px rgba(0,0,0,0.15); text-align: center;">
+                    📊 確定申告集計
+                </a>
+            </div>
+
+            <!-- 🤖 AIレシート自動仕訳マシーン（本体） -->
+            <div style="border: 2px dashed #e67e22; background-color: #ffffff; border-radius: 10px; padding: 15px;">
+                <h3 style="color: #e67e22; font-size: 1.1rem; margin-top: 0; margin-bottom: 8px; display: flex; align-items: center; gap: 6px;">
                     🤖 AIレシート自動仕訳マシーン
-                </h2>
-                <p style="font-size: 12px; color: #666; margin-bottom: 15px;">
-                    ※カメラでレシートを撮影すると、AIが解析し、仕訳データ化します。（APIキー隠蔽・安全仕様）
+                </h3>
+                <p style="font-size: 12px; color: #666; margin-top: 0; margin-bottom: 12px;">
+                    ※レシート・請求書を撮影するとAIが解析し、過去履歴と照合して自動記帳します。
                 </p>
-                
+
                 <input type="file" accept="image/*" capture="environment" id="receiptFileInput" style="display: none;">
-                
+
                 <button id="cameraBtn" style="width: 100%; padding: 15px; background: #e67e22; color: white; border: none; border-radius: 8px; font-size: 1.1rem; font-weight: bold; cursor: pointer; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">
                     📸 レシート・納品書を撮影
                 </button>
 
                 <img id="receiptPreview" src="" style="max-width: 100%; height: auto; margin-top: 15px; border-radius: 8px; display: none; border: 1px solid #ccc;">
-                
+
                 <div id="receiptLoading" style="display: none; color: #0056b3; font-weight: bold; text-align: center; margin-top: 20px;">
                     <span style="font-size: 1.5rem;">⏳</span><br>GASの金庫へ転送＆AI解析中...<br>
                     <span style="font-size: 11px; font-weight: normal; color: #666;">（数秒かかります）</span>
@@ -215,7 +236,7 @@
                     <p style="margin: 8px 0; font-size: 1.1rem;">📅 日付: <strong id="resDate" style="color: #0056b3;"></strong></p>
                     <p style="margin: 8px 0; font-size: 1.1rem;">💰 金額: <strong id="resAmount" style="color: #d9534f; font-size: 1.3rem;"></strong> 円</p>
                     <p style="margin: 8px 0; font-size: 1.1rem;">🏬 店名: <strong id="resShop" style="color: #333;"></strong></p>
-                    
+
                     <div style="margin-top: 15px; padding-top: 10px; border-top: 1px dashed #ccc;">
                         <label style="font-size: 1rem; font-weight: bold; color: #e67e22;">💡 AI推測科目 (タップで変更可):</label><br>
                         <select id="resCategory" style="width: 100%; padding: 10px; margin-top: 5px; font-size: 1.1rem; border: 2px solid #e67e22; border-radius: 5px; background: #fffaf0;">
@@ -236,20 +257,21 @@
 
                 <div id="actionButtons" style="display: none; margin-top: 15px; flex-direction: column; gap: 10px;">
                     <button onclick="saveRecord('site')" style="padding:15px; background:#00C853; color:white; border:none; border-radius:8px; font-weight:bold; font-size:1.1rem; box-shadow: 0 4px 6px rgba(0,0,0,0.1); cursor:pointer;">
-                        🟩 現場の経費にする（材料・外注など）
+                        🟩 現場の経費にする（外注・現場専用材）
                     </button>
                     <button onclick="saveRecord('company')" style="padding:15px; background:#0056b3; color:white; border:none; border-radius:8px; font-weight:bold; font-size:1.1rem; box-shadow: 0 4px 6px rgba(0,0,0,0.1); cursor:pointer;">
-                        🟦 会社の共通経費にする（消耗品・ガソリン）
+                        🟦 会社の共通経費にする（問屋請求・燃料・消耗品）
                     </button>
                     <button onclick="saveRecord('personal')" style="padding:15px; background:#e67e22; color:white; border:none; border-radius:8px; font-weight:bold; font-size:1.1rem; box-shadow: 0 4px 6px rgba(0,0,0,0.1); cursor:pointer;">
-                        🟧 冬期配達の自腹（個人事業・免税）
+                        🟧 冬期配達の経費にする（配達事業用）
                     </button>
                 </div>
-                
+
                 <div id="saveLoading" style="display:none; text-align:center; color:#00C853; font-weight:bold; margin-top:15px;">
                     💾 スプレッドシートに記帳中...
                 </div>
-            </section>
+            </div>
+        </section>
         </div>
 
         <section class="tool-section">
