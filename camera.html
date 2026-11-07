@@ -61,23 +61,34 @@
         .mode-btn.active { background: #fff; color: #2c3e50; }
         .mode-btn.active-date { color: #e67e22; }
 
-        .preview-canvas-wrapper { display: flex; justify-content: center; align-items: center; width: 100%; max-width: 300px; }
-        #boardCanvas { width: 100%; height: auto; box-shadow: 0 4px 10px rgba(0,0,0,0.5); background: transparent; }
+        .preview-canvas-wrapper { display: flex; justify-content: center; align-items: center; width: 100%; max-width: 300px; min-height: 80px; }
+        #boardCanvas { width: 100%; height: auto; box-shadow: 0 4px 10px rgba(0,0,0,0.5); background: transparent; border-radius: 4px; }
 
-        /* 入力エリア（黒板・日付共通） */
-        .input-group-container { display: block; transition: opacity 0.3s; margin-bottom: 20px; }
+        /* 入力エリア */
+        .input-group-container { display: block; margin-bottom: 12px; }
         .input-group-container.hidden { display: none; }
 
-        label { margin-top: 15px; display: block; font-weight: bold; font-size: 0.9rem; color: #2c3e50; }
+        label { margin-top: 14px; display: block; font-weight: bold; font-size: 0.88rem; color: #2c3e50; }
         label:first-child { margin-top: 0; }
-        input[type="text"] { width: 100%; padding: 12px; margin-top: 5px; border: 1px solid #ccc; border-radius: 6px; font-size: 1rem; box-sizing: border-box; background: #f9f9f9; }
+        input[type="text"], input[type="date"] { width: 100%; padding: 10px 12px; margin-top: 5px; border: 1px solid #ccc; border-radius: 6px; font-size: 0.98rem; box-sizing: border-box; background: #f9f9f9; }
         
+        /* 日付変更バー（黒板・日付モード共通で使える超便利機能） */
+        .custom-date-bar {
+            display: flex; align-items: center; gap: 6px; background: #f4f6f9;
+            padding: 8px 10px; border-radius: 8px; border: 1px solid #dce1e7; margin-bottom: 12px;
+        }
+        .date-shift-btn {
+            background: #fff; border: 1px solid #ccc; border-radius: 6px; padding: 6px 10px;
+            font-weight: bold; font-size: 0.82rem; cursor: pointer; color: #2c3e50; flex-shrink: 0;
+        }
+        .date-shift-btn:active { background: #e2e6ea; }
+
         /* 黒板用ボタン類 */
         .process-btns { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 10px; margin-top: 5px; }
         .proc-btn { flex: 1; min-width: 70px; padding: 5px; font-size: 0.9rem; line-height: 1.2; background: #f0f0f0; border: 1px solid #ccc; border-radius: 6px; cursor: pointer; color: #555; font-weight: bold; display: flex; align-items: center; justify-content: center; text-align: center; height: 45px; position: relative; overflow: hidden; }
         .proc-btn.active { background: #2c3e50; color: white; border-color: #2c3e50; }
         
-        .custom-btn-area { border-top: 1px dashed #ddd; padding-top: 15px; margin-top: 15px; }
+        .custom-btn-area { border-top: 1px dashed #ddd; padding-top: 12px; margin-top: 12px; }
         .input-grid-cam { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; margin-top: 5px; }
         .cam-chip { background: #f0f0f0; border: 1px solid #ccc; border-radius: 6px; font-size: 0.8rem; height: 40px; display: flex; align-items: center; justify-content: center; cursor: pointer; position: relative; overflow: hidden; font-weight: bold; color: #555; user-select: none; padding: 0 2px; text-align: center; }
         .cam-chip.active { background: #2c3e50; color: white; border-color: #2c3e50; }
@@ -90,25 +101,17 @@
         .input-wrapper { display: flex; align-items: center; margin-top: 5px; gap: 5px; }
         .btn-clear-left { width: 44px; height: 44px; border-radius: 6px; border: 1px solid #ccc; background: #ffebee; color: #c62828; font-weight: bold; font-size: 1.2rem; cursor: pointer; flex-shrink: 0; }
 
-        /* 日付調整用コントローラー */
-        .date-adjust-row {
-            display: flex; align-items: center; justify-content: space-between;
-            background: #f9f9f9; padding: 10px; border-radius: 8px; margin-top: 5px; border: 1px solid #eee;
-        }
-        .date-val-display { font-size: 1.2rem; font-weight: bold; color: #333; width: 60px; text-align: center; }
-        .adj-btn {
-            width: 44px; height: 44px; border-radius: 50%; border: 1px solid #ccc; background: white;
-            font-size: 1.5rem; font-weight: bold; color: #555; cursor: pointer;
-            display: flex; justify-content: center; align-items: center; box-shadow: 0 2px 5px rgba(0,0,0,0.05);
-        }
-        .adj-btn:active { background: #eee; transform: scale(0.95); }
+        /* 日付スタイル選択チップ */
+        .date-style-btns { display: flex; gap: 8px; margin-top: 6px; }
+        .style-chip { flex: 1; padding: 10px 6px; border-radius: 6px; border: 2px solid #ddd; font-weight: bold; font-size: 0.85rem; text-align: center; cursor: pointer; }
+        .style-chip.active { border-color: #e67e22; box-shadow: 0 0 0 2px rgba(230,126,34,0.25); }
 
         /* フッターアクション */
-        .footer-actions { padding-top: 15px; border-top: 1px solid #eee; display: flex; gap: 10px; }
+        .footer-actions { padding-top: 15px; border-top: 1px solid #eee; display: flex; gap: 10px; align-items: center; }
         .btn-close { background-color: #95a5a6; color: white; padding: 14px; border: none; border-radius: 8px; font-weight: bold; cursor: pointer; flex: 1; }
         .save-btn { background-color: #00C853; color: white; padding: 14px; border: none; border-radius: 8px; font-weight: bold; cursor: pointer; flex: 2.2; font-size: 1.15rem; box-shadow: 0 4px 6px rgba(0,200,83,0.25); }
 
-        /* ★ブラッシュアップ：撮影後プレビュー＆合成画面 */
+        /* 撮影後プレビュー＆合成画面 */
         #photoPreviewArea {
             display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
             background: #111; z-index: 200; flex-direction: column; justify-content: space-between;
@@ -121,10 +124,9 @@
         #overlayBoard {
             position: absolute; top: 10px; left: 10px; width: 150px;
             cursor: grab; z-index: 210; touch-action: none; user-select: none; -webkit-user-drag: none;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.5);
         }
 
-        /* 下部ツールバー（位置・サイズ・透過・保存を1箇所に集約） */
+        /* 下部ツールバー */
         .preview-bottom-dock {
             background: #1a252f; color: white; padding: 10px 12px 20px 12px;
             border-top: 1px solid #34495e; z-index: 220; flex-shrink: 0;
@@ -151,9 +153,10 @@
             position: fixed; top: 65px; left: 50%; transform: translateX(-50%);
             background: rgba(0, 200, 83, 0.95); color: white; padding: 10px 20px; border-radius: 25px;
             font-weight: bold; font-size: 0.9rem; z-index: 400; display: none; box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+            white-space: nowrap;
         }
 
-        /* スライダーその他 */
+        /* 16方位スライダー */
         .slider-overlay { position: fixed; bottom: 100px; left: 50%; transform: translateX(-50%); width: 85%; max-width: 400px; background: rgba(44, 62, 80, 0.95); padding: 20px; border-radius: 15px; box-shadow: 0 10px 25px rgba(0,0,0,0.5); z-index: 300; display: none; text-align: center; color: white; backdrop-filter: blur(5px); }
         .slider-overlay.show { display: block; animation: popUp 0.2s ease-out; }
         @keyframes popUp { from { transform: translate(-50%, 20px); opacity: 0; } to { transform: translate(-50%, 0); opacity: 1; } }
@@ -173,7 +176,7 @@
     <h2 class="site-title">📸 電子黒板カメラ</h2>
     <label class="quick-save-toggle" title="ONにすると撮影後プレビューを省略し、前回位置に自動合成して即保存します">
         <input type="checkbox" id="instantSaveChk" onchange="toggleInstantSave(this.checked)">
-        <span>⚡ 連続撮影モード</span>
+        <span>⚡ 確認せず即保存</span>
     </label>
 </div>
 
@@ -183,54 +186,58 @@
     <div id="fixedTopArea">
         <div class="mode-switch-container">
             <button class="mode-btn active" onclick="switchMode('board')" id="btn-mode-board">📋 黒板</button>
-            <button class="mode-btn" onclick="switchMode('date')" id="btn-mode-date">📅 日付</button>
-            <button class="mode-btn" onclick="switchMode('datetime')" id="btn-mode-datetime">🕒 日時</button>
+            <button class="mode-btn" onclick="switchMode('date')" id="btn-mode-date">📅 日付のみ</button>
+            <button class="mode-btn" onclick="switchMode('datetime')" id="btn-mode-datetime">🕒 日時のみ</button>
         </div>
 
         <div class="preview-canvas-wrapper">
-            <!-- ★高解像度化：内部解像度を2倍(800x600)にして合成時の文字ボケを防止 -->
             <canvas id="boardCanvas" width="800" height="600"></canvas>
         </div>
     </div>
 
     <div id="scrollableInputArea">
+        <!-- ★新機能：印字する日付の調整バー（前日・翌日・今日リセット対応） -->
+        <div class="custom-date-bar">
+            <span style="font-size:0.82rem; font-weight:bold; color:#555; flex-shrink:0;">📅 印字日:</span>
+            <button class="date-shift-btn" onclick="shiftCustomDate(-1)">◀前日</button>
+            <input type="date" id="customDateInput" style="margin:0; padding:6px 8px; font-size:0.9rem; font-weight:bold;" onchange="drawBoard()">
+            <button class="date-shift-btn" onclick="shiftCustomDate(1)">翌日▶</button>
+            <button class="date-shift-btn" style="background:#e8f5e9; color:#2e7d32; border-color:#a5d6a7;" onclick="resetCustomDate()">今日</button>
+        </div>
+
+        <!-- 日付・日時モード専用のデザイン切替エリア -->
+        <div id="dateInputGroup" class="input-group-container hidden">
+            <label>スタンプの見た目（背景・文字色）</label>
+            <div class="date-style-btns">
+                <div class="style-chip active" id="dstyle-orange" style="background:#222; color:#ff9f43;" onclick="setDateStyle('orange')">🟧 デジカメ風</div>
+                <div class="style-chip" id="dstyle-white" style="background:#333; color:#ffffff;" onclick="setDateStyle('white')">⬜ 白文字＋黒縁</div>
+                <div class="style-chip" id="dstyle-badge" style="background:#111; color:#fff;" onclick="setDateStyle('badge')">⬛ 黒ラベル(見やすい)</div>
+            </div>
+            <label style="margin-top:10px; display:flex; align-items:center; gap:6px; font-weight:normal; cursor:pointer;">
+                <input type="checkbox" id="dateShowLocChk" onchange="toggleDateShowLoc(this.checked)" style="width:18px; height:18px; accent-color:#e67e22;">
+                <span style="font-size:0.85rem; color:#333;">下の「施工箇所（北面など）」も日付の横に小さく印字する</span>
+            </label>
+        </div>
+
+        <!-- 黒板モード専用の会社名・工程エリア -->
         <div id="boardInputGroup" class="input-group-container">
             <label>会社名</label>
             <input type="text" id="companyName" placeholder="会社名を入力" oninput="drawBoard(); saveCameraSettings()">
 
             <label>工程 <span style="font-size:0.8rem; font-weight:normal; color:#888;">(長押しで編集)</span></label>
             <div class="process-btns"></div>
-            
-            <div class="custom-btn-area">
-                <label style="margin-bottom:5px; display:block;">任意ボタン <span style="font-size:0.8rem; font-weight:normal; color:#888;">(長押しで編集)</span></label>
-                <div id="customBtnGroup" class="input-grid-cam"></div>
-            </div>
-            
-            <label>施工箇所</label>
-            <div class="input-wrapper">
-                <button class="btn-clear-left" onclick="clearLocation()">×</button>
-                <input type="text" id="photoDetail" placeholder="例：北面、軒天など" oninput="drawBoard()">
-            </div>
         </div>
 
-        <div id="dateInputGroup" class="input-group-container hidden">
-            <label>文字の大きさ</label>
-            <div class="date-adjust-row">
-                <button class="adj-btn" onclick="changeDateConfig('size', -5)">－</button>
-                <span class="date-val-display" id="disp-date-size">50</span>
-                <button class="adj-btn" onclick="changeDateConfig('size', 5)">＋</button>
-            </div>
-
-            <label>縁取りの太さ（太字感）</label>
-            <div class="date-adjust-row">
-                <button class="adj-btn" onclick="changeDateConfig('stroke', -1)">－</button>
-                <span class="date-val-display" id="disp-date-stroke">6</span>
-                <button class="adj-btn" onclick="changeDateConfig('stroke', 1)">＋</button>
-            </div>
-            
-            <p style="font-size:0.8rem; color:#888; margin-top:10px;">
-                ※ ここで設定したサイズは自動的に保存され、次回も同じ大きさで表示されます。
-            </p>
+        <!-- ★共通エリア：任意ボタン＆施工箇所（日付モードでもファイル名整理やラベル印字に使える！） -->
+        <div class="custom-btn-area">
+            <label style="margin-bottom:5px; display:block;">部位・場所ボタン <span style="font-size:0.78rem; font-weight:normal; color:#888;">(ファイル名にも自動反映 / 長押しで編集)</span></label>
+            <div id="customBtnGroup" class="input-grid-cam"></div>
+        </div>
+        
+        <label>施工箇所・写真メモ <span style="font-size:0.78rem; font-weight:normal; color:#888;">(保存ファイル名に付きます)</span></label>
+        <div class="input-wrapper">
+            <button class="btn-clear-left" onclick="clearLocation()">×</button>
+            <input type="text" id="photoDetail" placeholder="例：北面、軒天、現調など" oninput="drawBoard()">
         </div>
 
         <div class="footer-actions">
@@ -241,23 +248,21 @@
     </div>
 </div>
 
-<!-- ★ブラッシュアップ後の撮影後プレビュー画面 -->
+<!-- 撮影後プレビュー＆合成画面（黒板・日付モード共通で4隅＆小中大が使える！） -->
 <div id="photoPreviewArea">
     <div id="previewStage">
         <img id="previewImage" src="" alt="撮影写真">
-        <img id="overlayBoard" src="" alt="黒板">
+        <img id="overlayBoard" src="" alt="スタンプ">
     </div>
     
     <div class="preview-bottom-dock">
         <div class="board-tool-row">
-            <!-- 4隅ワンタップ移動（ドラッグ移動もそのまま可能） -->
             <div class="tool-group">
-                <button class="mini-tool-btn" id="pos-tl" onclick="snapBoard('tl')">↖</button>
-                <button class="mini-tool-btn" id="pos-tr" onclick="snapBoard('tr')">↗</button>
-                <button class="mini-tool-btn" id="pos-bl" onclick="snapBoard('bl')">↙</button>
-                <button class="mini-tool-btn" id="pos-br" onclick="snapBoard('br')">↘</button>
+                <button class="mini-tool-btn" id="pos-tl" onclick="snapBoard('tl')">↖左上</button>
+                <button class="mini-tool-btn" id="pos-tr" onclick="snapBoard('tr')">↗右上</button>
+                <button class="mini-tool-btn" id="pos-bl" onclick="snapBoard('bl')">↙左下</button>
+                <button class="mini-tool-btn" id="pos-br" onclick="snapBoard('br')">↘右下</button>
             </div>
-            <!-- 黒板サイズ切替（写真幅に対する比率） -->
             <div class="tool-group">
                 <button class="mini-tool-btn" id="sz-sm" onclick="setBoardScale(0.24, 'sm')">小</button>
                 <button class="mini-tool-btn" id="sz-md" onclick="setBoardScale(0.32, 'md')">中</button>
@@ -268,8 +273,8 @@
 
         <div class="camera-controls-area">
             <button class="btn-cam-action btn-retake" onclick="retakePhoto()">やり直す</button>
-            <button class="btn-cam-action btn-save-photo" onclick="saveCompositePhoto(false)">💾して戻る</button>
-            <button class="btn-cam-action btn-save-next" onclick="saveCompositePhoto(true)">💾して次へ📸</button>
+            <button class="btn-cam-action btn-save-photo" onclick="saveCompositePhoto(false)">💾 保存して戻る</button>
+            <button class="btn-cam-action btn-save-next" onclick="saveCompositePhoto(true)">💾 保存して次へ📸</button>
         </div>
     </div>
 </div>
@@ -278,13 +283,13 @@
     let currentSite = null;
     let currentMode = 'board';
 
-    // 日付用設定
+    // 日付モード用のスタイル設定
     let dateConfig = {
-        size: parseInt(localStorage.getItem('dx_date_size')) || 50,
-        stroke: parseInt(localStorage.getItem('dx_date_stroke')) || 6
+        style: localStorage.getItem('dx_date_style') || 'orange', // 'orange' | 'white' | 'badge'
+        showLoc: localStorage.getItem('dx_date_show_loc') === '1'
     };
 
-    // ★黒板の配置・サイズ・透過・即保存の設定（自動記憶）
+    // 黒板・日付共通の配置・サイズ・透過・即保存の設定
     let boardState = {
         pos: localStorage.getItem('dx_board_pos') || 'br',
         scaleKey: localStorage.getItem('dx_board_scale_key') || 'md',
@@ -308,12 +313,86 @@
         const savedComp = localStorage.getItem('dx_company_name');
         document.getElementById('companyName').value = savedComp ? savedComp : "";
         document.getElementById('instantSaveChk').checked = boardState.instantSave;
+        document.getElementById('dateShowLocChk').checked = dateConfig.showLoc;
+        resetCustomDate();
         renderProcessButtons();
         renderCameraButtons();
-        updateDateConfigDisplay();
+        updateDateStyleUI();
         updateToolButtonsUI();
         drawBoard();
     };
+
+    // ★印字日の操作関数（今日・前日・翌日）
+    function resetCustomDate() {
+        const now = new Date();
+        const yyyy = now.getFullYear();
+        const mm = ('0' + (now.getMonth() + 1)).slice(-2);
+        const dd = ('0' + now.getDate()).slice(-2);
+        document.getElementById('customDateInput').value = `${yyyy}-${mm}-${dd}`;
+        drawBoard();
+    }
+
+    function shiftCustomDate(days) {
+        const input = document.getElementById('customDateInput');
+        const parts = (input.value || '').split('-');
+        const d = parts.length === 3 ? new Date(parts[0], parts[1] - 1, parts[2]) : new Date();
+        d.setDate(d.getDate() + days);
+        const yyyy = d.getFullYear();
+        const mm = ('0' + (d.getMonth() + 1)).slice(-2);
+        const dd = ('0' + d.getDate()).slice(-2);
+        input.value = `${yyyy}-${mm}-${dd}`;
+        drawBoard();
+    }
+
+    function getFormattedDateStrings() {
+        const val = document.getElementById('customDateInput').value;
+        const now = new Date();
+        let dateStr = `${now.getFullYear()}/${now.getMonth()+1}/${now.getDate()}`;
+        let compactDate = `${now.getFullYear()}${('0'+(now.getMonth()+1)).slice(-2)}${('0'+now.getDate()).slice(-2)}`;
+        if (val) {
+            const p = val.split('-');
+            if (p.length === 3) {
+                dateStr = `${p[0]}/${parseInt(p[1],10)}/${parseInt(p[2],10)}`;
+                compactDate = `${p[0]}${p[1]}${p[2]}`;
+            }
+        }
+        const timeStr = `${('0'+now.getHours()).slice(-2)}:${('0'+now.getMinutes()).slice(-2)}`;
+        return { dateStr, timeStr, fullDateTime: `${dateStr} ${timeStr}`, compactDate };
+    }
+
+    // ★管理しやすい連番（001, 002...）を生成する関数
+    function getNextPhotoSeq(compactDate) {
+        const lastDate = localStorage.getItem('dx_photo_seq_date');
+        let seq = parseInt(localStorage.getItem('dx_photo_seq_num') || '0', 10);
+        if (lastDate !== compactDate) {
+            seq = 1;
+            localStorage.setItem('dx_photo_seq_date', compactDate);
+        } else {
+            seq += 1;
+        }
+        localStorage.setItem('dx_photo_seq_num', String(seq));
+        return ('000' + seq).slice(-3);
+    }
+
+    function setDateStyle(style) {
+        dateConfig.style = style;
+        localStorage.setItem('dx_date_style', style);
+        updateDateStyleUI();
+        drawBoard();
+    }
+
+    function toggleDateShowLoc(checked) {
+        dateConfig.showLoc = checked;
+        localStorage.setItem('dx_date_show_loc', checked ? '1' : '0');
+        drawBoard();
+    }
+
+    function updateDateStyleUI() {
+        ['orange', 'white', 'badge'].forEach(s => {
+            const el = document.getElementById('dstyle-' + s);
+            if (el) el.classList.toggle('active', dateConfig.style === s);
+        });
+    }
 
     function toggleInstantSave(checked) {
         boardState.instantSave = checked;
@@ -330,27 +409,6 @@
     function saveCameraSettings() {
         const val = document.getElementById('companyName').value;
         localStorage.setItem('dx_company_name', val);
-    }
-
-    function changeDateConfig(key, delta) {
-        if(key === 'size') {
-            dateConfig.size += delta;
-            if(dateConfig.size < 10) dateConfig.size = 10;
-            if(dateConfig.size > 200) dateConfig.size = 200;
-            localStorage.setItem('dx_date_size', dateConfig.size);
-        } else if(key === 'stroke') {
-            dateConfig.stroke += delta;
-            if(dateConfig.stroke < 0) dateConfig.stroke = 0;
-            if(dateConfig.stroke > 20) dateConfig.stroke = 20;
-            localStorage.setItem('dx_date_stroke', dateConfig.stroke);
-        }
-        updateDateConfigDisplay();
-        drawBoard();
-    }
-
-    function updateDateConfigDisplay() {
-        document.getElementById('disp-date-size').innerText = dateConfig.size;
-        document.getElementById('disp-date-stroke').innerText = dateConfig.stroke;
     }
 
     function switchMode(mode) {
@@ -378,24 +436,24 @@
     const canvas = document.getElementById('boardCanvas');
     const ctx = canvas.getContext('2d');
 
-    // ★2倍解像度(800x600)でクッキリ描画する関数
     function drawBoard() {
         if(!canvas) return;
-        const d = new Date();
-        const dateStr = `${d.getFullYear()}/${d.getMonth()+1}/${d.getDate()}`;
-        const timeStr = `${('0'+d.getHours()).slice(-2)}:${('0'+d.getMinutes()).slice(-2)}`;
-        const fullDateTime = `${dateStr} ${timeStr}`;
-
-        ctx.save();
-        ctx.clearRect(0, 0, canvas.width, canvas.height);
-        ctx.scale(2, 2); // 400x300の座標系を2倍の800x600で鮮明描画
+        const { dateStr, fullDateTime } = getFormattedDateStrings();
+        const fontFamily = '"Yu Gothic","Hiragino Kaku Gothic ProN", "Hiragino Sans", sans-serif';
+        const location = (document.getElementById('photoDetail').value || "").trim();
 
         if (currentMode === 'board') {
+            // 黒板モードは 800x600 (4:3)
+            if (canvas.width !== 800 || canvas.height !== 600) {
+                canvas.width = 800; canvas.height = 600;
+            }
+            ctx.save();
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            ctx.scale(2, 2);
+
             const siteName = currentSite ? currentSite.name : "（現場名未定）";
             const company = document.getElementById('companyName').value || "";
-            const location = document.getElementById('photoDetail').value || "";
             const process = currentProcess || "（選択なし）";
-            const fontFamily = '"Yu Gothic","Hiragino Kaku Gothic ProN", "Hiragino Sans", sans-serif';
 
             ctx.fillStyle = '#004d40'; ctx.fillRect(0, 0, 400, 300); 
             ctx.strokeStyle = 'white'; ctx.lineWidth = 5; ctx.strokeRect(5, 5, 390, 290);
@@ -440,22 +498,75 @@
 
             ctx.textAlign = 'right'; ctx.font = `bold 24px ${fontFamily}`; ctx.fillText(dateStr, 380, 270); 
             ctx.textAlign = 'left'; ctx.font = `16px ${fontFamily}`; ctx.fillStyle = '#ccc'; ctx.fillText(company, 20, 270);
+            ctx.restore();
 
         } else {
-            const displayText = (currentMode === 'datetime') ? fullDateTime : dateStr;
-            ctx.font = `bold ${dateConfig.size}px sans-serif`;
-            ctx.textAlign = 'right';
-            ctx.textBaseline = 'bottom';
-            ctx.strokeStyle = 'black';
-            ctx.lineWidth = dateConfig.stroke;
-            ctx.lineJoin = 'round';
-            if(dateConfig.stroke > 0) {
-                ctx.strokeText(displayText, 390, 290);
+            // ★日付・日時モード：余白のないスリム枠（640x160）に動的変更！4隅のどこに置いてもピタッと端に揃う
+            if (canvas.width !== 640 || canvas.height !== 160) {
+                canvas.width = 640; canvas.height = 160;
             }
-            ctx.fillStyle = '#ff9f43';
-            ctx.fillText(displayText, 390, 290);
+            ctx.save();
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            const displayText = (currentMode === 'datetime') ? fullDateTime : dateStr;
+            const subLoc = (dateConfig.showLoc && location) ? location : "";
+
+            if (dateConfig.style === 'badge') {
+                // どんな背景の写真でも100%読める「半透明黒プレート＋白文字」
+                ctx.fillStyle = 'rgba(0, 0, 0, 0.65)';
+                ctx.beginPath();
+                ctx.roundRect ? ctx.roundRect(10, 15, 620, 130, 18) : ctx.fillRect(10, 15, 620, 130);
+                ctx.fill();
+                ctx.strokeStyle = 'rgba(255,255,255,0.4)';
+                ctx.lineWidth = 3;
+                ctx.stroke();
+
+                ctx.fillStyle = '#ffffff';
+                ctx.textAlign = 'center';
+                ctx.textBaseline = 'middle';
+                if (subLoc) {
+                    ctx.font = `bold 52px ${fontFamily}`;
+                    ctx.fillText(displayText, 320, 62);
+                    ctx.font = `bold 34px ${fontFamily}`;
+                    ctx.fillStyle = '#ffd166';
+                    ctx.fillText(subLoc, 320, 114);
+                } else {
+                    ctx.font = `bold 64px ${fontFamily}`;
+                    ctx.fillText(displayText, 320, 82);
+                }
+            } else {
+                // デジカメ風オレンジ または 白文字＋黒縁（選択している角に合わせて左右寄せを自動調整）
+                const isLeft = (boardState.pos === 'tl' || boardState.pos === 'bl');
+                const anchorX = isLeft ? 20 : 620;
+                ctx.textAlign = isLeft ? 'left' : 'right';
+                ctx.textBaseline = 'middle';
+                ctx.lineJoin = 'round';
+                ctx.strokeStyle = 'rgba(0,0,0,0.85)';
+
+                const mainColor = (dateConfig.style === 'white') ? '#ffffff' : '#ff9f43';
+
+                if (subLoc) {
+                    ctx.font = `bold 56px sans-serif`;
+                    ctx.lineWidth = 10;
+                    ctx.strokeText(displayText, anchorX, 58);
+                    ctx.fillStyle = mainColor;
+                    ctx.fillText(displayText, anchorX, 58);
+
+                    ctx.font = `bold 36px ${fontFamily}`;
+                    ctx.lineWidth = 8;
+                    ctx.strokeText(subLoc, anchorX, 118);
+                    ctx.fillStyle = '#ffffff';
+                    ctx.fillText(subLoc, anchorX, 118);
+                } else {
+                    ctx.font = `bold 68px sans-serif`;
+                    ctx.lineWidth = 12;
+                    ctx.strokeText(displayText, anchorX, 85);
+                    ctx.fillStyle = mainColor;
+                    ctx.fillText(displayText, anchorX, 85);
+                }
+            }
+            ctx.restore();
         }
-        ctx.restore();
     }
 
     let photoFile = null;
@@ -472,8 +583,8 @@
                     const boardImg = document.getElementById('overlayBoard');
                     boardImg.src = canvas.toDataURL('image/png');
                     boardImg.style.opacity = boardState.semiTransparent ? '0.78' : '1.0';
+                    boardImg.style.boxShadow = (currentMode === 'board') ? '0 2px 8px rgba(0,0,0,0.5)' : 'none';
 
-                    // ★「確認せず即保存」がONの場合はプレビューを開かず直接合成＆ダウンロード！
                     if (boardState.instantSave) {
                         directCompositeAndDownload(previewImg);
                         return;
@@ -481,7 +592,6 @@
                     
                     document.getElementById('photoPreviewArea').style.display = 'flex';
                     
-                    // 写真の実際の表示サイズに合わせて黒板サイズ＆前回位置を反映
                     setTimeout(() => {
                         applyBoardSizeToPreview();
                         snapBoard(boardState.pos);
@@ -495,7 +605,6 @@
         input.value = '';
     }
 
-    // プレビューを使わずに記憶された角・サイズ比率で直接高画質合成する関数
     function directCompositeAndDownload(pImg) {
         const c = document.createElement('canvas');
         c.width = pImg.naturalWidth;
@@ -503,9 +612,10 @@
         const cx = c.getContext('2d');
         cx.drawImage(pImg, 0, 0);
 
+        const aspect = canvas.height / canvas.width;
         const bW = Math.round(c.width * boardState.scaleRatio);
-        const bH = Math.round(bW * 0.75); // 4:3比率
-        const margin = Math.round(c.width * 0.015); // 端から1.5%のスマート余白
+        const bH = Math.round(bW * aspect);
+        const margin = Math.round(c.width * 0.015);
 
         let bx = margin, by = margin;
         if (boardState.pos === 'tr') { bx = c.width - bW - margin; by = margin; }
@@ -518,7 +628,6 @@
 
         triggerDownload(c);
         photoFile = null;
-        showToast("⚡ 自動合成して保存しました！");
     }
     
     function retakePhoto() {
@@ -526,15 +635,21 @@
         photoFile = null;
     }
 
+    // ★整理しやすいファイル名（現場名_工程または日付_施工箇所_YYYYMMDD_連番001.jpg）で保存
     function triggerDownload(compCanvas) {
         const link = document.createElement('a');
         link.href = compCanvas.toDataURL('image/jpeg', 0.92);
-        const loc = document.getElementById('photoDetail').value || '箇所なし';
-        const suffix = (currentMode === 'board') ? currentProcess : '日付';
-        link.download = `${currentSite ? currentSite.name : '現場'}_${suffix}_${loc}_${Date.now()}.jpg`;
+        const { compactDate } = getFormattedDateStrings();
+        const seq = getNextPhotoSeq(compactDate);
+        const siteStr = currentSite ? currentSite.name : '現場';
+        const loc = (document.getElementById('photoDetail').value || '').trim().replace(/\s+/g, '-') || '全景';
+        const suffix = (currentMode === 'board') ? (currentProcess || '記録') : '日付記録';
+        const fileName = `${siteStr}_${suffix}_${loc}_${compactDate}_${seq}.jpg`;
+        link.download = fileName;
         document.body.appendChild(link);
         link.click();
         document.body.removeChild(link);
+        showToast(`✅ 保存: ${loc}_${seq}.jpg`);
     }
 
     function saveCompositePhoto(andNext) {
@@ -556,9 +671,7 @@
         
         triggerDownload(c);
         retakePhoto();
-        showToast("✅ 保存しました！");
 
-        // 「保存して次へ📸」が押された場合はそのままカメラを再起動
         if (andNext) {
             setTimeout(() => {
                 document.getElementById('nativeCameraInput').click();
@@ -566,7 +679,6 @@
         }
     }
 
-    // 写真の表示幅に対する比率で黒板の大きさを自動調整（縦横で比率が狂わない）
     function applyBoardSizeToPreview() {
         const pImg = document.getElementById('previewImage');
         const board = document.getElementById('overlayBoard');
@@ -611,6 +723,12 @@
         localStorage.setItem('dx_board_pos', pos);
         updateToolButtonsUI();
 
+        // 日付モードの時は左右の角に合わせて文字寄せ方向を再描画
+        if (currentMode !== 'board') {
+            drawBoard();
+            document.getElementById('overlayBoard').src = canvas.toDataURL('image/png');
+        }
+
         const board = document.getElementById('overlayBoard');
         const pImg = document.getElementById('previewImage');
         const stage = document.getElementById('previewStage');
@@ -624,7 +742,7 @@
         
         const bWidth = board.offsetWidth;
         const bHeight = board.offsetHeight;
-        const margin = Math.max(6, Math.round(pWidth * 0.015)); // 端から1.5%の余白
+        const margin = Math.max(6, Math.round(pWidth * 0.015));
 
         board.style.top = ''; board.style.bottom = ''; board.style.left = ''; board.style.right = '';
 
@@ -793,7 +911,18 @@
             let endX, endY; if(e.changedTouches) { endX = e.changedTouches[0].clientX; endY = e.changedTouches[0].clientY; } else { endX = e.clientX; endY = e.clientY; }
             if (Math.abs(endX - startX) > 10 || Math.abs(endY - startY) > 10) return;
             if (e.type === 'touchend' && e.cancelable) e.preventDefault();
-            if (text !== '（空）') { if (isCamLocationMode) { const detailBox = document.getElementById('photoDetail'); detailBox.value = detailBox.value + (detailBox.value ? ' ' : '') + text; drawBoard(); } else { if (btn.classList.contains('active')) { btn.classList.remove('active'); currentProcess = ''; } else { document.querySelectorAll('.proc-btn').forEach(b => b.classList.remove('active')); document.querySelectorAll('.cam-chip').forEach(b => b.classList.remove('active')); btn.classList.add('active'); currentProcess = text; } drawBoard(); } }
+            if (text !== '（空）') {
+                if (isCamLocationMode || currentMode !== 'board') {
+                    // 場所モード、または日付モードの時は「施工箇所」に文字を追加する
+                    const detailBox = document.getElementById('photoDetail');
+                    detailBox.value = detailBox.value + (detailBox.value ? ' ' : '') + text;
+                    drawBoard();
+                } else {
+                    if (btn.classList.contains('active')) { btn.classList.remove('active'); currentProcess = ''; }
+                    else { document.querySelectorAll('.proc-btn').forEach(b => b.classList.remove('active')); document.querySelectorAll('.cam-chip').forEach(b => b.classList.remove('active')); btn.classList.add('active'); currentProcess = text; }
+                    drawBoard();
+                }
+            }
         };
         btn.addEventListener('touchstart', handleStart, {passive: false}); btn.addEventListener('touchend', handleEnd, {passive: false});
         btn.addEventListener('mousedown', handleStart); btn.addEventListener('mouseup', handleEnd); btn.addEventListener('mouseleave', () => { clearTimeout(pressTimer); btn.classList.remove('pressing'); if(bar) { bar.style.transition = 'none'; bar.style.width = '0%'; } });
