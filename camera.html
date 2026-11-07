@@ -6,7 +6,6 @@
     window.dataLayer = window.dataLayer || [];
     function gtag(){dataLayer.push(arguments);}
     gtag('js', new Date());
-
     gtag('config', 'G-EPKTC39SQG');
     </script>
     <meta charset="UTF-8">
@@ -26,8 +25,10 @@
         body { font-family: -apple-system, BlinkMacSystemFont, "Helvetica Neue", "Yu Gothic", sans-serif; background-color: #000; margin: 0; padding: 0; color: #333; height: 100vh; overflow: hidden; display: flex; flex-direction: column; }
         
         /* ヘッダー */
-        .site-header { background: #2c3e50; color: white; padding: 12px; text-align: center; box-shadow: 0 4px 10px rgba(0,0,0,0.1); z-index: 100; flex-shrink: 0; }
-        .site-title { margin: 0; font-size: 1.1rem; font-weight: bold; }
+        .site-header { background: #2c3e50; color: white; padding: 10px 12px; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 4px 10px rgba(0,0,0,0.1); z-index: 100; flex-shrink: 0; }
+        .site-title { margin: 0; font-size: 1.05rem; font-weight: bold; }
+        .quick-save-toggle { display: flex; align-items: center; gap: 5px; font-size: 0.78rem; background: rgba(255,255,255,0.12); padding: 5px 10px; border-radius: 20px; cursor: pointer; user-select: none; }
+        .quick-save-toggle input { margin: 0; accent-color: #00C853; width: 15px; height: 15px; }
         
         /* メインコンテナ */
         #cameraContainer { flex: 1; display: flex; flex-direction: column; background: #fff; overflow: hidden; position: relative; }
@@ -50,7 +51,7 @@
             overflow-y: auto;
             background: #fff;
             padding: 15px;
-            padding-bottom: 80px; /* 下に余白 */
+            padding-bottom: 80px;
             -webkit-overflow-scrolling: touch;
         }
 
@@ -60,7 +61,7 @@
         .mode-btn.active { background: #fff; color: #2c3e50; }
         .mode-btn.active-date { color: #e67e22; }
 
-        .preview-canvas-wrapper { display: flex; justify-content: center; align-items: center; width: 100%; max-width: 320px; }
+        .preview-canvas-wrapper { display: flex; justify-content: center; align-items: center; width: 100%; max-width: 300px; }
         #boardCanvas { width: 100%; height: auto; box-shadow: 0 4px 10px rgba(0,0,0,0.5); background: transparent; }
 
         /* 入力エリア（黒板・日付共通） */
@@ -89,68 +90,68 @@
         .input-wrapper { display: flex; align-items: center; margin-top: 5px; gap: 5px; }
         .btn-clear-left { width: 44px; height: 44px; border-radius: 6px; border: 1px solid #ccc; background: #ffebee; color: #c62828; font-weight: bold; font-size: 1.2rem; cursor: pointer; flex-shrink: 0; }
 
-        /* ★日付調整用コントローラー */
+        /* 日付調整用コントローラー */
         .date-adjust-row {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            background: #f9f9f9;
-            padding: 10px;
-            border-radius: 8px;
-            margin-top: 5px;
-            border: 1px solid #eee;
+            display: flex; align-items: center; justify-content: space-between;
+            background: #f9f9f9; padding: 10px; border-radius: 8px; margin-top: 5px; border: 1px solid #eee;
         }
         .date-val-display { font-size: 1.2rem; font-weight: bold; color: #333; width: 60px; text-align: center; }
         .adj-btn {
-            width: 44px; height: 44px;
-            border-radius: 50%;
-            border: 1px solid #ccc;
-            background: white;
-            font-size: 1.5rem;
-            font-weight: bold;
-            color: #555;
-            cursor: pointer;
-            display: flex; justify-content: center; align-items: center;
-            box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+            width: 44px; height: 44px; border-radius: 50%; border: 1px solid #ccc; background: white;
+            font-size: 1.5rem; font-weight: bold; color: #555; cursor: pointer;
+            display: flex; justify-content: center; align-items: center; box-shadow: 0 2px 5px rgba(0,0,0,0.05);
         }
         .adj-btn:active { background: #eee; transform: scale(0.95); }
 
         /* フッターアクション */
-        .footer-actions { padding-top: 20px; border-top: 1px solid #eee; display: flex; gap: 10px; }
-        .btn-close { background-color: #95a5a6; color: white; padding: 12px; border: none; border-radius: 8px; font-weight: bold; cursor: pointer; flex: 1; }
-        .save-btn { background-color: #00C853; color: white; padding: 12px; border: none; border-radius: 8px; font-weight: bold; cursor: pointer; flex: 2; font-size: 1.1rem; box-shadow: 0 4px 6px rgba(0,200,83,0.2); }
+        .footer-actions { padding-top: 15px; border-top: 1px solid #eee; display: flex; gap: 10px; }
+        .btn-close { background-color: #95a5a6; color: white; padding: 14px; border: none; border-radius: 8px; font-weight: bold; cursor: pointer; flex: 1; }
+        .save-btn { background-color: #00C853; color: white; padding: 14px; border: none; border-radius: 8px; font-weight: bold; cursor: pointer; flex: 2.2; font-size: 1.15rem; box-shadow: 0 4px 6px rgba(0,200,83,0.25); }
 
-        /* 撮影後プレビュー */
-        #photoPreviewArea { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #000; z-index: 200; flex-direction: column; justify-content: center; align-items: center; }
-        #previewImage { max-width: 100%; max-height: 100%; object-fit: contain; flex: 1; }
-        #overlayBoard { position: absolute; top: 20px; left: 20px; width: 200px; cursor: grab; z-index: 210; touch-action: none; }
-        
-        /* 矢印コントローラー */
-        .snap-controls { 
-            position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
-            display: grid; grid-template-columns: 1fr 1fr; gap: 15px; 
-            z-index: 230; 
-            background: rgba(0, 0, 0, 0.2); 
-            padding: 20px; border-radius: 25px; 
-            backdrop-filter: blur(2px); 
+        /* ★ブラッシュアップ：撮影後プレビュー＆合成画面 */
+        #photoPreviewArea {
+            display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: #111; z-index: 200; flex-direction: column; justify-content: space-between;
         }
-        .snap-btn { 
-            background: rgba(255,255,255,0.15); color: white; border: 1px solid rgba(255,255,255,0.4); 
-            width: 50px; height: 50px; border-radius: 50%; font-size: 1.5rem; 
-            cursor: pointer; display: flex; justify-content: center; align-items: center; transition: 0.2s;
+        #previewStage {
+            position: relative; flex: 1; width: 100%; overflow: hidden;
+            display: flex; justify-content: center; align-items: center; background: #000;
         }
-        .snap-btn:active { background: rgba(255,255,255,0.5); transform: scale(0.95); }
-        
-        /* コントロールエリア */
-        .camera-controls-area { 
-            position: absolute; bottom: 0; width: 100%; padding: 30px 20px; 
-            background: #000000; 
-            display: flex; justify-content: center; gap: 30px; 
-            align-items: center; box-sizing: border-box; z-index: 220; 
+        #previewImage { max-width: 100%; max-height: 100%; object-fit: contain; user-select: none; -webkit-user-drag: none; }
+        #overlayBoard {
+            position: absolute; top: 10px; left: 10px; width: 150px;
+            cursor: grab; z-index: 210; touch-action: none; user-select: none; -webkit-user-drag: none;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.5);
         }
-        .btn-cam-action { padding: 12px 30px; border-radius: 30px; font-weight: bold; cursor: pointer; border: none; font-size: 1rem; min-width: 120px; }
-        .btn-retake { background: #e74c3c; color: white; }
-        .btn-save-photo { background: #00C853; color: white; box-shadow: 0 0 15px rgba(0,200,83,0.4); }
+
+        /* 下部ツールバー（位置・サイズ・透過・保存を1箇所に集約） */
+        .preview-bottom-dock {
+            background: #1a252f; color: white; padding: 10px 12px 20px 12px;
+            border-top: 1px solid #34495e; z-index: 220; flex-shrink: 0;
+        }
+        .board-tool-row {
+            display: flex; justify-content: space-between; align-items: center; gap: 6px; margin-bottom: 10px;
+        }
+        .tool-group { display: flex; gap: 4px; background: rgba(255,255,255,0.08); padding: 4px; border-radius: 8px; }
+        .mini-tool-btn {
+            background: transparent; color: #ccc; border: 1px solid transparent; border-radius: 6px;
+            padding: 6px 9px; font-size: 0.82rem; font-weight: bold; cursor: pointer;
+        }
+        .mini-tool-btn.active { background: #3498db; color: white; }
+        .mini-tool-btn:active { transform: scale(0.95); }
+
+        .camera-controls-area { display: flex; gap: 8px; width: 100%; }
+        .btn-cam-action { padding: 13px 10px; border-radius: 10px; font-weight: bold; cursor: pointer; border: none; font-size: 0.95rem; text-align: center; }
+        .btn-retake { background: #7f8c8d; color: white; flex: 0.9; }
+        .btn-save-photo { background: #2980b9; color: white; flex: 1.2; }
+        .btn-save-next { background: #00C853; color: white; flex: 1.6; box-shadow: 0 2px 10px rgba(0,200,83,0.35); }
+
+        /* トースト通知 */
+        #toastMsg {
+            position: fixed; top: 65px; left: 50%; transform: translateX(-50%);
+            background: rgba(0, 200, 83, 0.95); color: white; padding: 10px 20px; border-radius: 25px;
+            font-weight: bold; font-size: 0.9rem; z-index: 400; display: none; box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+        }
 
         /* スライダーその他 */
         .slider-overlay { position: fixed; bottom: 100px; left: 50%; transform: translateX(-50%); width: 85%; max-width: 400px; background: rgba(44, 62, 80, 0.95); padding: 20px; border-radius: 15px; box-shadow: 0 10px 25px rgba(0,0,0,0.5); z-index: 300; display: none; text-align: center; color: white; backdrop-filter: blur(5px); }
@@ -170,10 +171,15 @@
 
 <div class="site-header">
     <h2 class="site-title">📸 電子黒板カメラ</h2>
+    <label class="quick-save-toggle" title="ONにすると撮影後プレビューを省略し、前回位置に自動合成して即保存します">
+        <input type="checkbox" id="instantSaveChk" onchange="toggleInstantSave(this.checked)">
+        <span>⚡ 確認せず即保存</span>
+    </label>
 </div>
 
+<div id="toastMsg">✅ 保存しました！</div>
+
 <div id="cameraContainer">
-    
     <div id="fixedTopArea">
         <div class="mode-switch-container">
             <button class="mode-btn active" onclick="switchMode('board')" id="btn-mode-board">📋 黒板</button>
@@ -182,12 +188,12 @@
         </div>
 
         <div class="preview-canvas-wrapper">
-            <canvas id="boardCanvas" width="400" height="300"></canvas>
+            <!-- ★高解像度化：内部解像度を2倍(800x600)にして合成時の文字ボケを防止 -->
+            <canvas id="boardCanvas" width="800" height="600"></canvas>
         </div>
     </div>
 
     <div id="scrollableInputArea">
-        
         <div id="boardInputGroup" class="input-group-container">
             <label>会社名</label>
             <input type="text" id="companyName" placeholder="会社名を入力" oninput="drawBoard(); saveCameraSettings()">
@@ -235,32 +241,56 @@
     </div>
 </div>
 
+<!-- ★ブラッシュアップ後の撮影後プレビュー画面 -->
 <div id="photoPreviewArea">
-    <img id="previewImage" src="" alt="撮影写真">
-    <img id="overlayBoard" src="" alt="黒板">
-    
-    <div class="snap-controls">
-        <button class="snap-btn" onclick="snapBoard('tl')">↖️</button>
-        <button class="snap-btn" onclick="snapBoard('tr')">↗️</button>
-        <button class="snap-btn" onclick="snapBoard('bl')">↙️</button>
-        <button class="snap-btn" onclick="snapBoard('br')">↘️</button>
+    <div id="previewStage">
+        <img id="previewImage" src="" alt="撮影写真">
+        <img id="overlayBoard" src="" alt="黒板">
     </div>
     
-    <div class="camera-controls-area">
-        <button class="btn-cam-action btn-retake" onclick="retakePhoto()">やり直す</button>
-        <button class="btn-cam-action btn-save-photo" onclick="saveCompositePhoto()">💾 保存する</button>
+    <div class="preview-bottom-dock">
+        <div class="board-tool-row">
+            <!-- 4隅ワンタップ移動（ドラッグ移動もそのまま可能） -->
+            <div class="tool-group">
+                <button class="mini-tool-btn" id="pos-tl" onclick="snapBoard('tl')">↖左上</button>
+                <button class="mini-tool-btn" id="pos-tr" onclick="snapBoard('tr')">↗右上</button>
+                <button class="mini-tool-btn" id="pos-bl" onclick="snapBoard('bl')">↙左下</button>
+                <button class="mini-tool-btn" id="pos-br" onclick="snapBoard('br')">↘右下</button>
+            </div>
+            <!-- 黒板サイズ切替（写真幅に対する比率） -->
+            <div class="tool-group">
+                <button class="mini-tool-btn" id="sz-sm" onclick="setBoardScale(0.24, 'sm')">小</button>
+                <button class="mini-tool-btn" id="sz-md" onclick="setBoardScale(0.32, 'md')">中</button>
+                <button class="mini-tool-btn" id="sz-lg" onclick="setBoardScale(0.42, 'lg')">大</button>
+                <button class="mini-tool-btn" id="btn-alpha" onclick="toggleBoardAlpha()">透</button>
+            </div>
+        </div>
+
+        <div class="camera-controls-area">
+            <button class="btn-cam-action btn-retake" onclick="retakePhoto()">やり直す</button>
+            <button class="btn-cam-action btn-save-photo" onclick="saveCompositePhoto(false)">💾 保存して戻る</button>
+            <button class="btn-cam-action btn-save-next" onclick="saveCompositePhoto(true)">💾 保存して次へ📸</button>
+        </div>
     </div>
 </div>
 
 <script>
-    // --- JSロジック ---
     let currentSite = null;
     let currentMode = 'board';
 
-    // ★日付用設定（初期値）
+    // 日付用設定
     let dateConfig = {
         size: parseInt(localStorage.getItem('dx_date_size')) || 50,
         stroke: parseInt(localStorage.getItem('dx_date_stroke')) || 6
+    };
+
+    // ★黒板の配置・サイズ・透過・即保存の設定（自動記憶）
+    let boardState = {
+        pos: localStorage.getItem('dx_board_pos') || 'br',
+        scaleKey: localStorage.getItem('dx_board_scale_key') || 'md',
+        scaleRatio: parseFloat(localStorage.getItem('dx_board_scale_ratio')) || 0.32,
+        semiTransparent: localStorage.getItem('dx_board_alpha') === '1',
+        instantSave: localStorage.getItem('dx_instant_save') === '1'
     };
 
     try {
@@ -277,18 +307,31 @@
     window.onload = () => {
         const savedComp = localStorage.getItem('dx_company_name');
         document.getElementById('companyName').value = savedComp ? savedComp : "";
+        document.getElementById('instantSaveChk').checked = boardState.instantSave;
         renderProcessButtons();
         renderCameraButtons();
-        updateDateConfigDisplay(); // 設定値を画面に反映
+        updateDateConfigDisplay();
+        updateToolButtonsUI();
         drawBoard();
     };
+
+    function toggleInstantSave(checked) {
+        boardState.instantSave = checked;
+        localStorage.setItem('dx_instant_save', checked ? '1' : '0');
+    }
+
+    function showToast(text) {
+        const t = document.getElementById('toastMsg');
+        t.innerText = text;
+        t.style.display = 'block';
+        setTimeout(() => { t.style.display = 'none'; }, 1800);
+    }
 
     function saveCameraSettings() {
         const val = document.getElementById('companyName').value;
         localStorage.setItem('dx_company_name', val);
     }
 
-    // ★日付設定変更処理
     function changeDateConfig(key, delta) {
         if(key === 'size') {
             dateConfig.size += delta;
@@ -335,6 +378,7 @@
     const canvas = document.getElementById('boardCanvas');
     const ctx = canvas.getContext('2d');
 
+    // ★2倍解像度(800x600)でクッキリ描画する関数
     function drawBoard() {
         if(!canvas) return;
         const d = new Date();
@@ -342,7 +386,9 @@
         const timeStr = `${('0'+d.getHours()).slice(-2)}:${('0'+d.getMinutes()).slice(-2)}`;
         const fullDateTime = `${dateStr} ${timeStr}`;
 
+        ctx.save();
         ctx.clearRect(0, 0, canvas.width, canvas.height);
+        ctx.scale(2, 2); // 400x300の座標系を2倍の800x600で鮮明描画
 
         if (currentMode === 'board') {
             const siteName = currentSite ? currentSite.name : "（現場名未定）";
@@ -351,8 +397,8 @@
             const process = currentProcess || "（選択なし）";
             const fontFamily = '"Yu Gothic","Hiragino Kaku Gothic ProN", "Hiragino Sans", sans-serif';
 
-            ctx.fillStyle = '#004d40'; ctx.fillRect(0, 0, canvas.width, canvas.height); 
-            ctx.strokeStyle = 'white'; ctx.lineWidth = 5; ctx.strokeRect(5, 5, canvas.width - 10, canvas.height - 10);
+            ctx.fillStyle = '#004d40'; ctx.fillRect(0, 0, 400, 300); 
+            ctx.strokeStyle = 'white'; ctx.lineWidth = 5; ctx.strokeRect(5, 5, 390, 290);
             
             ctx.lineWidth = 2; ctx.beginPath(); 
             ctx.moveTo(10, 80); ctx.lineTo(390, 80); 
@@ -396,26 +442,20 @@
             ctx.textAlign = 'left'; ctx.font = `16px ${fontFamily}`; ctx.fillStyle = '#ccc'; ctx.fillText(company, 20, 270);
 
         } else {
-            // ★日付・日時モード（設定値を反映）
             const displayText = (currentMode === 'datetime') ? fullDateTime : dateStr;
-            
-            // 設定値を使用
             ctx.font = `bold ${dateConfig.size}px sans-serif`;
             ctx.textAlign = 'right';
             ctx.textBaseline = 'bottom';
-            
-            // 縁取り（黒）
             ctx.strokeStyle = 'black';
-            ctx.lineWidth = dateConfig.stroke; // 設定値を使用
+            ctx.lineWidth = dateConfig.stroke;
             ctx.lineJoin = 'round';
             if(dateConfig.stroke > 0) {
-                ctx.strokeText(displayText, canvas.width - 10, canvas.height - 10);
+                ctx.strokeText(displayText, 390, 290);
             }
-            
-            // 本体（オレンジ）
             ctx.fillStyle = '#ff9f43';
-            ctx.fillText(displayText, canvas.width - 10, canvas.height - 10);
+            ctx.fillText(displayText, 390, 290);
         }
+        ctx.restore();
     }
 
     let photoFile = null;
@@ -431,12 +471,20 @@
                     drawBoard(); 
                     const boardImg = document.getElementById('overlayBoard');
                     boardImg.src = canvas.toDataURL('image/png');
+                    boardImg.style.opacity = boardState.semiTransparent ? '0.78' : '1.0';
+
+                    // ★「確認せず即保存」がONの場合はプレビューを開かず直接合成＆ダウンロード！
+                    if (boardState.instantSave) {
+                        directCompositeAndDownload(previewImg);
+                        return;
+                    }
                     
                     document.getElementById('photoPreviewArea').style.display = 'flex';
                     
-                    // 初期位置を右下に
+                    // 写真の実際の表示サイズに合わせて黒板サイズ＆前回位置を反映
                     setTimeout(() => {
-                        snapBoard('br');
+                        applyBoardSizeToPreview();
+                        snapBoard(boardState.pos);
                     }, 50);
                 };
 
@@ -446,13 +494,50 @@
         }
         input.value = '';
     }
+
+    // プレビューを使わずに記憶された角・サイズ比率で直接高画質合成する関数
+    function directCompositeAndDownload(pImg) {
+        const c = document.createElement('canvas');
+        c.width = pImg.naturalWidth;
+        c.height = pImg.naturalHeight;
+        const cx = c.getContext('2d');
+        cx.drawImage(pImg, 0, 0);
+
+        const bW = Math.round(c.width * boardState.scaleRatio);
+        const bH = Math.round(bW * 0.75); // 4:3比率
+        const margin = Math.round(c.width * 0.015); // 端から1.5%のスマート余白
+
+        let bx = margin, by = margin;
+        if (boardState.pos === 'tr') { bx = c.width - bW - margin; by = margin; }
+        else if (boardState.pos === 'bl') { bx = margin; by = c.height - bH - margin; }
+        else if (boardState.pos === 'br') { bx = c.width - bW - margin; by = c.height - bH - margin; }
+
+        if (boardState.semiTransparent) cx.globalAlpha = 0.78;
+        cx.drawImage(canvas, bx, by, bW, bH);
+        cx.globalAlpha = 1.0;
+
+        triggerDownload(c);
+        photoFile = null;
+        showToast("⚡ 自動合成して保存しました！");
+    }
     
     function retakePhoto() {
         document.getElementById('photoPreviewArea').style.display = 'none';
         photoFile = null;
     }
 
-    function saveCompositePhoto() {
+    function triggerDownload(compCanvas) {
+        const link = document.createElement('a');
+        link.href = compCanvas.toDataURL('image/jpeg', 0.92);
+        const loc = document.getElementById('photoDetail').value || '箇所なし';
+        const suffix = (currentMode === 'board') ? currentProcess : '日付';
+        link.download = `${currentSite ? currentSite.name : '現場'}_${suffix}_${loc}_${Date.now()}.jpg`;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+    }
+
+    function saveCompositePhoto(andNext) {
         if(!photoFile) return;
         const pImg = document.getElementById('previewImage');
         const bImg = document.getElementById('overlayBoard');
@@ -465,78 +550,113 @@
         const bRect = bImg.getBoundingClientRect();
         const s = pImg.naturalWidth / pRect.width;
         
-        cx.drawImage(bImg, (bRect.left - pRect.left) * s, (bRect.top - pRect.top) * s, bRect.width * s, bRect.height * s);
+        if (boardState.semiTransparent) cx.globalAlpha = 0.78;
+        cx.drawImage(canvas, (bRect.left - pRect.left) * s, (bRect.top - pRect.top) * s, bRect.width * s, bRect.height * s);
+        cx.globalAlpha = 1.0;
         
-        const link = document.createElement('a');
-        link.href = c.toDataURL('image/jpeg', 0.9);
-        
-        
-        // 画面に入力されている「施工箇所（photoDetail）」の文字を取得
-        const loc = document.getElementById('photoDetail').value || '箇所なし';
-
-        // 現場名 _ 工程 _ 施工箇所 _ タイムスタンプ の順で合体！
-        const suffix = (currentMode === 'board') ? currentProcess : '日付';
-        link.download = `${currentSite?currentSite.name:'現場'}_${suffix}_${loc}_${Date.now()}.jpg`;
-
-        
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
-        
+        triggerDownload(c);
         retakePhoto();
+        showToast("✅ 保存しました！");
+
+        // 「保存して次へ📸」が押された場合はそのままカメラを再起動
+        if (andNext) {
+            setTimeout(() => {
+                document.getElementById('nativeCameraInput').click();
+            }, 250);
+        }
     }
 
-    const SNAP_MARGIN_TOP    = 20; 
-    const SNAP_MARGIN_BOTTOM = 20; 
-    const SNAP_MARGIN_LEFT   = 20; 
-    const SNAP_MARGIN_RIGHT  = 20; 
+    // 写真の表示幅に対する比率で黒板の大きさを自動調整（縦横で比率が狂わない）
+    function applyBoardSizeToPreview() {
+        const pImg = document.getElementById('previewImage');
+        const board = document.getElementById('overlayBoard');
+        const pRect = pImg.getBoundingClientRect();
+        if (pRect.width > 0) {
+            board.style.width = Math.round(pRect.width * boardState.scaleRatio) + 'px';
+        }
+    }
+
+    function setBoardScale(ratio, key) {
+        boardState.scaleRatio = ratio;
+        boardState.scaleKey = key;
+        localStorage.setItem('dx_board_scale_ratio', ratio);
+        localStorage.setItem('dx_board_scale_key', key);
+        updateToolButtonsUI();
+        applyBoardSizeToPreview();
+        snapBoard(boardState.pos);
+    }
+
+    function toggleBoardAlpha() {
+        boardState.semiTransparent = !boardState.semiTransparent;
+        localStorage.setItem('dx_board_alpha', boardState.semiTransparent ? '1' : '0');
+        document.getElementById('overlayBoard').style.opacity = boardState.semiTransparent ? '0.78' : '1.0';
+        updateToolButtonsUI();
+    }
+
+    function updateToolButtonsUI() {
+        ['tl', 'tr', 'bl', 'br'].forEach(p => {
+            const el = document.getElementById('pos-' + p);
+            if(el) el.classList.toggle('active', boardState.pos === p);
+        });
+        ['sm', 'md', 'lg'].forEach(k => {
+            const el = document.getElementById('sz-' + k);
+            if(el) el.classList.toggle('active', boardState.scaleKey === k);
+        });
+        const alphaBtn = document.getElementById('btn-alpha');
+        if(alphaBtn) alphaBtn.classList.toggle('active', boardState.semiTransparent);
+    }
 
     function snapBoard(pos) {
+        boardState.pos = pos;
+        localStorage.setItem('dx_board_pos', pos);
+        updateToolButtonsUI();
+
         const board = document.getElementById('overlayBoard');
         const pImg = document.getElementById('previewImage');
-        const container = document.getElementById('photoPreviewArea');
+        const stage = document.getElementById('previewStage');
         const pRect = pImg.getBoundingClientRect();
-        const cRect = container.getBoundingClientRect();
+        const sRect = stage.getBoundingClientRect();
         
-        const offsetTop = pRect.top - cRect.top;
-        const offsetLeft = pRect.left - cRect.left;
+        const offsetTop = pRect.top - sRect.top;
+        const offsetLeft = pRect.left - sRect.left;
         const pWidth = pRect.width;
         const pHeight = pRect.height;
         
         const bWidth = board.offsetWidth;
         const bHeight = board.offsetHeight;
+        const margin = Math.max(6, Math.round(pWidth * 0.015)); // 端から1.5%の余白
 
         board.style.top = ''; board.style.bottom = ''; board.style.left = ''; board.style.right = '';
 
         if (pos === 'tl') { 
-            board.style.top  = (offsetTop + SNAP_MARGIN_TOP) + 'px';
-            board.style.left = (offsetLeft + SNAP_MARGIN_LEFT) + 'px';
+            board.style.top  = (offsetTop + margin) + 'px';
+            board.style.left = (offsetLeft + margin) + 'px';
         } 
         else if (pos === 'tr') { 
-            board.style.top  = (offsetTop + SNAP_MARGIN_TOP) + 'px';
-            board.style.left = (offsetLeft + pWidth - bWidth - SNAP_MARGIN_RIGHT) + 'px';
+            board.style.top  = (offsetTop + margin) + 'px';
+            board.style.left = (offsetLeft + pWidth - bWidth - margin) + 'px';
         } 
         else if (pos === 'bl') { 
-            board.style.top  = (offsetTop + pHeight - bHeight - SNAP_MARGIN_BOTTOM) + 'px';
-            board.style.left = (offsetLeft + SNAP_MARGIN_LEFT) + 'px';
+            board.style.top  = (offsetTop + pHeight - bHeight - margin) + 'px';
+            board.style.left = (offsetLeft + margin) + 'px';
         } 
         else if (pos === 'br') { 
-            board.style.top  = (offsetTop + pHeight - bHeight - SNAP_MARGIN_BOTTOM) + 'px';
-            board.style.left = (offsetLeft + pWidth - bWidth - SNAP_MARGIN_RIGHT) + 'px';
+            board.style.top  = (offsetTop + pHeight - bHeight - margin) + 'px';
+            board.style.left = (offsetLeft + pWidth - bWidth - margin) + 'px';
         }
     }
 
     const overlayBoard = document.getElementById('overlayBoard'); 
     let isDragging = false, dragStartX, dragStartY, initialLeft, initialTop;
-    const SNAP_SIZE = 10;
     
     const handleDragStart = (e) => {
         isDragging = true;
         const s = window.getComputedStyle(overlayBoard);
-        initialLeft = parseInt(s.left) || 0; initialTop = parseInt(s.top) || 0;
+        initialLeft = parseFloat(s.left) || 0; initialTop = parseFloat(s.top) || 0;
         if(e.touches) { dragStartX = e.touches[0].clientX; dragStartY = e.touches[0].clientY; } 
         else { dragStartX = e.clientX; dragStartY = e.clientY; }
-        overlayBoard.style.bottom = ''; overlayBoard.style.right = ''; overlayBoard.style.left = initialLeft + 'px'; overlayBoard.style.top = initialTop + 'px';
+        overlayBoard.style.bottom = ''; overlayBoard.style.right = '';
+        overlayBoard.style.left = initialLeft + 'px'; overlayBoard.style.top = initialTop + 'px';
         overlayBoard.style.transition = 'none';
         if(e.cancelable && e.type === 'touchstart') e.preventDefault();
     };
@@ -545,10 +665,10 @@
         let clientX, clientY;
         if(e.touches) { clientX = e.touches[0].clientX; clientY = e.touches[0].clientY; } 
         else { clientX = e.clientX; clientY = e.clientY; }
-        const snappedDx = Math.round((clientX - dragStartX) / SNAP_SIZE) * SNAP_SIZE;
-        const snappedDy = Math.round((clientY - dragStartY) / SNAP_SIZE) * SNAP_SIZE;
-        overlayBoard.style.left = `${initialLeft + snappedDx}px`;
-        overlayBoard.style.top = `${initialTop + snappedDy}px`;
+        const dx = clientX - dragStartX;
+        const dy = clientY - dragStartY;
+        overlayBoard.style.left = `${initialLeft + dx}px`;
+        overlayBoard.style.top = `${initialTop + dy}px`;
         if(e.cancelable) e.preventDefault();
     };
     const handleDragEnd = () => { isDragging = false; };
