@@ -173,7 +173,7 @@
     <h2 class="site-title">📸 電子黒板カメラ</h2>
     <label class="quick-save-toggle" title="ONにすると撮影後プレビューを省略し、前回位置に自動合成して即保存します">
         <input type="checkbox" id="instantSaveChk" onchange="toggleInstantSave(this.checked)">
-        <span>⚡ 確認せず即保存</span>
+        <span>⚡ 連続撮影モード</span>
     </label>
 </div>
 
@@ -252,10 +252,10 @@
         <div class="board-tool-row">
             <!-- 4隅ワンタップ移動（ドラッグ移動もそのまま可能） -->
             <div class="tool-group">
-                <button class="mini-tool-btn" id="pos-tl" onclick="snapBoard('tl')">↖左上</button>
-                <button class="mini-tool-btn" id="pos-tr" onclick="snapBoard('tr')">↗右上</button>
-                <button class="mini-tool-btn" id="pos-bl" onclick="snapBoard('bl')">↙左下</button>
-                <button class="mini-tool-btn" id="pos-br" onclick="snapBoard('br')">↘右下</button>
+                <button class="mini-tool-btn" id="pos-tl" onclick="snapBoard('tl')">↖</button>
+                <button class="mini-tool-btn" id="pos-tr" onclick="snapBoard('tr')">↗</button>
+                <button class="mini-tool-btn" id="pos-bl" onclick="snapBoard('bl')">↙</button>
+                <button class="mini-tool-btn" id="pos-br" onclick="snapBoard('br')">↘</button>
             </div>
             <!-- 黒板サイズ切替（写真幅に対する比率） -->
             <div class="tool-group">
@@ -268,8 +268,8 @@
 
         <div class="camera-controls-area">
             <button class="btn-cam-action btn-retake" onclick="retakePhoto()">やり直す</button>
-            <button class="btn-cam-action btn-save-photo" onclick="saveCompositePhoto(false)">💾 保存して戻る</button>
-            <button class="btn-cam-action btn-save-next" onclick="saveCompositePhoto(true)">💾 保存して次へ📸</button>
+            <button class="btn-cam-action btn-save-photo" onclick="saveCompositePhoto(false)">💾して戻る</button>
+            <button class="btn-cam-action btn-save-next" onclick="saveCompositePhoto(true)">💾して次へ📸</button>
         </div>
     </div>
 </div>
