@@ -765,6 +765,92 @@
 </div>
 
 <script>
+    // =========================================================
+    // 🔐 セキュリティ＆権限管理（ハードコード撤去・ロール制御）
+    // =========================================================
+    function getGasConfig() {
+        return {
+            url: (localStorage.getItem('dx_gas_url') || '').trim(),
+            authKey: (localStorage.getItem('dx_auth_key') || '').trim(),
+            staffPin: (localStorage.getItem('dx_staff_pin') || '').trim(),
+            role: localStorage.getItem('dx_user_role') || '職人' // デフォルトは安全側の「職人」
+        };
+    }
+
+    // 権限（親方 / 職人 / 助っ人）に応じて画面のボタンを自動で隠す・表示する関数
+    function applyRolePermissions() {
+        const { role, url, authKey } = getGasConfig();
+        const isOyakata = (role === '親方');
+        const isHelper  = (role === '助っ人');
+
+        // 1. ヘッダーに現在のモードバッジを表示（タップでPIN入力・切替可能にする）
+        const subEl = document.getElementById('displaySiteId');
+        if (subEl && !document.getElementById('roleBadge')) {
+            const badgeColor = isOyakata ? '#f39c12' : (isHelper ? '#95a5a6' : '#27ae60');
+            const badgeIcon  = isOyakata ? '👑 親方' : (isHelper ? '🧢 助っ人' : '🔨 職人');
+            subEl.insertAdjacentHTML('beforeend', 
+                `<span id="roleBadge" onclick="promptRolePin()" style="margin-left:10px; background:${badgeColor}; color:white; padding:2px 8px; border-radius:12px; font-size:0.75rem; font-weight:bold; cursor:pointer;">${badgeIcon}</span>`
+            );
+        }
+
+        // 2. 親方以外に隠す要素（「⚙️管理」ナビ、「⚙️情報管理」セクション、「📢お客様へ予定送信」、「📊工程管理へ」）
+        const manageNav = document.querySelector('.dash-btn.man');
+        const manageSec = document.getElementById('sec-manage');
+        const manageGrid = manageSec ? manageSec.nextElementSibling : null;
+        const flowBtn = document.querySelector('[onclick="openFlowchartModal()"]');
+        const managerLink = document.querySelector('a[href="manager.html"]');
+
+        const adminElements = [manageNav, manageSec, manageGrid, flowBtn, managerLink];
+        adminElements.forEach(el => {
+            if (el) el.style.display = isOyakata ? '' : 'none';
+        });
+
+        // 3. 助っ人モードの時はさらに「🎙️日報」「📦資材記録」「📅カレンダー」も隠す
+        const reportBtn = document.querySelector('[onclick="openModal(\'report\')"]');
+        const matBtn = document.querySelector('[onclick="openModal(\'material\')"]');
+        const calBtn = document.querySelector('[onclick="handleCalendarAction()"]');
+        [reportBtn, matBtn, calBtn].forEach(el => {
+            if (el) el.style.display = isHelper ? 'none' : '';
+        });
+
+        // 4. もしGAS URLや合言葉が未設定なら「試用版モード」としてバッジに表示
+        if (!url || !authKey) {
+            const badge = document.getElementById('roleBadge');
+            if (badge) {
+                badge.textContent = '🔰 試用版(ローカル)';
+                badge.style.background = '#7f8c8d';
+            }
+        }
+    }
+
+    // ヘッダーのバッジをタップした時にPINコードで権限を切り替える機能
+    function promptRolePin() {
+        const currentRole = localStorage.getItem('dx_user_role') || '職人';
+        const inputPin = prompt(`【権限モード切替】現在のモード: ${currentRole}\nスタッフPINコード（例: 1223-0223）を入力してください:`);
+        if (inputPin === null) return;
+
+        const cleanPin = inputPin.trim();
+        // ※将来GAS側と通信してスタッフマスタのPINを照合する形にも拡張可能
+        // まずはローカル設定の管理者PIN（またはマスタ同期済みのリスト）で即座に判定
+        const savedAdminPin = localStorage.getItem('dx_admin_pin') || '1223-0223';
+        if (cleanPin === savedAdminPin) {
+            localStorage.setItem('dx_user_role', '親方');
+            localStorage.setItem('dx_staff_pin', cleanPin);
+            alert('👑 親方（管理者）モードに切り替えました！全機能が解放されます。');
+        } else if (cleanPin === '0000-0000' || cleanPin === '0000') {
+            localStorage.setItem('dx_user_role', '助っ人');
+            localStorage.setItem('dx_staff_pin', cleanPin);
+            alert('🧢 助っ人モードに切り替えました（カメラ・マップのみ表示）。');
+        } else {
+            localStorage.setItem('dx_user_role', '職人');
+            localStorage.setItem('dx_staff_pin', cleanPin);
+            alert('🔨 職人モードに切り替えました（現場の編集・削除機能などを保護します）。');
+        }
+        location.reload();
+    }
+
+    window.addEventListener('DOMContentLoaded', applyRolePermissions);
+
     const params = new URLSearchParams(window.location.search);
     const siteId = params.get('id');
     let currentSite = null;
@@ -872,7 +958,7 @@ function loadSendLogs(siteId) {
     fetch(gasUrl, {
         method: 'POST',
         headers: { 'Content-Type': 'text/plain' },
-        body: JSON.stringify({ authKey: "うっきうき", type: "getSendLogs", siteId: siteId })
+        body: JSON.stringify({ authKey: getGasConfig().authKey, type: "getSendLogs", siteId: siteId })
     })
     .then(res => res.json())
     .then(data => {
@@ -947,7 +1033,7 @@ function cancelLogItem(rowNumber, summaryText) {
     fetch(gasUrl, {
         method: 'POST',
         headers: { 'Content-Type': 'text/plain' },
-        body: JSON.stringify({ authKey: "うっきうき", type: "cancelSendLog", row: rowNumber })
+        body: JSON.stringify({ authKey: getGasConfig().authKey, type: "cancelSendLog", row: rowNumber })
     })
     .then(res => res.json())
     .then(data => {
@@ -1217,7 +1303,7 @@ window.addEventListener('DOMContentLoaded', () => {
             reportType: item.reportType || "通常",
             content: item.content, 
             timestamp: item.timestamp || new Date(item.date).getTime(),
-            authKey: localStorage.getItem('dx_auth_key') || "うっきうき" 
+            authKey: getGasConfig().authKey 
         };
 
         try {
@@ -1381,7 +1467,7 @@ window.addEventListener('DOMContentLoaded', () => {
         const sendData = {
             type: "fetch_reports",
             id: currentSite.id,
-            authKey: localStorage.getItem('dx_auth_key') || "うっきうき"
+            authKey: getGasConfig().authKey
         };
 
         try {
@@ -1464,7 +1550,7 @@ window.addEventListener('DOMContentLoaded', () => {
             reportType: item.reportType || "通常",
             content: item.content, 
             timestamp: item.timestamp || new Date(item.date).getTime(),
-            authKey: localStorage.getItem('dx_auth_key') || "うっきうき" 
+            authKey: getGasConfig().authKey 
         };
 
         try {
@@ -1522,7 +1608,7 @@ window.addEventListener('DOMContentLoaded', () => {
             id: currentSite ? currentSite.id : "",
             timestamp: item.timestamp || new Date(item.date).getTime(),
             content: item.content || "", 
-            authKey: localStorage.getItem('dx_auth_key') || "うっきうき"
+            authKey: getGasConfig().authKey
         };
 
         try {
@@ -2679,7 +2765,7 @@ function recordSendLog(tool, subject, text) {
     const finalLogText = userInput ? userInput : "(定型文のみ送信)";
 
     const logData = {
-        authKey: "うっきうき",
+        authKey: getGasConfig().authKey,
         type: "saveSendLog",
         siteId: currentSite.id,
         status: document.getElementById('flowchart-status').value,
@@ -3153,7 +3239,7 @@ function fetchMaterialMasterBg() {
         headers: { 'Content-Type': 'text/plain' }, 
         body: JSON.stringify({ 
             type: "getMaterials",
-            authKey: "うっきうき"  // ★ジェイミー痛恨のミス：ここを追加しました！
+            authKey: getGasConfig().authKey  // ★ジェイミー痛恨のミス：ここを追加しました！
         })
     })
     .then(res => res.json())
@@ -3234,16 +3320,19 @@ document.addEventListener('click', (e) => {
 <script>
 let translationDict = {};
 
-// ① アプリ起動時にGASから辞書を裏で読み込んでおく（※従来のチェック用）
+// ① アプリ起動時にGASから辞書を裏で読み込んでおく（★ハードコード完全撤去版）
 async function loadDictionary() {
+  const { url, authKey } = getGasConfig();
+  if (!url || !authKey) return; // 試用版（未設定）なら通信しない
+
   try {
-    const response = await fetch("https://script.google.com/macros/s/AKfycbxUpH4otUOhFLQOQh33ai8NvSUIpIOd1_ftG9TR11bLhRGl_CYzNhAKd_iVzUpWOotbGA/exec", {
+    const response = await fetch(url, {
       method: "POST",
       headers: { "Content-Type": "text/plain" },
-      body: JSON.stringify({ type: "getDictionary", authKey: "うっきうき" })
+      body: JSON.stringify({ type: "getDictionary", authKey: authKey })
     });
     const result = await response.json();
-    if (result.result === "success") {
+    if (result.result === "success" && Array.isArray(result.data)) {
       result.data.forEach(item => {
         if (item.trigger) {
           if (!translationDict[item.trigger]) {
