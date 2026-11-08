@@ -25,10 +25,11 @@
         body { font-family: -apple-system, BlinkMacSystemFont, "Helvetica Neue", "Yu Gothic", sans-serif; background-color: #000; margin: 0; padding: 0; color: #333; height: 100vh; overflow: hidden; display: flex; flex-direction: column; }
         
         /* ヘッダー */
-        .site-header { background: #2c3e50; color: white; padding: 10px 12px; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 4px 10px rgba(0,0,0,0.1); z-index: 100; flex-shrink: 0; }
-        .site-title { margin: 0; font-size: 1.05rem; font-weight: bold; }
-        .quick-save-toggle { display: flex; align-items: center; gap: 5px; font-size: 0.78rem; background: rgba(255,255,255,0.12); padding: 5px 10px; border-radius: 20px; cursor: pointer; user-select: none; }
-        .quick-save-toggle input { margin: 0; accent-color: #00C853; width: 15px; height: 15px; }
+        .site-header { background: #2c3e50; color: white; padding: 10px 10px; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 4px 10px rgba(0,0,0,0.1); z-index: 100; flex-shrink: 0; }
+        .site-title { margin: 0; font-size: 1.0rem; font-weight: bold; white-space: nowrap; }
+        .header-toggles { display: flex; gap: 6px; align-items: center; }
+        .quick-save-toggle { display: flex; align-items: center; gap: 4px; font-size: 0.74rem; background: rgba(255,255,255,0.14); padding: 5px 8px; border-radius: 16px; cursor: pointer; user-select: none; white-space: nowrap; }
+        .quick-save-toggle input { margin: 0; accent-color: #00C853; width: 14px; height: 14px; }
         
         /* メインコンテナ */
         #cameraContainer { flex: 1; display: flex; flex-direction: column; background: #fff; overflow: hidden; position: relative; }
@@ -72,7 +73,7 @@
         label:first-child { margin-top: 0; }
         input[type="text"], input[type="date"] { width: 100%; padding: 10px 12px; margin-top: 5px; border: 1px solid #ccc; border-radius: 6px; font-size: 0.98rem; box-sizing: border-box; background: #f9f9f9; }
         
-        /* 日付変更バー（黒板・日付モード共通で使える超便利機能） */
+        /* 日付変更バー */
         .custom-date-bar {
             display: flex; align-items: center; gap: 6px; background: #f4f6f9;
             padding: 8px 10px; border-radius: 8px; border: 1px solid #dce1e7; margin-bottom: 12px;
@@ -150,9 +151,9 @@
 
         /* トースト通知 */
         #toastMsg {
-            position: fixed; top: 65px; left: 50%; transform: translateX(-50%);
-            background: rgba(0, 200, 83, 0.95); color: white; padding: 10px 20px; border-radius: 25px;
-            font-weight: bold; font-size: 0.9rem; z-index: 400; display: none; box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+            position: fixed; top: 60px; left: 50%; transform: translateX(-50%);
+            background: rgba(0, 200, 83, 0.95); color: white; padding: 10px 18px; border-radius: 25px;
+            font-weight: bold; font-size: 0.88rem; z-index: 400; display: none; box-shadow: 0 4px 12px rgba(0,0,0,0.35);
             white-space: nowrap;
         }
 
@@ -173,11 +174,17 @@
 <body>
 
 <div class="site-header">
-    <h2 class="site-title">📸 電子黒板カメラ</h2>
-    <label class="quick-save-toggle" title="ONにすると撮影後プレビューを省略し、前回位置に自動合成して即保存します">
-        <input type="checkbox" id="instantSaveChk" onchange="toggleInstantSave(this.checked)">
-        <span>⚡ 確認せず即保存</span>
-    </label>
+    <h2 class="site-title">📸 黒板カメラ</h2>
+    <div class="header-toggles">
+        <label class="quick-save-toggle" title="ONにするとGoogleドライブの『職人ギア_現場写真』フォルダへ直接保存します">
+            <input type="checkbox" id="driveUploadChk" onchange="toggleDriveUpload(this.checked)">
+            <span>☁️Gドライブ</span>
+        </label>
+        <label class="quick-save-toggle" title="ONにすると撮影後プレビューを省略し、前回位置に自動合成して即保存します">
+            <input type="checkbox" id="instantSaveChk" onchange="toggleInstantSave(this.checked)">
+            <span>⚡即保存</span>
+        </label>
+    </div>
 </div>
 
 <div id="toastMsg">✅ 保存しました！</div>
@@ -196,7 +203,7 @@
     </div>
 
     <div id="scrollableInputArea">
-        <!-- ★新機能：印字する日付の調整バー（前日・翌日・今日リセット対応） -->
+        <!-- 印字する日付の調整バー（前日・翌日・今日リセット対応） -->
         <div class="custom-date-bar">
             <span style="font-size:0.82rem; font-weight:bold; color:#555; flex-shrink:0;">📅 印字日:</span>
             <button class="date-shift-btn" onclick="shiftCustomDate(-1)">◀前日</button>
@@ -228,7 +235,7 @@
             <div class="process-btns"></div>
         </div>
 
-        <!-- ★共通エリア：任意ボタン＆施工箇所（日付モードでもファイル名整理やラベル印字に使える！） -->
+        <!-- 共通エリア：任意ボタン＆施工箇所 -->
         <div class="custom-btn-area">
             <label style="margin-bottom:5px; display:block;">部位・場所ボタン <span style="font-size:0.78rem; font-weight:normal; color:#888;">(ファイル名にも自動反映 / 長押しで編集)</span></label>
             <div id="customBtnGroup" class="input-grid-cam"></div>
@@ -248,7 +255,7 @@
     </div>
 </div>
 
-<!-- 撮影後プレビュー＆合成画面（黒板・日付モード共通で4隅＆小中大が使える！） -->
+<!-- 撮影後プレビュー＆合成画面 -->
 <div id="photoPreviewArea">
     <div id="previewStage">
         <img id="previewImage" src="" alt="撮影写真">
@@ -280,22 +287,27 @@
 </div>
 
 <script>
+    // ★navi.htmlの設定画面で保存されたGAS URLと認証キーを参照
+    const GAS_WEBAPP_URL = localStorage.getItem("expenseGasUrl") || "";
+
     let currentSite = null;
     let currentMode = 'board';
+    let uploadingCount = 0;
 
     // 日付モード用のスタイル設定
     let dateConfig = {
-        style: localStorage.getItem('dx_date_style') || 'orange', // 'orange' | 'white' | 'badge'
+        style: localStorage.getItem('dx_date_style') || 'orange',
         showLoc: localStorage.getItem('dx_date_show_loc') === '1'
     };
 
-    // 黒板・日付共通の配置・サイズ・透過・即保存の設定
+    // 黒板・日付共通の配置・サイズ・透過・即保存・Gドライブ直行設定
     let boardState = {
         pos: localStorage.getItem('dx_board_pos') || 'br',
         scaleKey: localStorage.getItem('dx_board_scale_key') || 'md',
         scaleRatio: parseFloat(localStorage.getItem('dx_board_scale_ratio')) || 0.32,
         semiTransparent: localStorage.getItem('dx_board_alpha') === '1',
-        instantSave: localStorage.getItem('dx_instant_save') === '1'
+        instantSave: localStorage.getItem('dx_instant_save') === '1',
+        driveUpload: localStorage.getItem('dx_cam_drive_upload') !== '0' // 初期値ON
     };
 
     try {
@@ -313,6 +325,7 @@
         const savedComp = localStorage.getItem('dx_company_name');
         document.getElementById('companyName').value = savedComp ? savedComp : "";
         document.getElementById('instantSaveChk').checked = boardState.instantSave;
+        document.getElementById('driveUploadChk').checked = boardState.driveUpload;
         document.getElementById('dateShowLocChk').checked = dateConfig.showLoc;
         resetCustomDate();
         renderProcessButtons();
@@ -322,7 +335,19 @@
         drawBoard();
     };
 
-    // ★印字日の操作関数（今日・前日・翌日）
+    function toggleDriveUpload(checked) {
+        boardState.driveUpload = checked;
+        localStorage.setItem('dx_cam_drive_upload', checked ? '1' : '0');
+        if (checked && !localStorage.getItem("expenseGasUrl")) {
+            alert("⚠️ 設定画面（navi.html）でGAS URLがまだ設定されていないため、スマホ本体へ保存されます。");
+        }
+    }
+
+    function toggleInstantSave(checked) {
+        boardState.instantSave = checked;
+        localStorage.setItem('dx_instant_save', checked ? '1' : '0');
+    }
+
     function resetCustomDate() {
         const now = new Date();
         const yyyy = now.getFullYear();
@@ -360,7 +385,6 @@
         return { dateStr, timeStr, fullDateTime: `${dateStr} ${timeStr}`, compactDate };
     }
 
-    // ★管理しやすい連番（001, 002...）を生成する関数
     function getNextPhotoSeq(compactDate) {
         const lastDate = localStorage.getItem('dx_photo_seq_date');
         let seq = parseInt(localStorage.getItem('dx_photo_seq_num') || '0', 10);
@@ -394,16 +418,14 @@
         });
     }
 
-    function toggleInstantSave(checked) {
-        boardState.instantSave = checked;
-        localStorage.setItem('dx_instant_save', checked ? '1' : '0');
-    }
-
-    function showToast(text) {
+    let toastTimer = null;
+    function showToast(text, bgColor) {
         const t = document.getElementById('toastMsg');
         t.innerText = text;
+        t.style.background = bgColor || 'rgba(0, 200, 83, 0.95)';
         t.style.display = 'block';
-        setTimeout(() => { t.style.display = 'none'; }, 1800);
+        if (toastTimer) clearTimeout(toastTimer);
+        toastTimer = setTimeout(() => { t.style.display = 'none'; }, 2400);
     }
 
     function saveCameraSettings() {
@@ -443,7 +465,6 @@
         const location = (document.getElementById('photoDetail').value || "").trim();
 
         if (currentMode === 'board') {
-            // 黒板モードは 800x600 (4:3)
             if (canvas.width !== 800 || canvas.height !== 600) {
                 canvas.width = 800; canvas.height = 600;
             }
@@ -501,7 +522,6 @@
             ctx.restore();
 
         } else {
-            // ★日付・日時モード：余白のないスリム枠（640x160）に動的変更！4隅のどこに置いてもピタッと端に揃う
             if (canvas.width !== 640 || canvas.height !== 160) {
                 canvas.width = 640; canvas.height = 160;
             }
@@ -512,7 +532,6 @@
             const subLoc = (dateConfig.showLoc && location) ? location : "";
 
             if (dateConfig.style === 'badge') {
-                // どんな背景の写真でも100%読める「半透明黒プレート＋白文字」
                 ctx.fillStyle = 'rgba(0, 0, 0, 0.65)';
                 ctx.beginPath();
                 ctx.roundRect ? ctx.roundRect(10, 15, 620, 130, 18) : ctx.fillRect(10, 15, 620, 130);
@@ -535,7 +554,6 @@
                     ctx.fillText(displayText, 320, 82);
                 }
             } else {
-                // デジカメ風オレンジ または 白文字＋黒縁（選択している角に合わせて左右寄せを自動調整）
                 const isLeft = (boardState.pos === 'tl' || boardState.pos === 'bl');
                 const anchorX = isLeft ? 20 : 620;
                 ctx.textAlign = isLeft ? 'left' : 'right';
@@ -635,21 +653,67 @@
         photoFile = null;
     }
 
-    // ★整理しやすいファイル名（現場名_工程または日付_施工箇所_YYYYMMDD_連番001.jpg）で保存
-    function triggerDownload(compCanvas) {
+    // スマホ本体へダウンロードするバックアップ関数
+    function downloadToLocalDevice(dataUrl, fileName) {
         const link = document.createElement('a');
-        link.href = compCanvas.toDataURL('image/jpeg', 0.92);
+        link.href = dataUrl;
+        link.download = fileName;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+    }
+
+    // ★Gドライブ直行（裏側で非同期アップロードし、失敗時のみスマホ本体へ自動保存）
+    async function triggerDownload(compCanvas) {
+        const dataUrl = compCanvas.toDataURL('image/jpeg', 0.90);
         const { compactDate } = getFormattedDateStrings();
         const seq = getNextPhotoSeq(compactDate);
         const siteStr = currentSite ? currentSite.name : '現場';
         const loc = (document.getElementById('photoDetail').value || '').trim().replace(/\s+/g, '-') || '全景';
         const suffix = (currentMode === 'board') ? (currentProcess || '記録') : '日付記録';
         const fileName = `${siteStr}_${suffix}_${loc}_${compactDate}_${seq}.jpg`;
-        link.download = fileName;
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
-        showToast(`✅ 保存: ${loc}_${seq}.jpg`);
+
+        const gasUrl = localStorage.getItem("expenseGasUrl") || GAS_WEBAPP_URL || "";
+        const authKey = localStorage.getItem("dx_auth_key") || "うっきうき";
+
+        // 「☁️Gドライブ」がOFF、またはGAS URLが未設定ならスマホ本体へダウンロード
+        if (!boardState.driveUpload || !gasUrl) {
+            downloadToLocalDevice(dataUrl, fileName);
+            showToast(`📱 スマホ保存: ${loc}_${seq}.jpg`);
+            return;
+        }
+
+        // ★裏側（非同期）でGoogleドライブの現場フォルダへ直接送信！
+        const base64Image = dataUrl.split(',')[1];
+        uploadingCount++;
+        showToast(`☁️ Gドライブへ送信中... (${uploadingCount}枚)`, 'rgba(41, 128, 185, 0.95)');
+
+        try {
+            const response = await fetch(gasUrl, {
+                method: 'POST',
+                headers: { 'Content-Type': 'text/plain' },
+                body: JSON.stringify({
+                    action: "uploadSitePhoto",
+                    authKey: authKey,
+                    siteName: siteStr,
+                    fileName: fileName,
+                    image: base64Image
+                })
+            });
+            const res = await response.json();
+            uploadingCount = Math.max(0, uploadingCount - 1);
+
+            if (res.status === "success") {
+                showToast(`✅ Gドライブ保存完了！（${loc}_${seq}）`);
+            } else {
+                throw new Error(res.message || "保存エラー");
+            }
+        } catch (err) {
+            uploadingCount = Math.max(0, uploadingCount - 1);
+            console.error("Gドライブ送信エラー（スマホ本体へ退避）:", err);
+            downloadToLocalDevice(dataUrl, fileName);
+            showToast(`⚠️ 電波エラーのためスマホ本体に保存しました`, 'rgba(230, 126, 34, 0.95)');
+        }
     }
 
     function saveCompositePhoto(andNext) {
@@ -723,7 +787,6 @@
         localStorage.setItem('dx_board_pos', pos);
         updateToolButtonsUI();
 
-        // 日付モードの時は左右の角に合わせて文字寄せ方向を再描画
         if (currentMode !== 'board') {
             drawBoard();
             document.getElementById('overlayBoard').src = canvas.toDataURL('image/png');
@@ -913,7 +976,6 @@
             if (e.type === 'touchend' && e.cancelable) e.preventDefault();
             if (text !== '（空）') {
                 if (isCamLocationMode || currentMode !== 'board') {
-                    // 場所モード、または日付モードの時は「施工箇所」に文字を追加する
                     const detailBox = document.getElementById('photoDetail');
                     detailBox.value = detailBox.value + (detailBox.value ? ' ' : '') + text;
                     drawBoard();
