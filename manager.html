@@ -66,13 +66,13 @@
             margin-bottom: 16px;
             box-shadow: 0 3px 8px rgba(0,0,0,0.12);
         }
-        .overlap-title { font-size: 0.85rem; color: #f39c12; font-weight: bold; margin-bottom: 6px; display: flex; justify-content: space-between; }
+        .overlap-title { font-size: 1rem; color: #f39c12; font-weight: bold; margin-bottom: 6px; display: flex; justify-content: space-between; }
         .overlap-chips { display: flex; flex-wrap: wrap; gap: 6px; }
         .overlap-chip { background: rgba(255,255,255,0.15); padding: 4px 10px; border-radius: 15px; font-size: 0.8rem; font-weight: bold; }
 
         /* セクション見出し */
         .section-divider {
-            font-size: 0.85rem;
+            font-size: 1rem;
             font-weight: bold;
             color: #555;
             margin: 18px 0 8px 4px;
@@ -201,9 +201,9 @@
 
     <div class="filter-area">
         <button class="filter-btn active" onclick="setFilter('upcoming', this)">🔥 予定・稼働順</button>
-        <button class="filter-btn" onclick="setFilter('activeOnly', this)">🤝 着工・契約済のみ</button>
+        <button class="filter-btn" onclick="setFilter('activeOnly', this)">🤝 契約済み</button>
         <button class="filter-btn" onclick="setFilter('nodate', this)">⚠️ 日程未定</button>
-        <button class="filter-btn" onclick="setFilter('all', this)">📋 請求・完了含む全て</button>
+        <button class="filter-btn" onclick="setFilter('all', this)">📋 全て</button>
     </div>
 </div>
 
@@ -233,11 +233,11 @@
 
     <div style="display:grid; grid-template-columns: 1fr 1fr; gap:10px;">
         <div>
-            <label>着工日（開始日）</label>
+            <label>着工日</label>
             <input type="date" id="editStart">
         </div>
         <div>
-            <label>完工予定（終了日）</label>
+            <label>完工予定</label>
             <input type="date" id="editEnd">
         </div>
     </div>
@@ -254,16 +254,16 @@
 
     <label>ステータス変更</label>
     <select id="editStatus">
-        <option value="estimate">📄 見積中（現調・打合せ）</option>
-        <option value="contract">🤝 契約済み・施工中</option>
-        <option value="billing">💰 請求中</option>
+        <option value="estimate">📄 見積中</option>
+        <option value="contract">🤝 契約済み</option>
+        <option value="billing">💰 請求</option>
         <option value="complete">✅ 完了</option>
     </select>
 
     <!-- お客さん公開用 Googleカレンダー連携ボタン -->
     <div style="margin-top:18px; padding-top:12px; border-top:1px solid #eee;">
         <button onclick="sendCalendarFromManager(event)" style="width:100%; background:#f39c12; color:white; border:none; padding:12px; border-radius:8px; font-weight:bold; cursor:pointer; font-size:0.95rem; margin-bottom:10px; box-shadow: 0 2px 5px rgba(0,0,0,0.1);">
-            📅 Gカレンダーに反映（名刺QR連動）＆保存
+            📅 Gカレンダーに反映　＆　保存
         </button>
 
         <div style="display:flex; gap:8px;">
@@ -445,7 +445,7 @@
             const chips = todayRunning.map(s => `<span class="overlap-chip">🔨 ${s.name}</span>`).join('');
             summaryEl.innerHTML = `
                 <div class="overlap-title">
-                    <span>🔥 本日の稼働・予定現場（同時進行: ${todayRunning.length}件）</span>
+                    <span>🔥 本日の稼働・予定（重複: ${todayRunning.length}件）</span>
                     <span>${today.getMonth()+1}/${today.getDate()}</span>
                 </div>
                 <div class="overlap-chips">${chips}</div>
@@ -530,9 +530,9 @@
 
         let currentGroupHeader = 0;
         const groupTitles = {
-            1: '🟢 現在稼働中・着工中の現場',
-            2: '📅 今後の予定・着工順（日報予定・工期連動）',
-            3: '⚠️ 日程・予定が未定の現場',
+            1: '🟢 現在稼働中の現場',
+            2: '📅 今後の予定・着工順',
+            3: '⚠️ 未定の現場',
             4: '✅ 施工完了・請求中・その他の現場'
         };
 
@@ -550,8 +550,8 @@
             else if (group === 4) cardClass = 'card-done';
 
             let stLabel = '見積中', stClass = 'st-estimate';
-            if (site.status === 'contract' || site.status === 'active') { stLabel = '契約済・施工'; stClass = 'st-contract'; }
-            if (site.status === 'billing') { stLabel = '請求中'; stClass = 'st-billing'; }
+            if (site.status === 'contract' || site.status === 'active') { stLabel = '契約済み'; stClass = 'st-contract'; }
+            if (site.status === 'billing') { stLabel = '請求'; stClass = 'st-billing'; }
             if (site.status === 'complete' || site.status === 'done') { stLabel = '完了'; stClass = 'st-complete'; }
 
             // ★修正：「予定」タグには✕ボタンを付けず、日報側で管理する仕様に統一
@@ -626,7 +626,7 @@
             } else {
                 periodHtml = `
                     <div class="period-box" style="background:#fff5f5; border-color:#ffcdd2; color:#c62828; font-size:0.85rem; font-weight:bold;">
-                        ⚠️ 着工日・完工日が未設定です
+                        ⚠️ 予定が未設定です
                     </div>
                 `;
             }
@@ -647,9 +647,9 @@
                     ${schedHtml}
                     ${periodHtml}
                     <div class="card-actions">
-                        <button class="btn-card btn-edit-date" onclick="openEditModal('${site.id}')">📅 日程・メモ編集</button>
+                        <button class="btn-card btn-edit-date" onclick="openEditModal('${site.id}')">📅 日程・編集</button>
                         ${quickShiftBtns}
-                        <a href="tools.html?id=${site.id}" class="btn-card btn-open-tool">🧰 日報・黒板</a>
+                        <a href="tools.html?id=${site.id}" class="btn-card btn-open-tool">🧰 ツール</a>
                     </div>
                 </div>
             `;
