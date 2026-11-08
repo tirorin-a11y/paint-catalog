@@ -917,6 +917,7 @@ function moveItem(index, direction) {
         const numInput = document.getElementById('inputNum'); numInput.readOnly = true; numInput.className = 'input-num locked'; tapCount = 0;
         if(mode==='new') {
             isEditing=false; editingId=null;
+            document.getElementById('pluscode').value = '';
             document.getElementById('btnDeleteSingle').style.display='none'; document.getElementById('btnDuplicate').style.display='none'; document.getElementById('naviCountArea').style.display='none';
             const y = new Date().getFullYear(); document.getElementById('inputYear').value=y; document.getElementById('inputNum').value=getNextNum(y);
             document.getElementById('siteName').value=''; document.getElementById('address').value=''; document.getElementById('status').value='estimate'; document.getElementById('parentCaseNo').value=''; document.getElementById('startDate').value=''; document.getElementById('endDate').value='';
@@ -926,6 +927,7 @@ function moveItem(index, direction) {
             const s = sites.find(x=>x.id===id);
             if(s) {
                 const p = s.id.split('-'); document.getElementById('inputYear').value=p[0]; document.getElementById('inputNum').value=p[1];
+                document.getElementById('pluscode').value = s.plusCode || '';
                 document.getElementById('siteName').value=s.name; document.getElementById('address').value=s.address; document.getElementById('status').value=s.status; document.getElementById('editNaviCount').value=s.naviCount||0; document.getElementById('parentCaseNo').value=s.parentCaseNo||''; document.getElementById('startDate').value=s.start||''; document.getElementById('endDate').value=s.end||'';
             }
         }
@@ -987,175 +989,118 @@ function moveItem(index, direction) {
         }
     }
 
-    // クラウド保存（即閉じ ＆ 撃ちっ放しバックグラウンド仕様）
-async function syncAllDataToCloud() {
-    const authKey = localStorage.getItem('dx_auth_key') || "";
-    // 合言葉が空の場合はここでストップ
-    if (!authKey || authKey.trim() === "") {
-        alert("合言葉を入力してください。");
-        return false;
-    }
+    // ① クラウド保存（getGasConfig統一 ＆ 親方権限ガード付き）
+    async function syncAllDataToCloud() {
+        const { url, authKey, role } = getGasConfig();
 
-    if(!confirm("現在スマホにあるデータで、クラウドを上書き保存しますか？")) return;
-    
-    // ===========================================================
-    // 🌟【作戦Aの核心】OKを押された瞬間に、0.1秒で画面をすべて閉じる！
-    // ===========================================================
-    closeAllModals();
-    showNotification("☁️ クラウドへ保存を開始しました");
-
-    const targetUrl = localStorage.getItem('dx_gas_url');
-    if(!targetUrl || targetUrl.includes("script.google.com") === false) { 
-        alert("GAS URLを設定してください"); return false; 
-    }
-
-    // 🕵️‍♂️ 旧ステップ1（送信前のチラ見チェック）は、
-    // 画面を即座に落とす運用の邪魔になるためバッサリ削除しました！
-    // 安全性の高い「GAS側の門番チェック」にすべてを委ねます。
-
-    // -----------------------------------------------------------
-    // 🚀 いざ、送信！（通信の完了を待たずに即時フリーにする）
-    // -----------------------------------------------------------
-    try {
-        // 💡 あえて「await」を外すことで、通信の終わりを待たずにこの関数を即終了させます
-        fetch(targetUrl, { 
-            method: 'POST', 
-            headers: { 'Content-Type': 'text/plain' }, 
-            body: JSON.stringify({ 
-                type: "sync", 
-                data: sites, 
-                reporter: localStorage.getItem('dx_reporter_name') || "職人",
-                clientTime: Number(localStorage.getItem('dx_sync_time') || 0),
-                authKey: authKey
-            }),
-            keepalive: true // 🌟【最重要】スマホをポケットにしまっても、ブラウザが裏で最後まで送り届ける魔法！
-        })
-        .then(async response => {
-            const resText = await response.text(); 
-            const resJson = JSON.parse(resText);   
-            
-            if (resJson.result === "success") { 
-                // 成功したら、裏側でこっそり同期時間を更新
-                localStorage.setItem('dx_sync_time', Date.now()); 
-                if (typeof showNotification === 'function') {
-                    showNotification("✅ クラウド保存完了"); 
-                }
-            } else { 
-                // GAS側の門番（サーバーの方が新しいデータがある等）で弾かれた場合
-                if (resJson.error && resJson.error.includes("サーバーに新しいデータ")) {
-                    // もしアプリを開いたまま待っていたなら、警告を出す
-                    if (typeof showNotification === 'function') {
-                        showNotification("⛔ 保存失敗：サーバーが新しいです");
-                    }
-                    console.warn("同期競合エラー:", resJson.error);
-                }
-            }
-        })
-        .catch(e => {
-            console.error("バックグラウンド通信エラー（スルーします）:", e);
-        });
-
-        // 通信の「開始」自体は成功したので、trueを返して即座に画面を動かせる状態にする
-        return true; 
-
-    } catch(e) { 
-        alert("送信処理の開始に失敗: " + e); 
-        return false; 
-    }
-}
-
-    async function downloadFromCloud() {
-        const gasUrl = localStorage.getItem('dx_gas_url');
-        const authKey = localStorage.getItem('dx_auth_key') || ""; 
-        
-        // ★追加：合言葉が空の場合はここでストップ
-        if (!authKey || authKey.trim() === "") {
+        if (!authKey) {
             alert("合言葉を入力してください。");
-            return;
+            return false;
         }
+        if (!url || !url.includes("script.google.com")) {
+            alert("GAS URLを正しく設定してください。");
+            return false;
+        }
+        // ★追加ガード：職人・助っ人モードからの全体上書きを防止
+        if (role !== '親方') {
+            alert("⛔ クラウド全体のデータ上書きは「👑 親方モード」のみ実行できます。");
+            return false;
+        }
+
+        if (!confirm("現在スマホにあるデータで、クラウドを上書き保存しますか？")) return false;
+
+        closeAllModals();
+        showNotification("☁️ クラウドへ保存を開始しました");
+
+        try {
+            fetch(url, { 
+                method: 'POST', 
+                headers: { 'Content-Type': 'text/plain' }, 
+                body: JSON.stringify({ 
+                    type: "sync", 
+                    data: sites, 
+                    reporter: localStorage.getItem('dx_reporter_name') || "職人",
+                    clientTime: Number(localStorage.getItem('dx_sync_time') || 0),
+                    authKey: authKey
+                }),
+                keepalive: true
+            })
+            .then(async response => {
+                const resText = await response.text(); 
+                const resJson = JSON.parse(resText);   
+                if (resJson.result === "success") { 
+                    localStorage.setItem('dx_sync_time', Date.now()); 
+                    showNotification("✅ クラウド保存完了"); 
+                } else if (resJson.error && resJson.error.includes("サーバーに新しいデータ")) {
+                    showNotification("⛔ 保存失敗：サーバーが新しいです");
+                }
+            })
+            .catch(e => console.error("バックグラウンド通信エラー:", e));
+
+            return true; 
+        } catch(e) { 
+            alert("送信処理の開始に失敗: " + e); 
+            return false; 
+        }
+    }
+
+    // ② クラウドから復元（getGasConfig統一 ＆ 合言葉のURLエンコード保護）
+    async function downloadFromCloud() {
+        const { url, authKey } = getGasConfig();
+        if (!authKey) { alert("合言葉を入力してください。"); return; }
+        if (!url) { alert("GAS URL設定なし"); return; }
         
-        if(!gasUrl) { alert("GAS URL設定なし"); return; }
-        
-        if(!confirm("クラウドデータで上書き復元しますか？")) return;
+        if (!confirm("クラウドデータで上書き復元しますか？")) return;
         showNotification('📥 取得中...');
         
         try {
-            const res = await fetch(gasUrl + "?type=getAll&authKey=" + authKey + "&t=" + Date.now());
+            // ★修正：encodeURIComponentで合言葉を安全に保護して送信
+            const fetchUrl = `${url}?type=getAll&authKey=${encodeURIComponent(authKey)}&t=${Date.now()}`;
+            const res = await fetch(fetchUrl);
             const text = await res.text(); 
             const responseData = JSON.parse(text);       
             
-// =========================================================
-            // ★追加：一緒に届いた辞書データをスマホのメモリに記憶させる！
-            // =========================================================
             if (responseData.dictionary) {
                 localStorage.setItem('dx_tag_dictionary', JSON.stringify(responseData.dictionary));
             }
 
+            let finalData = responseData.items ? responseData.items : (Array.isArray(responseData) ? responseData : null);
+            if (!finalData) { alert("データ形式エラー（または合言葉が違います）"); return; }
 
-            let finalData = [];
+            sites = finalData; 
+            sites.sort((a, b) => (a.id > b.id ? -1 : 1));
+            localStorage.setItem('dx_sites', JSON.stringify(sites));
+            localStorage.setItem('dx_sync_time', Date.now()); 
 
-            // ★新しい形式に対応
-            if (responseData.items) {
-                finalData = responseData.items;
-            } else if (Array.isArray(responseData)) {
-                finalData = responseData;
-            } else {
-                alert("データ形式エラー"); return;
-            }
-
-            if(Array.isArray(finalData)) {
-                sites = finalData; 
-                sites.sort((a, b) => (a.id > b.id ? -1 : 1));
-                localStorage.setItem('dx_sites', JSON.stringify(sites));
-                
-                // 時間更新
-                localStorage.setItem('dx_sync_time', Date.now()); 
-
-                renderList(); closeAllModals(); showNotification(`✅ 復元完了 (${sites.length}件)`);
-            }
+            renderList(); closeAllModals(); showNotification(`✅ 復元完了 (${sites.length}件)`);
         } catch(e) { alert("取得エラー: " + e); }
     }
-    
-     
 
-    
+    // ③ 自動更新チェック（getGasConfig統一 ＆ 未設定時は完全停止）
     async function checkForCloudUpdates() {
-        const targetUrl = localStorage.getItem('dx_gas_url');
-        const authKey = localStorage.getItem('dx_auth_key') || "";
-        if(!targetUrl) return;
+        const { url, authKey } = getGasConfig();
+        // ★修正：URLと合言葉の両方が揃っていない時（試用版など）は無駄な通信を一切しない
+        if (!url || !authKey) return;
 
-        // 連打ガード（10秒）
         const now = Date.now();
         if (typeof lastCheckTime !== 'undefined' && now - lastCheckTime < 10000) return;
         lastCheckTime = now;
 
-        // アイコン回す（控えめに）
         const indicator = document.getElementById('syncIndicator');
-        if(indicator) { indicator.style.display = 'inline-block'; indicator.classList.add('sync-spinner'); }
+        if (indicator) { indicator.style.display = 'inline-block'; indicator.classList.add('sync-spinner'); }
 
         try {
-            // キャッシュ無視のおまじない付きでアクセス
-            const fetchUrl = targetUrl + "?type=getAll&authKey=" + authKey + "&t=" + Date.now();
+            const fetchUrl = `${url}?type=getAll&authKey=${encodeURIComponent(authKey)}&t=${Date.now()}`;
             const res = await fetch(fetchUrl);
             const text = await res.text(); 
-            
-            // エラーなら静かに終了（ログだけ残す）
-            if (text.includes('"result":"error"')) { console.warn("Check Skip: Error"); return; }
+            if (text.includes('"result":"error"')) return;
 
             const responseData = JSON.parse(text);
-
-            // =========================================================
-            // ★追加：アップデート確認のついでに辞書データも最新版に更新！
-            // =========================================================
             if (responseData.dictionary) {
                 localStorage.setItem('dx_tag_dictionary', JSON.stringify(responseData.dictionary));
             }
 
-
-            // データ解析
-            let cloudTime = 0;
-            let cloudData = [];
-
+            let cloudTime = 0, cloudData = [];
             if (responseData.serverTime) {
                 cloudTime = Number(responseData.serverTime);
                 cloudData = responseData.items;
@@ -1164,33 +1109,21 @@ async function syncAllDataToCloud() {
                 cloudTime = cloudData.length > 0 ? Math.max(...cloudData.map(s => s.updatedAt ? new Date(s.updatedAt).getTime() : 0)) : 0;
             }
 
-            // スマホの前回同期時間
             const localSyncTime = Number(localStorage.getItem('dx_sync_time') || 0);
-            
-            // ★判定：サーバーの方が新しければ通知！
             if (cloudTime > localSyncTime) {
                 if (confirm(`🔄 クラウドに新しいデータがあります！\n取り込みますか？`)) {
-                    // ID順に整列
                     cloudData.sort((a, b) => (a.id > b.id ? -1 : 1));
                     sites = cloudData; 
-                    
-                    // 保存＆時間更新
                     localStorage.setItem('dx_sites', JSON.stringify(sites));
                     localStorage.setItem('dx_sync_time', Date.now()); 
-
                     alert("✅ 最新データを反映しました！"); 
                     location.reload();
                 }
             }
-
         } catch (e) { 
-            // ★★★ ここを修正しました！ ★★★
-            // alert（ポップアップ）を消して、console.warn（裏側の記録）だけにしました。
-            // これで放置しても画面には何も出ません。
             console.warn("更新チェック失敗（スルーします）:", e); 
         } finally {
-            // アイコンを止める
-            if(indicator) { 
+            if (indicator) { 
                 setTimeout(() => { 
                     indicator.classList.remove('sync-spinner'); 
                     indicator.style.display = 'none'; 
@@ -1214,7 +1147,7 @@ async function syncAllDataToCloud() {
     
     // ★修正：暗号化付きJSON書き出し（合言葉を使用）
     async function exportJSON() {
-        const authKey = localStorage.getItem('dx_auth_key');
+        const { authKey } = getGasConfig();
         
         if (!authKey || authKey.trim() === "") {
             alert("合言葉を入力してください。");
@@ -1260,7 +1193,7 @@ async function syncAllDataToCloud() {
     function importJSON(input) {
         const f = input.files[0];
         if (!f) return;
-        const authKey = localStorage.getItem('dx_auth_key');
+        const { authKey } = getGasConfig();
 
         const r = new FileReader();
         r.onload = function(e) {
@@ -1313,7 +1246,7 @@ async function syncAllDataToCloud() {
     // ★追加：バックアップボタンの挙動制御
     function handleBackupClick() {
         // ★修正：ここで合言葉を先にチェックすることもできますが、クラウド・ファイルどちらか選ぶ前にストップしないように関数内にチェックを移動しました
-        const gasUrl = localStorage.getItem('dx_gas_url');
+        const { url: gasUrl } = getGasConfig();
         
         // クラウド設定がある場合 → 選択画面を出す
         if (gasUrl && gasUrl.trim() !== "") {
