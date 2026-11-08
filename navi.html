@@ -310,21 +310,23 @@
             <label>📩 日報送信先</label>
             <input type="email" id="managerEmail" placeholder="example@gmail.com" onchange="saveSettings()" style="background:#fff;">
         </div>
+        <!-- ★ここへ移動！試用版の人も最初から顧客データを暗号化できるよう常時開放 -->
+        <div style="margin-bottom:15px;">
+            <label>🔑 合言葉 (★顧客データの暗号化・保護に使用)</label>
+            <input type="text" id="authKey" placeholder="任意の合言葉を設定してください" onchange="saveSettings()" style="background:#fff; border:2px solid #f39c12;">
+        </div>
 
         <div class="manager-only">
             <details class="accordion-box">
                 <summary>🔧 システム連携設定 (GAS・カレンダー)</summary>
                     <div class="accordion-content">
-                        <p style="font-size:0.8rem; color:#e67e22; margin-top:0;">※ここを変更すると連携が動かなくなる場合があります。</p>
+                        <p style="font-size:0.8rem; color:#e67e22; margin-top:0;">※クラウド連携（有料版）を使う場合のみ設定します。</p>
                         
                         <label>☁️ 工程表・日報用 GAS URL</label>
                         <input type="text" id="gasUrl" placeholder="https://script.google.com/macros/s/xxxx/exec" onchange="saveSettings()">
                         
                         <label>💰 経費自動記帳用 GAS URL</label>
                         <input type="text" id="settingExpenseGas" placeholder="https://script.google.com/macros/s/xxxx/exec" onchange="saveSettings()">
-                        
-                        <label>🔑 合言葉 (★ローカル暗号化にも使用)</label>
-                        <input type="text" id="authKey" placeholder="設定した合言葉を入力" onchange="saveSettings()">
                         
                         <label>📅 カレンダーID</label>
                         <input type="text" id="calendarId" placeholder="xxxxx@group.calendar.google.com" onchange="saveSettings()">
@@ -381,6 +383,78 @@
 </div>
 
 <script>
+    // =========================================================
+    // 🔐 セキュリティ＆権限管理（tools.htmlと完全連動）
+    // =========================================================
+    function getGasConfig() {
+        return {
+            url: (localStorage.getItem('dx_gas_url') || '').trim(),
+            authKey: (localStorage.getItem('dx_auth_key') || '').trim(),
+            staffPin: (localStorage.getItem('dx_staff_pin') || '').trim(),
+            role: localStorage.getItem('dx_user_role') || '職人'
+        };
+    }
+
+    // 並び替えモードの記憶（active: 通い中優先 / count: ナビ回数順 / id: 案件No順）
+    let currentSortOrder = localStorage.getItem('dx_sort_order') || 'active';
+
+    function applyNaviRolePermissions() {
+        const { role, url } = getGasConfig();
+        // ★ポイント：GAS URLが空欄（試用版）なら、無条件で「親方（全機能解放）」として扱う！
+        const isTrial = !url;
+        const isOyakata = isTrial || (role === '親方');
+
+        // 1. ヘッダーにモードバッジを表示
+        const titleArea = document.querySelector('.header-title-area');
+        if (titleArea) {
+            let badge = document.getElementById('roleBadge');
+            if (!badge) {
+                titleArea.insertAdjacentHTML('beforeend',
+                    `<span id="roleBadge" onclick="promptRolePin()" style="color:white; padding:2px 8px; border-radius:12px; font-size:0.72rem; font-weight:bold; cursor:pointer; user-select:none;"></span>`
+                );
+                badge = document.getElementById('roleBadge');
+            }
+            if (isTrial) {
+                badge.textContent = '🔰 試用モード';
+                badge.style.background = '#7f8c8d';
+            } else {
+                badge.textContent = (role === '親方') ? '👑 親方' : (role === '助っ人' ? '🧢 助っ人' : '🔨 職人');
+                badge.style.background = (role === '親方') ? '#f39c12' : (role === '助っ人' ? '#95a5a6' : '#27ae60');
+            }
+        }
+
+        // 2. 試用版または親方なら全ボタン表示、クラウド連携中の職人・助っ人だけ隠す
+        const managerLink = document.querySelector('a[href="manager.html"]');
+        const fabContainer = document.querySelector('.fab-container');
+        if (managerLink) managerLink.style.display = isOyakata ? '' : 'none';
+        if (fabContainer) fabContainer.style.display = isOyakata ? 'flex' : 'none';
+    }
+
+    function promptRolePin() {
+        const currentRole = localStorage.getItem('dx_user_role') || '職人';
+        const inputPin = prompt(`【権限モード切替】現在のモード: ${currentRole}\nスタッフPINコードを入力してください:`);
+        if (inputPin === null) return;
+
+        const cleanPin = inputPin.trim();
+        const savedAdminPin = localStorage.getItem('dx_admin_pin') || '1223-0223';
+        if (cleanPin === savedAdminPin) {
+            localStorage.setItem('dx_user_role', '親方');
+            localStorage.setItem('dx_staff_pin', cleanPin);
+            alert('👑 親方（管理者）モードに切り替えました！');
+        } else if (cleanPin === '0000-0000' || cleanPin === '0000') {
+            localStorage.setItem('dx_user_role', '助っ人');
+            localStorage.setItem('dx_staff_pin', cleanPin);
+            alert('🧢 助っ人モードに切り替えました。');
+        } else {
+            localStorage.setItem('dx_user_role', '職人');
+            localStorage.setItem('dx_staff_pin', cleanPin);
+            alert('🔨 職人モードに切り替えました。');
+        }
+        location.reload();
+    }
+
+    document.addEventListener('DOMContentLoaded', applyNaviRolePermissions);
+
     let sites = JSON.parse(localStorage.getItem('dx_sites')) || [];
     let isEditing = false, tapCount = 0, editingId = null, isSortMode = false, pressTimer = null; 
     
@@ -609,7 +683,31 @@
             renderList();
         }
     }
-    function toggleSortMode() { isSortMode = !isSortMode; document.body.classList.toggle('sort-mode', isSortMode); showNotification(isSortMode ? '⇅ 並び替えモード：ON' : '並び替え終了'); renderList(); }
+    
+    // ★進化版：右上の「⇅」ボタンで並び順をスマート切り替え！
+    function toggleSortMode() {
+        if (currentFilter === 'all') {
+            // 「全て」タブの時は従来の上下ボタン手動並び替えモード
+            isSortMode = !isSortMode;
+            document.body.classList.toggle('sort-mode', isSortMode);
+            showNotification(isSortMode ? '⇅ 手動並び替え：ON' : '並び替え終了');
+            renderList();
+        } else {
+            // 「契約済」などのタブでは、押すたびに並び順ルールを切り替える！
+            if (currentSortOrder === 'active') {
+                currentSortOrder = 'count';
+                showNotification('🚀 並び順：ナビ回数が多い順');
+            } else if (currentSortOrder === 'count') {
+                currentSortOrder = 'id';
+                showNotification('🆕 並び順：新しい案件No順');
+            } else {
+                currentSortOrder = 'active';
+                showNotification('🔥 並び順：通い中の現場優先（埋もれ防止）');
+            }
+            localStorage.setItem('dx_sort_order', currentSortOrder);
+            renderList();
+        }
+    }
 
     function getStatusText(status) {
         const map = { 'estimate':'見積中', 'contract':'契約済み', 'billing':'請求', 'complete':'完了', 'lost':'失注' };
@@ -617,20 +715,51 @@
     }
 
     function renderList() {
-    const listEl = document.getElementById('siteList');
-    const kw = document.getElementById('searchInput').value.toLowerCase();
-    listEl.innerHTML = '';
-    if (sites.length === 0) { listEl.innerHTML = '<div style="text-align:center; padding:40px; color:#888;">データがありません。<br>右下の「＋」ボタンから追加してください。</div>'; return; }
-    
-    let displaySites = [...sites];
-    if (currentFilter !== 'all') {
-        displaySites = displaySites.filter(s => {
-            if (currentFilter === 'contract') return s.status === 'contract' || s.status === 'active';
-            if (currentFilter === 'complete') return s.status === 'complete' || s.status === 'done';
-            return s.status === currentFilter;
-        });
-        displaySites.sort((a, b) => { if (a.id < b.id) return 1; if (a.id > b.id) return -1; return 0; });
-    }
+        const listEl = document.getElementById('siteList');
+        const kw = document.getElementById('searchInput').value.toLowerCase();
+        listEl.innerHTML = '';
+        if (sites.length === 0) { listEl.innerHTML = '<div style="text-align:center; padding:40px; color:#888;">データがありません。<br>右下の「＋」ボタンから追加してください。</div>'; return; }
+        
+        let displaySites = [...sites];
+        if (currentFilter !== 'all') {
+            displaySites = displaySites.filter(s => {
+                if (currentFilter === 'contract') return s.status === 'contract' || s.status === 'active';
+                if (currentFilter === 'complete') return s.status === 'complete' || s.status === 'done';
+                return s.status === currentFilter;
+            });
+
+            // ★進化版ソートロジック：新しい契約が増えても「今通っている現場」が絶対に埋もれない！
+            displaySites.sort((a, b) => {
+                const countA = a.naviCount || 0;
+                const countB = b.naviCount || 0;
+
+                if (currentSortOrder === 'active') {
+                    // ① ナビ1回以上（通い中）を最優先で上に！
+                    const isActiveA = countA > 0 ? 1 : 0;
+                    const isActiveB = countB > 0 ? 1 : 0;
+                    if (isActiveA !== isActiveB) return isActiveB - isActiveA;
+
+                    // ② 通い中同士なら「最近ナビを押した順（updatedAt）」、同じならナビ回数順
+                    if (isActiveA === 1) {
+                        const timeA = a.updatedAt || 0;
+                        const timeB = b.updatedAt || 0;
+                        if (timeA !== timeB) return timeB - timeA;
+                        if (countA !== countB) return countB - countA;
+                    }
+                    // ③ まだ通っていない新契約（0回）同士は案件Noの新しい順
+                    return (a.id < b.id) ? 1 : -1;
+                } 
+                else if (currentSortOrder === 'count') {
+                    // 🚀 ナビ回数が多い順（同じ回数なら案件Noの新しい順）
+                    if (countA !== countB) return countB - countA;
+                    return (a.id < b.id) ? 1 : -1;
+                } 
+                else {
+                    // 🆕 案件Noの新しい順（従来）
+                    return (a.id < b.id) ? 1 : -1;
+                }
+            });
+        }
     
     displaySites.forEach((site) => {
         const originalIndex = sites.findIndex(s => s.id === site.id);
@@ -824,7 +953,7 @@ function moveItem(index, direction) {
     function unlockCaseNo() { tapCount++; if(tapCount>=5){ const el=document.getElementById('inputNum'); el.readOnly=false; el.className='input-num unlocked'; showNotification('🔓 ロック解除'); tapCount=0; } }
     function getNowStr() { const d=new Date(); return `${d.getFullYear()}${('0'+(d.getMonth()+1)).slice(-2)}${('0'+d.getDate()).slice(-2)}`; }
     
-    // タブ切り替え処理
+    // タブ切り替え処理（★GAS URLが入っている社内運用時のみ、職人モードでPINロックをかける！）
     function switchSettingsTab(mode) {
         const body = document.getElementById('settingsBody');
         const tabSite = document.getElementById('tabSite');
@@ -832,9 +961,23 @@ function moveItem(index, direction) {
         const title = document.getElementById('tabTitle');
         const managerItems = document.querySelectorAll('.manager-only');
 
+        const { role, url } = getGasConfig();
+        // ★GAS URLが設定されている（社内クラウド運用中）かつ親方以外の時だけPINを聞く！
+        // （試用版の人はロックなしで自由に管理者タブも開けます）
+        if (mode === 'manager' && url && role !== '親方') {
+            const pin = prompt('🔒 管理者設定を開くには親方PINコードを入力してください:');
+            const savedAdminPin = localStorage.getItem('dx_admin_pin') || '1223-0223';
+            if (!pin || pin.trim() !== savedAdminPin) {
+                alert('⛔ PINコードが一致しないため開けません。');
+                return;
+            }
+            localStorage.setItem('dx_user_role', '親方');
+            applyNaviRolePermissions();
+        }
+
         if (mode === 'site') {
             tabSite.classList.add('active'); tabManager.classList.remove('active');
-            body.className = 'settings-content mode-site-bg'; title.innerText = '⛑️ 現場用メニュー (安全モード)';
+            body.className = 'settings-content mode-site-bg'; title.innerText = '⛑️ 現場用メニュー (基本設定)';
             managerItems.forEach(el => el.classList.add('hide-in-site'));
         } else {
             tabManager.classList.add('active'); tabSite.classList.remove('active');

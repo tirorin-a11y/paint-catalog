@@ -779,9 +779,10 @@
 
     // 権限（親方 / 職人 / 助っ人）に応じて画面のボタンを自動で隠す・表示する関数
     function applyRolePermissions() {
-        const { role, url, authKey } = getGasConfig();
-        const isOyakata = (role === '親方');
-        const isHelper  = (role === '助っ人');
+        const { role, url } = getGasConfig();
+        const isTrial = !url; // ★GAS URLが空なら試用版
+        const isOyakata = isTrial || (role === '親方'); // ★試用版は全機能（編集・削除・予定送信）を開放！
+        const isHelper  = !isTrial && (role === '助っ人');
 
         // 1. ヘッダーに現在のモードバッジを表示（タップでPIN入力・切替可能にする）
         const subEl = document.getElementById('displaySiteId');
