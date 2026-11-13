@@ -249,9 +249,10 @@
             <!-- 右：退勤用 -->
             <div class="punch-col">
                 <div>
-                    <label>☕ 休憩時間（退勤時・記憶）</label>
+                    <label>☕休憩時間（退勤時）</label>
                     <select id="attBreakSelect" onchange="saveBreakPreference()" style="padding:10px; font-size:0.9rem;">
                         <option value="60">60分</option>
+                        <option value="75">75分</option>
                         <option value="90">90分</option>
                         <option value="120">120分</option>
                         <option value="45">45分</option>
@@ -408,15 +409,37 @@
         const savedSite = localStorage.getItem('dx_last_att_site') || '';
         select.innerHTML = '<option value="">-- 現場を選択 --</option>';
 
+        // ★1. 本業（塗装現場）のリスト
+        const mainGroup = document.createElement('optgroup');
+        mainGroup.label = '🏠 本業（塗装・施工現場）';
         activeSites.forEach(s => {
             const opt = document.createElement('option');
             opt.value = s.name;
             const badge = (s.status === 'contract' || s.status === 'active') ? '🤝' : (s.status === 'billing' ? '💰' : '📄');
             opt.textContent = `${badge} ${s.name}`;
             if (s.name === savedSite) opt.selected = true;
-            select.appendChild(opt);
+            mainGroup.appendChild(opt);
         });
+        select.appendChild(mainGroup);
 
+        // ★2. 副業・冬期委託枠（選ぶだけで自動的に【副業1】などのタグが付く！）
+        const subGroup = document.createElement('optgroup');
+        subGroup.label = '❄️ 副業・冬期委託・掛け持ち';
+        const sideJobs = [
+            { val: '【副業1】旭川中央郵便局', label: '📮 【副業1】旭川中央郵便局' },
+            { val: '【副業2】副業・掛け持ち2', label: '🏪 【副業2】副業・掛け持ち2' },
+            { val: '【副業3】副業・掛け持ち3', label: '🚚 【副業3】副業・掛け持ち3' }
+        ];
+        sideJobs.forEach(job => {
+            const opt = document.createElement('option');
+            opt.value = job.val;
+            opt.textContent = job.label;
+            if (job.val === savedSite) opt.selected = true;
+            subGroup.appendChild(opt);
+        });
+        select.appendChild(subGroup);
+
+        // ★3. 自由手入力
         const customOpt = document.createElement('option');
         customOpt.value = '__custom__';
         customOpt.textContent = '✏️ その他（手入力する）';
@@ -539,8 +562,12 @@
             : siteSelectVal;
         const breakMinutes = document.getElementById('attBreakSelect').value;
 
-        if (!staffId || !pin) {
-            return showAttMsg('⚠️ スタッフ名と打刻PINコードを入力してください', false);
+        if (!staffId) {
+            return showAttMsg('⚠️ スタッフ名を選択してください', false);
+        }
+        // ★修正：出勤（in）の時だけPINコードを必須にし、退勤（out）の時はPIN不要で即退勤！
+        if (type === 'in' && !pin) {
+            return showAttMsg('⚠️ 出勤時は打刻PINコードを入力してください', false);
         }
 
         localStorage.setItem('dx_my_staff_id', staffId);
