@@ -409,37 +409,31 @@
         const savedSite = localStorage.getItem('dx_last_att_site') || '';
         select.innerHTML = '<option value="">-- 現場を選択 --</option>';
 
-        // ★1. 本業（塗装現場）のリスト
         const mainGroup = document.createElement('optgroup');
         mainGroup.label = '🏠 本業（塗装・施工現場）';
+        const subGroup = document.createElement('optgroup');
+        subGroup.label = '❄️ 副業・委託・掛け持ち';
+        let hasSub = false;
+
         activeSites.forEach(s => {
             const opt = document.createElement('option');
             opt.value = s.name;
             const badge = (s.status === 'contract' || s.status === 'active') ? '🤝' : (s.status === 'billing' ? '💰' : '📄');
             opt.textContent = `${badge} ${s.name}`;
             if (s.name === savedSite) opt.selected = true;
-            mainGroup.appendChild(opt);
+
+            // ★現場ナビの現場名に「副業」または「委託」が入っていれば、自動で副業グループへ振り分ける！
+            if (s.name.includes('副業') || s.name.includes('委託')) {
+                subGroup.appendChild(opt);
+                hasSub = true;
+            } else {
+                mainGroup.appendChild(opt);
+            }
         });
+
         select.appendChild(mainGroup);
+        if (hasSub) select.appendChild(subGroup);
 
-        // ★2. 副業・冬期委託枠（選ぶだけで自動的に【副業1】などのタグが付く！）
-        const subGroup = document.createElement('optgroup');
-        subGroup.label = '❄️ 副業・冬期委託・掛け持ち';
-        const sideJobs = [
-            { val: '【副業1】旭川中央郵便局', label: '📮 【副業1】旭川中央郵便局' },
-            { val: '【副業2】副業・掛け持ち2', label: '🏪 【副業2】副業・掛け持ち2' },
-            { val: '【副業3】副業・掛け持ち3', label: '🚚 【副業3】副業・掛け持ち3' }
-        ];
-        sideJobs.forEach(job => {
-            const opt = document.createElement('option');
-            opt.value = job.val;
-            opt.textContent = job.label;
-            if (job.val === savedSite) opt.selected = true;
-            subGroup.appendChild(opt);
-        });
-        select.appendChild(subGroup);
-
-        // ★3. 自由手入力
         const customOpt = document.createElement('option');
         customOpt.value = '__custom__';
         customOpt.textContent = '✏️ その他（手入力する）';
