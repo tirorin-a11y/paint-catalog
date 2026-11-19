@@ -351,6 +351,8 @@
     const GAS_WEBAPP_URL = localStorage.getItem("expenseGasUrl") || "";
     let attStaffList = [];
     let attStatusMap = {};
+    let attMasterSheetUrl = "";
+    let hasPunchedInSession = false; // ★即打刻した後に裏の古い通信で上書きされないためのガード
 
     window.addEventListener('DOMContentLoaded', () => {
         updateClock();
@@ -452,8 +454,55 @@
         }
     }
 
+    // スタッフリストをドロップダウンに描画する共通関数
+    
+
+    function getTodayDateKey() {
+        const d = new Date();
+        return `${d.getFullYear()}-${d.getMonth() + 1}-${d.getDate()}`;
+    }
+
+    function renderStaffOptions(list) {
+        const select = document.getElementById('attStaffSelect');
+        if (!select || !Array.isArray(list)) return;
+
+        const savedStaffId = localStorage.getItem('dx_my_staff_id') || "";
+        select.innerHTML = '<option value="">-- 名前を選択 --</option>';
+        list.forEach(s => {
+            const opt = document.createElement('option');
+            opt.value = s.id;
+            opt.textContent = `${s.name} (${s.role})`;
+            if (s.id === savedStaffId) opt.selected = true;
+            select.appendChild(opt);
+        });
+        onStaffSelectionChange();
+    }
+
     async function loadStaffListFromGAS() {
         const select = document.getElementById('attStaffSelect');
+        const todayKey = getTodayDateKey();
+
+        // ① スマホ内のキャッシュから0.01秒で即座に復元
+        const cachedListStr = localStorage.getItem('dx_att_staff_cache');
+        const cachedStatusStr = localStorage.getItem('dx_att_status_cache');
+        const cachedStatusDate = localStorage.getItem('dx_att_status_date');
+        const cachedUrl = localStorage.getItem('dx_att_master_url');
+
+        if (cachedListStr) {
+            try {
+                attStaffList = JSON.parse(cachedListStr);
+                // ★日付が今日と一致する時だけ出退勤状態を復元（翌朝は自動でリセット！）
+                if (cachedStatusStr && cachedStatusDate === todayKey) {
+                    attStatusMap = JSON.parse(cachedStatusStr);
+                } else {
+                    attStatusMap = {};
+                }
+                if (cachedUrl) attMasterSheetUrl = cachedUrl;
+                renderStaffOptions(attStaffList);
+            } catch (e) {}
+        }
+
+        // ② 裏側でGASから最新状態を取得してキャッシュを更新
         try {
             const res = await fetch(GAS_WEBAPP_URL, {
                 method: 'POST',
@@ -464,24 +513,28 @@
                 })
             });
             const data = await res.json();
+
+            // ★すでにこの画面で打刻ボタンを押した後なら、古い通信結果で上書きしない
+            if (hasPunchedInSession) return;
+
             if (data.statusMap) {
                 attStatusMap = data.statusMap;
+                localStorage.setItem('dx_att_status_cache', JSON.stringify(attStatusMap));
+                localStorage.setItem('dx_att_status_date', todayKey);
+            }
+            if (data.masterUrl) {
+                attMasterSheetUrl = data.masterUrl;
+                localStorage.setItem('dx_att_master_url', attMasterSheetUrl);
             }
             if (data.list) {
                 attStaffList = data.list;
-                const savedStaffId = localStorage.getItem('dx_my_staff_id') || "";
-                select.innerHTML = '<option value="">-- 名前を選択 --</option>';
-                data.list.forEach(s => {
-                    const opt = document.createElement('option');
-                    opt.value = s.id;
-                    opt.textContent = `${s.name} (${s.role})`;
-                    if (s.id === savedStaffId) opt.selected = true;
-                    select.appendChild(opt);
-                });
-                onStaffSelectionChange();
+                localStorage.setItem('dx_att_staff_cache', JSON.stringify(attStaffList));
+                renderStaffOptions(attStaffList);
             }
         } catch (e) {
-            select.innerHTML = '<option value="">通信エラー</option>';
+            if (!cachedListStr && select) {
+                select.innerHTML = '<option value="">通信エラー（再読込してください）</option>';
+            }
         }
     }
 
@@ -548,6 +601,7 @@
 
     async function sendTimecard(type) {
         if (!GAS_WEBAPP_URL) return;
+        hasPunchedInSession = true; // ★打刻開始をマーク
         const staffId = document.getElementById('attStaffSelect').value;
         const pin = document.getElementById('attPinInput').value;
         const siteSelectVal = document.getElementById('attSiteSelect').value;
@@ -607,7 +661,10 @@
                     attStatusMap[staffId].isFinishedToday = true;
                     attStatusMap[staffId].outTimeToday = result.outTime || '';
                 }
+                localStorage.setItem('dx_att_status_cache', JSON.stringify(attStatusMap));
             }
+            localStorage.setItem('dx_att_status_cache', JSON.stringify(attStatusMap));
+                localStorage.setItem('dx_att_status_date', getTodayDateKey());
         } catch (err) {
             showAttMsg('通信エラー: ' + err.message, false);
         } finally {
