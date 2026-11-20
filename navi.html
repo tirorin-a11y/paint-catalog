@@ -828,7 +828,63 @@
             </div>`;
         listEl.insertAdjacentHTML('beforeend', html);
     });
+    // ★renderList() の末尾に追加：クラウド設定がある時だけ「過去アーカイブ検索」ボタンを表示
+    const { url: gasUrl, authKey } = getGasConfig();
+    if (gasUrl && authKey) {
+        const kwText = kw ? `「${kw}」で` : '';
+        listEl.insertAdjacentHTML('beforeend', `
+            <div style="text-align:center; margin-top:20px; padding:15px; border-top:1px dashed #ccc;">
+                <button onclick="searchArchiveFromCloud()" style="background:#546e7a; color:white; border:none; padding:12px 20px; border-radius:8px; font-weight:bold; font-size:0.9rem; cursor:pointer; box-shadow:0 2px 5px rgba(0,0,0,0.15);">
+                    🗄️ ${kwText}昨年以前の完了・失注を検索
+                </button>
+                <div id="archiveResultArea" style="margin-top:15px; text-align:left;"></div>
+            </div>
+        `);
+    }
 }
+
+// ★昨年以前の過去案件をクラウドから一時取得して表示（localStorageは汚さない！）
+    async function searchArchiveFromCloud() {
+        const { url, authKey } = getGasConfig();
+        if (!url || !authKey) return;
+        const kw = document.getElementById('searchInput').value.trim();
+        const area = document.getElementById('archiveResultArea');
+        area.innerHTML = '<div style="text-align:center; color:#666; padding:15px;">⏳ 過去データを検索中...</div>';
+
+        try {
+            const fetchUrl = `${url}?type=getArchive&authKey=${encodeURIComponent(authKey)}&kw=${encodeURIComponent(kw)}&t=${Date.now()}`;
+            const res = await fetch(fetchUrl);
+            const json = await res.json();
+            const items = json.items || [];
+
+            if (items.length === 0) {
+                area.innerHTML = '<div style="text-align:center; color:#888; padding:15px;">該当する過去案件はありませんでした。</div>';
+                return;
+            }
+
+            let html = `<div style="font-size:0.85rem; color:#546e7a; font-weight:bold; margin-bottom:10px;">🗄️ 過去アーカイブ検索結果（${items.length}件）</div>`;
+            items.forEach(site => {
+                const stLabel = site.status === 'lost' ? '失注' : '完了';
+                const stClass = site.status === 'lost' ? 'st-lost' : 'st-complete';
+                html += `
+                    <div class="site-card" style="background:#fafafa; border:1px solid #e0e0e0;">
+                        <div class="card-header">
+                            <span class="case-no">${site.id}</span>
+                            <span class="status-badge ${stClass}">${stLabel}（過去）</span>
+                        </div>
+                        <div class="site-name">${site.name}</div>
+                        <div class="site-address">📍 ${site.address || '住所未登録'}</div>
+                        <div style="display:flex; gap:8px; margin-top:10px;">
+                            <a href="https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(site.plusCode || site.address)}" target="_blank" class="action-btn btn-navi-side" style="height:44px;">🚀 ナビ</a>
+                            <a href="tools.html?id=${site.id}" class="action-btn btn-center" style="height:44px;">🧰 日報・ツール</a>
+                        </div>
+                    </div>`;
+            });
+            area.innerHTML = html;
+        } catch (e) {
+            area.innerHTML = '<div style="text-align:center; color:#e74c3c; padding:15px;">通信エラーが発生しました。</div>';
+        }
+    }
 
 // ★新規追加：未算出をタップしたときに現調日時を手打ちする魔法
 function inputGencho(siteId) {
@@ -903,6 +959,16 @@ function moveItem(index, direction) {
             }
             else sites.unshift(data);
         }
+        // ★発行・保存した番号を最大値として記憶（失注が同期で消えても番号が戻らないようにする）
+        const parts = id.split('-');
+        if (parts.length === 2) {
+            const yKey = 'dx_max_num_' + parts[0];
+            const currentMax = Number(localStorage.getItem(yKey) || 0);
+            const savedNum = parseInt(parts[1], 10);
+            if (!isNaN(savedNum) && savedNum > currentMax) {
+                localStorage.setItem(yKey, String(savedNum));
+            }
+        }
         
         localStorage.setItem('dx_sites', JSON.stringify(sites)); 
         closeAllModals(); 
@@ -942,8 +1008,19 @@ function moveItem(index, direction) {
             isEditing=false; editingId=null; document.getElementById('btnDeleteSingle').style.display='none'; document.getElementById('btnDuplicate').style.display='none'; document.getElementById('naviCountArea').style.display='none';
         }
     }
-    function getNextNum(y) { let max=0; sites.filter(s=>s.id.startsWith(y)).forEach(s=>{ const n=parseInt(s.id.split('-')[1]); if(n>max)max=n; }); return (max+1).toString().padStart(3,'0'); }
-    
+    function getNextNum(y) {
+        const yearStr = String(y);
+        let max = Number(localStorage.getItem('dx_max_num_' + yearStr) || 0);
+
+        // スマホ内の全案件（失注含む）から最大番号をチェック
+        sites.filter(s => String(s.id).startsWith(yearStr + '-')).forEach(s => {
+            const n = parseInt(String(s.id).split('-')[1], 10);
+            if (!isNaN(n) && n > max) max = n;
+        });
+
+        return (max + 1).toString().padStart(3, '0');
+    }
+
     // 開くときは「現場タブ」をデフォルトにする
     function openSettings() { 
         document.getElementById('overlay').classList.add('show'); 
@@ -1063,6 +1140,14 @@ function moveItem(index, direction) {
             if (responseData.dictionary) {
                 localStorage.setItem('dx_tag_dictionary', JSON.stringify(responseData.dictionary));
             }
+            if (responseData.maxNums) {
+                Object.keys(responseData.maxNums).forEach(y => {
+                    const cur = Number(localStorage.getItem('dx_max_num_' + y) || 0);
+                    if (responseData.maxNums[y] > cur) {
+                        localStorage.setItem('dx_max_num_' + y, String(responseData.maxNums[y]));
+                    }
+                });
+            }
 
             let finalData = responseData.items ? responseData.items : (Array.isArray(responseData) ? responseData : null);
             if (!finalData) { alert("データ形式エラー（または合言葉が違います）"); return; }
@@ -1098,6 +1183,14 @@ function moveItem(index, direction) {
             const responseData = JSON.parse(text);
             if (responseData.dictionary) {
                 localStorage.setItem('dx_tag_dictionary', JSON.stringify(responseData.dictionary));
+            }
+            if (responseData.maxNums) {
+                Object.keys(responseData.maxNums).forEach(y => {
+                    const cur = Number(localStorage.getItem('dx_max_num_' + y) || 0);
+                    if (responseData.maxNums[y] > cur) {
+                        localStorage.setItem('dx_max_num_' + y, String(responseData.maxNums[y]));
+                    }
+                });
             }
 
             let cloudTime = 0, cloudData = [];
